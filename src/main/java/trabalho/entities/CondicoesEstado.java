@@ -6,9 +6,12 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "condicoes_estado")
+@Table(name = "condicoes_estado", schema = "public", uniqueConstraints = {
+        @UniqueConstraint(name = "condicoes_estado_fornecedor_id_estado_key", columnNames = {"fornecedor_id", "estado"})
+})
 public class CondicoesEstado {
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
     private UUID id;
 

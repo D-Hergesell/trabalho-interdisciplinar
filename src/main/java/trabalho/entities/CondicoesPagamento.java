@@ -5,9 +5,10 @@ import jakarta.persistence.*;
 import java.util.UUID;
 
 @Entity
-@Table(name = "condicoes_pagamento")
+@Table(name = "condicoes_pagamento", schema = "public")
 public class CondicoesPagamento {
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
     private UUID id;
 

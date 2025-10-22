@@ -6,11 +6,17 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "usuarios")
+@Table(name = "usuarios", schema = "public", uniqueConstraints = {
+        @UniqueConstraint(name = "usuarios_email_key", columnNames = {"email"})
+})
 public class Usuario {
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
     private UUID id;
+
+    @Column(name = "nome")
+    private String nome;
 
     @Column(name = "email", nullable = false)
     private String email;
@@ -41,6 +47,14 @@ public class Usuario {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
     }
 
     public String getEmail() {

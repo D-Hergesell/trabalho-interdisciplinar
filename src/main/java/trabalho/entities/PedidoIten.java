@@ -6,9 +6,10 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "pedido_itens")
-public class PedidoItem {
+@Table(name = "pedido_itens", schema = "public")
+public class PedidoIten {
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
     private UUID id;
 

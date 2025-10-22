@@ -7,9 +7,10 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "campanhas")
+@Table(name = "campanhas", schema = "public")
 public class Campanha {
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
     private UUID id;
 
@@ -39,6 +40,9 @@ public class Campanha {
     @Lob
     @Column(name = "brinde_descricao")
     private String brindeDescricao;
+
+    @Column(name = "percentual_desconto", precision = 5, scale = 2)
+    private BigDecimal percentualDesconto;
 
     @Column(name = "data_inicio", nullable = false)
     private LocalDate dataInicio;
@@ -119,6 +123,14 @@ public class Campanha {
 
     public void setBrindeDescricao(String brindeDescricao) {
         this.brindeDescricao = brindeDescricao;
+    }
+
+    public BigDecimal getPercentualDesconto() {
+        return percentualDesconto;
+    }
+
+    public void setPercentualDesconto(BigDecimal percentualDesconto) {
+        this.percentualDesconto = percentualDesconto;
     }
 
     public LocalDate getDataInicio() {

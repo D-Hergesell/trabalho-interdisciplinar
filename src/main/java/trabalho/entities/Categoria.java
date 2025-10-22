@@ -1,16 +1,16 @@
 package trabalho.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import java.util.UUID;
 
 @Entity
-@Table(name = "categorias")
+@Table(name = "categorias", schema = "public", uniqueConstraints = {
+        @UniqueConstraint(name = "categorias_nome_key", columnNames = {"nome"})
+})
 public class Categoria {
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
     private UUID id;
 

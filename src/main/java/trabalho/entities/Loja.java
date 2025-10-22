@@ -1,17 +1,18 @@
 package trabalho.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "lojas")
+@Table(name = "lojas", schema = "public", uniqueConstraints = {
+        @UniqueConstraint(name = "lojas_razao_social_key", columnNames = {"razao_social"}),
+        @UniqueConstraint(name = "lojas_cnpj_key", columnNames = {"cnpj"})
+})
 public class Loja {
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
     private UUID id;
 
@@ -26,6 +27,12 @@ public class Loja {
 
     @Column(name = "responsavel_nome")
     private String responsavelNome;
+
+    @Column(name = "email_contato")
+    private String emailContato;
+
+    @Column(name = "telefone", length = 20)
+    private String telefone;
 
     @Column(name = "cep", length = 8)
     private String cep;
@@ -83,6 +90,22 @@ public class Loja {
 
     public void setResponsavelNome(String responsavelNome) {
         this.responsavelNome = responsavelNome;
+    }
+
+    public String getEmailContato() {
+        return emailContato;
+    }
+
+    public void setEmailContato(String emailContato) {
+        this.emailContato = emailContato;
+    }
+
+    public String getTelefone() {
+        return telefone;
+    }
+
+    public void setTelefone(String telefone) {
+        this.telefone = telefone;
     }
 
     public String getCep() {
