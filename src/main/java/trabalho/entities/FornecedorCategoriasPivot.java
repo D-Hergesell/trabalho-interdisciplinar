@@ -11,7 +11,7 @@ public class FornecedorCategoriasPivot {
     @MapsId("fornecedorId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "fornecedor_id", nullable = false)
-    private Fornecedore fornecedor;
+    private Fornecedor fornecedor;
 
     @MapsId("categoriaId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -26,11 +26,11 @@ public class FornecedorCategoriasPivot {
         this.id = id;
     }
 
-    public Fornecedore getFornecedor() {
+    public Fornecedor getFornecedor() {
         return fornecedor;
     }
 
-    public void setFornecedor(Fornecedore fornecedor) {
+    public void setFornecedor(Fornecedor fornecedor) {
         this.fornecedor = fornecedor;
     }
 

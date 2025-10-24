@@ -33,7 +33,7 @@ public class Usuario {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fornecedor_id")
-    private Fornecedore fornecedor;
+    private Fornecedor fornecedor;
 
     @Column(name = "ativo", nullable = false)
     private Boolean ativo = false;
@@ -89,11 +89,11 @@ public class Usuario {
         this.loja = loja;
     }
 
-    public Fornecedore getFornecedor() {
+    public Fornecedor getFornecedor() {
         return fornecedor;
     }
 
-    public void setFornecedor(Fornecedore fornecedor) {
+    public void setFornecedor(Fornecedor fornecedor) {
         this.fornecedor = fornecedor;
     }
 

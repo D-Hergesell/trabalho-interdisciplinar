@@ -20,7 +20,7 @@ public class Pedido {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "fornecedor_id", nullable = false)
-    private Fornecedore fornecedor;
+    private Fornecedor fornecedor;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "criado_por_usuario_id", nullable = false)
@@ -55,11 +55,11 @@ public class Pedido {
         this.loja = loja;
     }
 
-    public Fornecedore getFornecedor() {
+    public Fornecedor getFornecedor() {
         return fornecedor;
     }
 
-    public void setFornecedor(Fornecedore fornecedor) {
+    public void setFornecedor(Fornecedor fornecedor) {
         this.fornecedor = fornecedor;
     }
 

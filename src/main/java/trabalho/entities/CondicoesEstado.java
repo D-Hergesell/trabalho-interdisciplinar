@@ -17,7 +17,7 @@ public class CondicoesEstado {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "fornecedor_id", nullable = false)
-    private Fornecedore fornecedor;
+    private Fornecedor fornecedor;
 
     @Column(name = "estado", nullable = false, length = 2)
     private String estado;
@@ -42,11 +42,11 @@ public class CondicoesEstado {
         this.id = id;
     }
 
-    public Fornecedore getFornecedor() {
+    public Fornecedor getFornecedor() {
         return fornecedor;
     }
 
-    public void setFornecedor(Fornecedore fornecedor) {
+    public void setFornecedor(Fornecedor fornecedor) {
         this.fornecedor = fornecedor;
     }
 

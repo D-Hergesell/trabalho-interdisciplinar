@@ -10,7 +10,7 @@ import java.util.UUID;
         @UniqueConstraint(name = "fornecedores_razao_social_key", columnNames = {"razao_social"}),
         @UniqueConstraint(name = "fornecedores_cnpj_key", columnNames = {"cnpj"})
 })
-public class Fornecedore {
+public class Fornecedor {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)

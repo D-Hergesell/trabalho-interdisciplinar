@@ -16,7 +16,7 @@ public class Campanha {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "fornecedor_id", nullable = false)
-    private Fornecedore fornecedor;
+    private Fornecedor fornecedor;
 
     @Column(name = "nome", nullable = false)
     private String nome;
@@ -61,11 +61,11 @@ public class Campanha {
         this.id = id;
     }
 
-    public Fornecedore getFornecedor() {
+    public Fornecedor getFornecedor() {
         return fornecedor;
     }
 
-    public void setFornecedor(Fornecedore fornecedor) {
+    public void setFornecedor(Fornecedor fornecedor) {
         this.fornecedor = fornecedor;
     }
 
