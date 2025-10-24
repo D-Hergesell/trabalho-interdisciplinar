@@ -1,10 +1,14 @@
 package trabalho.entities;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
+@Setter
+@Getter
 @Entity
 @Table(name = "condicoes_estado", schema = "public", uniqueConstraints = {
         @UniqueConstraint(name = "condicoes_estado_fornecedor_id_estado_key", columnNames = {"fornecedor_id", "estado"})
@@ -33,61 +37,5 @@ public class CondicoesEstado {
 
     @Column(name = "ativo", nullable = false)
     private Boolean ativo = false;
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public Fornecedor getFornecedor() {
-        return fornecedor;
-    }
-
-    public void setFornecedor(Fornecedor fornecedor) {
-        this.fornecedor = fornecedor;
-    }
-
-    public String getEstado() {
-        return estado;
-    }
-
-    public void setEstado(String estado) {
-        this.estado = estado;
-    }
-
-    public BigDecimal getCashbackPercentual() {
-        return cashbackPercentual;
-    }
-
-    public void setCashbackPercentual(BigDecimal cashbackPercentual) {
-        this.cashbackPercentual = cashbackPercentual;
-    }
-
-    public Integer getPrazoPagamentoDias() {
-        return prazoPagamentoDias;
-    }
-
-    public void setPrazoPagamentoDias(Integer prazoPagamentoDias) {
-        this.prazoPagamentoDias = prazoPagamentoDias;
-    }
-
-    public BigDecimal getAjusteUnitarioAplicado() {
-        return ajusteUnitarioAplicado;
-    }
-
-    public void setAjusteUnitarioAplicado(BigDecimal ajusteUnitarioAplicado) {
-        this.ajusteUnitarioAplicado = ajusteUnitarioAplicado;
-    }
-
-    public Boolean getAtivo() {
-        return ativo;
-    }
-
-    public void setAtivo(Boolean ativo) {
-        this.ativo = ativo;
-    }
 
 }

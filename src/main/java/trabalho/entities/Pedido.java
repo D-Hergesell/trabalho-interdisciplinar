@@ -1,11 +1,15 @@
 package trabalho.entities;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+@Setter
+@Getter
 @Entity
 @Table(name = "pedidos", schema = "public")
 public class Pedido {
@@ -38,69 +42,5 @@ public class Pedido {
 
     @Column(name = "data_pedido")
     private OffsetDateTime dataPedido;
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public Loja getLoja() {
-        return loja;
-    }
-
-    public void setLoja(Loja loja) {
-        this.loja = loja;
-    }
-
-    public Fornecedor getFornecedor() {
-        return fornecedor;
-    }
-
-    public void setFornecedor(Fornecedor fornecedor) {
-        this.fornecedor = fornecedor;
-    }
-
-    public Usuario getCriadoPorUsuario() {
-        return criadoPorUsuario;
-    }
-
-    public void setCriadoPorUsuario(Usuario criadoPorUsuario) {
-        this.criadoPorUsuario = criadoPorUsuario;
-    }
-
-    public CondicoesPagamento getCondicaoPagamento() {
-        return condicaoPagamento;
-    }
-
-    public void setCondicaoPagamento(CondicoesPagamento condicaoPagamento) {
-        this.condicaoPagamento = condicaoPagamento;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public BigDecimal getValorTotal() {
-        return valorTotal;
-    }
-
-    public void setValorTotal(BigDecimal valorTotal) {
-        this.valorTotal = valorTotal;
-    }
-
-    public OffsetDateTime getDataPedido() {
-        return dataPedido;
-    }
-
-    public void setDataPedido(OffsetDateTime dataPedido) {
-        this.dataPedido = dataPedido;
-    }
 
 }

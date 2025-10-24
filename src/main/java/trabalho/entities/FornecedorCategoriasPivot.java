@@ -1,7 +1,11 @@
 package trabalho.entities;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
+@Setter
+@Getter
 @Entity
 @Table(name = "fornecedor_categorias_pivot", schema = "public")
 public class FornecedorCategoriasPivot {
@@ -17,29 +21,5 @@ public class FornecedorCategoriasPivot {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
-
-    public FornecedorCategoriasPivotId getId() {
-        return id;
-    }
-
-    public void setId(FornecedorCategoriasPivotId id) {
-        this.id = id;
-    }
-
-    public Fornecedor getFornecedor() {
-        return fornecedor;
-    }
-
-    public void setFornecedor(Fornecedor fornecedor) {
-        this.fornecedor = fornecedor;
-    }
-
-    public Categoria getCategoria() {
-        return categoria;
-    }
-
-    public void setCategoria(Categoria categoria) {
-        this.categoria = categoria;
-    }
 
 }

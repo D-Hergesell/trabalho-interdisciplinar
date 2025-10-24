@@ -1,11 +1,15 @@
 package trabalho.entities;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+@Setter
+@Getter
 @Entity
 @Table(name = "campanhas", schema = "public")
 public class Campanha {
@@ -52,109 +56,5 @@ public class Campanha {
 
     @Column(name = "ativo", nullable = false)
     private Boolean ativo = false;
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public Fornecedor getFornecedor() {
-        return fornecedor;
-    }
-
-    public void setFornecedor(Fornecedor fornecedor) {
-        this.fornecedor = fornecedor;
-    }
-
-    public String getNome() {
-        return nome;
-    }
-
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public String getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(String tipo) {
-        this.tipo = tipo;
-    }
-
-    public BigDecimal getValorMinimoCompra() {
-        return valorMinimoCompra;
-    }
-
-    public void setValorMinimoCompra(BigDecimal valorMinimoCompra) {
-        this.valorMinimoCompra = valorMinimoCompra;
-    }
-
-    public BigDecimal getCashbackValor() {
-        return cashbackValor;
-    }
-
-    public void setCashbackValor(BigDecimal cashbackValor) {
-        this.cashbackValor = cashbackValor;
-    }
-
-    public Produto getProdutoIdBrinde() {
-        return produtoIdBrinde;
-    }
-
-    public void setProdutoIdBrinde(Produto produtoIdBrinde) {
-        this.produtoIdBrinde = produtoIdBrinde;
-    }
-
-    public Integer getQuantidadeMinimaProduto() {
-        return quantidadeMinimaProduto;
-    }
-
-    public void setQuantidadeMinimaProduto(Integer quantidadeMinimaProduto) {
-        this.quantidadeMinimaProduto = quantidadeMinimaProduto;
-    }
-
-    public String getBrindeDescricao() {
-        return brindeDescricao;
-    }
-
-    public void setBrindeDescricao(String brindeDescricao) {
-        this.brindeDescricao = brindeDescricao;
-    }
-
-    public BigDecimal getPercentualDesconto() {
-        return percentualDesconto;
-    }
-
-    public void setPercentualDesconto(BigDecimal percentualDesconto) {
-        this.percentualDesconto = percentualDesconto;
-    }
-
-    public LocalDate getDataInicio() {
-        return dataInicio;
-    }
-
-    public void setDataInicio(LocalDate dataInicio) {
-        this.dataInicio = dataInicio;
-    }
-
-    public LocalDate getDataFim() {
-        return dataFim;
-    }
-
-    public void setDataFim(LocalDate dataFim) {
-        this.dataFim = dataFim;
-    }
-
-    public Boolean getAtivo() {
-        return ativo;
-    }
-
-    public void setAtivo(Boolean ativo) {
-        this.ativo = ativo;
-    }
 
 }

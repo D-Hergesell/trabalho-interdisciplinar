@@ -1,9 +1,13 @@
 package trabalho.entities;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.UUID;
 
+@Setter
+@Getter
 @Entity
 @Table(name = "condicoes_pagamento", schema = "public")
 public class CondicoesPagamento {
@@ -24,45 +28,5 @@ public class CondicoesPagamento {
 
     @Column(name = "ativo", nullable = false)
     private Boolean ativo = false;
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public Fornecedor getFornecedor() {
-        return fornecedor;
-    }
-
-    public void setFornecedor(Fornecedor fornecedor) {
-        this.fornecedor = fornecedor;
-    }
-
-    public String getDescricao() {
-        return descricao;
-    }
-
-    public void setDescricao(String descricao) {
-        this.descricao = descricao;
-    }
-
-    public Integer getPrazoDias() {
-        return prazoDias;
-    }
-
-    public void setPrazoDias(Integer prazoDias) {
-        this.prazoDias = prazoDias;
-    }
-
-    public Boolean getAtivo() {
-        return ativo;
-    }
-
-    public void setAtivo(Boolean ativo) {
-        this.ativo = ativo;
-    }
 
 }
