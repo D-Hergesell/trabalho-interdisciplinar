@@ -41,8 +41,7 @@ public class Campanha {
     @Column(name = "quantidade_minima_produto")
     private Integer quantidadeMinimaProduto;
 
-    @Lob
-    @Column(name = "brinde_descricao")
+    @Column(name = "brinde_descricao", columnDefinition = "TEXT")
     private String brindeDescricao;
 
     @Column(name = "percentual_desconto", precision = 5, scale = 2)

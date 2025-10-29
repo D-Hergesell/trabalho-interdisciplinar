@@ -28,8 +28,7 @@ public class Produto {
     @Column(name = "nome", nullable = false)
     private String nome;
 
-    @Lob
-    @Column(name = "descricao")
+    @Column(name = "descricao", columnDefinition = "TEXT")
     private String descricao;
 
     @Column(name = "preco_base", nullable = false, precision = 10, scale = 2)
