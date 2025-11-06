@@ -2,14 +2,18 @@ package trabalho.entities;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
-
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+import trabalho.enums.TipoCampanha;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-@Setter
 @Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "campanhas", schema = "public")
 public class Campanha {
@@ -19,14 +23,16 @@ public class Campanha {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "fornecedor_id", nullable = false)
     private Fornecedor fornecedor;
 
     @Column(name = "nome", nullable = false)
     private String nome;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "tipo", nullable = false, length = 30)
-    private String tipo;
+    private TipoCampanha tipo;
 
     @Column(name = "valor_minimo_compra", precision = 10, scale = 2)
     private BigDecimal valorMinimoCompra;

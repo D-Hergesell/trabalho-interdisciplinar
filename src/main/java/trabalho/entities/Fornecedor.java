@@ -2,13 +2,16 @@ package trabalho.entities;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Setter
 @Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "fornecedores", schema = "public", uniqueConstraints = {
         @UniqueConstraint(name = "fornecedores_razao_social_key", columnNames = {"razao_social"}),
@@ -53,7 +56,12 @@ public class Fornecedor {
     @Column(name = "ativo", nullable = false)
     private Boolean ativo = false;
 
-    @Column(name = "created_at")
+    @Column(
+            name = "created_at",
+            insertable = false, // <-- "Não inclua no INSERT"
+            updatable = false   // <-- "Não inclua no UPDATE"
+    )
+    @ColumnDefault("now()")
     private OffsetDateTime createdAt;
 
 }

@@ -2,15 +2,20 @@ package trabalho.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.Hibernate;
 
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 
-@Setter
 @Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Embeddable
 public class FornecedorCategoriasPivotId implements Serializable {
     private static final long serialVersionUID = 2807860215651671328L;
@@ -23,7 +28,7 @@ public class FornecedorCategoriasPivotId implements Serializable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
         FornecedorCategoriasPivotId entity = (FornecedorCategoriasPivotId) o;
         return Objects.equals(this.fornecedorId, entity.fornecedorId) &&
                 Objects.equals(this.categoriaId, entity.categoriaId);

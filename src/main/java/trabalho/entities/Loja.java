@@ -2,13 +2,18 @@ package trabalho.entities;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Setter
 @Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "lojas", schema = "public", uniqueConstraints = {
         @UniqueConstraint(name = "lojas_razao_social_key", columnNames = {"razao_social"}),
@@ -53,7 +58,17 @@ public class Loja {
     @Column(name = "ativo", nullable = false)
     private Boolean ativo = false;
 
-    @Column(name = "created_at")
+    @Column(
+            name = "created_at",
+            insertable = false,
+            updatable = false
+    )
+    @ColumnDefault("now()")
     private OffsetDateTime createdAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    @JoinColumn(name = "loja_matriz_id")
+    private Loja lojaMatriz;
 
 }

@@ -2,14 +2,17 @@ package trabalho.entities;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Setter
 @Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name = "pedidos", schema = "public")
 public class Pedido {
@@ -34,12 +37,14 @@ public class Pedido {
     @JoinColumn(name = "condicao_pagamento_id")
     private CondicoesPagamento condicaoPagamento;
 
+    @ColumnDefault("'PENDENTE'")
     @Column(name = "status", nullable = false, length = 30)
-    private String status;
+    private String status = "PENDENTE";
 
     @Column(name = "valor_total", precision = 10, scale = 2)
     private BigDecimal valorTotal;
 
+    @ColumnDefault("now()")
     @Column(name = "data_pedido")
     private OffsetDateTime dataPedido;
 
