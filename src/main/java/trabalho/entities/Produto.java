@@ -9,6 +9,8 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -50,5 +52,11 @@ public class Produto {
 
     @Column(name = "ativo", nullable = false)
     private Boolean ativo = false;
+
+    @OneToMany(mappedBy = "produto", fetch = FetchType.LAZY)
+    private Set<PedidoItem> pedidoItems =  new HashSet<>();
+
+    @OneToMany(mappedBy = "produtoIdBrinde", fetch = FetchType.LAZY)
+    private Set<Campanha> campanhasOndeSouBrinde = new HashSet<>();
 
 }

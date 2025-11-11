@@ -9,6 +9,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.OffsetDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -70,5 +71,14 @@ public class Loja {
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "loja_matriz_id")
     private Loja lojaMatriz;
+
+    @OneToMany(mappedBy = "lojaMatriz", fetch = FetchType.LAZY)
+    private Set<Loja> filiais;
+
+    @OneToMany(mappedBy = "loja", fetch = FetchType.LAZY)
+    private Set<Pedido> pedidos;
+
+    @OneToMany(mappedBy = "loja", fetch = FetchType.LAZY)
+    private Set<Usuario> usuarios;
 
 }

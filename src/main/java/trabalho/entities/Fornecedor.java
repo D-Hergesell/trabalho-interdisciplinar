@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.OffsetDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -63,5 +64,21 @@ public class Fornecedor {
     )
     @ColumnDefault("now()")
     private OffsetDateTime createdAt;
+
+    @OneToMany(mappedBy = "fornecedor", fetch = FetchType.LAZY)
+    private Set<Campanha> campanhas;
+
+    @OneToMany(mappedBy = "fornecedor", fetch = FetchType.LAZY)
+    private Set<Produto> produtos;
+
+    @OneToMany(mappedBy = "fornecedor", fetch = FetchType.LAZY)
+    private Set<CondicoesPagamento> condicoesPagamentos;
+
+    @OneToMany(mappedBy = "fornecedor", fetch = FetchType.LAZY)
+    private Set<CondicoesEstado> condicoesEstados;
+
+    @OneToMany(mappedBy = "fornecedor", fetch = FetchType.LAZY)
+    private Set<Usuario> usuarios;
+
 
 }

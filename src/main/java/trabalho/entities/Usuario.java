@@ -8,7 +8,10 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import trabalho.enums.TipoUsuario;
 import java.time.OffsetDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -33,8 +36,9 @@ public class Usuario {
     @Column(name = "senha_hash", nullable = false)
     private String senhaHash;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "tipo_usuario", nullable = false, length = 20)
-    private String tipoUsuario;
+    private TipoUsuario tipoUsuario;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -56,5 +60,8 @@ public class Usuario {
     )
     @ColumnDefault("now()")
     private OffsetDateTime createdAt;
+
+    @OneToMany(mappedBy = "criadoPorUsuario", fetch = FetchType.LAZY)
+    private Set<Pedido> pedidosCriados = new HashSet<>();
 
 }
