@@ -9,5 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface LojaRepository extends JpaRepository<Loja, UUID>{
-    List<Loja> findByNomeContainingIgnoreCase(String nome);
+    List<Loja> findByNomeFantasiaContainingIgnoreCase(String nomeFantasia);
 }
