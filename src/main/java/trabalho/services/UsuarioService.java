@@ -24,7 +24,6 @@ public class UsuarioService {
     private final PasswordEncoder passwordEncoder;
 
     /**
-     * METODO CORRIGIDO:
      * Recebe um DTO, retorna um DTO.
      * Contém a lógica de negócio real.
      */
