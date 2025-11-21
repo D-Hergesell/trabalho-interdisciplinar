@@ -19,6 +19,9 @@ public class FornecedorController {
 
     private final FornecedorService fornecedorService;
 
+    // -----------------------------------------
+    // POST - Criar fornecedor
+    // -----------------------------------------
     @PostMapping
     public ResponseEntity<FornecedorResponseDTO> criarFornecedor(
             @Valid @RequestBody FornecedorRequestDTO dto
@@ -27,19 +30,41 @@ public class FornecedorController {
         return ResponseEntity.status(HttpStatus.CREATED).body(novoFornecedor);
     }
 
+    // -----------------------------------------
+    // GET - Listar todos
+    // -----------------------------------------
     @GetMapping
     public ResponseEntity<List<FornecedorResponseDTO>> listarFornecedores() {
-        List<FornecedorResponseDTO> fornecedores = fornecedorService.listarFornecedores();
-        return ResponseEntity.ok(fornecedores);
+        return ResponseEntity.ok(fornecedorService.listarFornecedores());
     }
 
+    // -----------------------------------------
+    // GET - Listar somente ativos
+    // -----------------------------------------
+    @GetMapping("/ativos")
+    public ResponseEntity<List<FornecedorResponseDTO>> listarAtivos() {
+        return ResponseEntity.ok(fornecedorService.listarAtivos());
+    }
+
+    // -----------------------------------------
+    // GET - Buscar por ID
+    // -----------------------------------------
     @GetMapping("/{id}")
     public ResponseEntity<FornecedorResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(fornecedorService.buscarPorId(id));
     }
 
-    // Assumindo que você criará o metodo atualizar no Service
-    /*
+    // -----------------------------------------
+    // GET - Buscar por CNPJ
+    // -----------------------------------------
+    @GetMapping("/cnpj/{cnpj}")
+    public ResponseEntity<FornecedorResponseDTO> buscarPorCnpj(@PathVariable String cnpj) {
+        return ResponseEntity.ok(fornecedorService.buscarPorCnpj(cnpj));
+    }
+
+    // -----------------------------------------
+    // PUT - Atualizar fornecedor
+    // -----------------------------------------
     @PutMapping("/{id}")
     public ResponseEntity<FornecedorResponseDTO> atualizarFornecedor(
             @PathVariable UUID id,
@@ -48,14 +73,13 @@ public class FornecedorController {
         FornecedorResponseDTO atualizado = fornecedorService.atualizarFornecedor(id, dto);
         return ResponseEntity.ok(atualizado);
     }
-    */
 
-    // Assumindo que você criará o metodo deletar no Service
-    /*
+    // -----------------------------------------
+    // DELETE - Remover fornecedor
+    // -----------------------------------------
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable UUID id) {
         fornecedorService.deletarFornecedor(id);
         return ResponseEntity.noContent().build();
     }
-    */
 }

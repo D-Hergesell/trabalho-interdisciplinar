@@ -1,5 +1,6 @@
 package trabalho.dto;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record LojaResponseDTO(
@@ -7,9 +8,14 @@ public record LojaResponseDTO(
         String nomeFantasia,
         String razaoSocial,
         String cnpj,
+        String responsavelNome,
         String emailContato,
+        String telefone,
+        String cep,
+        String logradouro,
         String cidade,
         String estado,
         Boolean ativo,
-        UUID lojaMatrizId // Retornamos o ID da matriz para o front saber
+        OffsetDateTime createdAt,
+        UUID lojaMatrizId
 ) {}

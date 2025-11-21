@@ -19,6 +19,9 @@ public class LojaController {
 
     private final LojaService lojaService;
 
+    // -----------------------------------------
+    // POST - Criar loja
+    // -----------------------------------------
     @PostMapping
     public ResponseEntity<LojaResponseDTO> criarLoja(
             @Valid @RequestBody LojaRequestDTO dto
@@ -27,17 +30,42 @@ public class LojaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(novaLoja);
     }
 
+    // -----------------------------------------
+    // GET - Listar todas
+    // -----------------------------------------
     @GetMapping
     public ResponseEntity<List<LojaResponseDTO>> listarLojas() {
         List<LojaResponseDTO> lojas = lojaService.listarLojas();
         return ResponseEntity.ok(lojas);
     }
 
+    // -----------------------------------------
+    // GET - Listar apenas lojas ativas
+    // -----------------------------------------
+    @GetMapping("/ativas")
+    public ResponseEntity<List<LojaResponseDTO>> listarLojasAtivas() {
+        return ResponseEntity.ok(lojaService.listarAtivas());
+    }
+
+    // -----------------------------------------
+    // GET - Buscar por ID
+    // -----------------------------------------
     @GetMapping("/{id}")
     public ResponseEntity<LojaResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(lojaService.buscarPorId(id));
     }
 
+    // -----------------------------------------
+    // GET - Listar filiais de uma loja matriz
+    // -----------------------------------------
+    @GetMapping("/{matrizId}/filiais")
+    public ResponseEntity<List<LojaResponseDTO>> listarFiliais(@PathVariable UUID matrizId) {
+        return ResponseEntity.ok(lojaService.listarFiliais(matrizId));
+    }
+
+    // -----------------------------------------
+    // PUT - Atualizar loja
+    // -----------------------------------------
     @PutMapping("/{id}")
     public ResponseEntity<LojaResponseDTO> atualizarLoja(
             @PathVariable UUID id,
@@ -47,6 +75,9 @@ public class LojaController {
         return ResponseEntity.ok(atualizada);
     }
 
+    // -----------------------------------------
+    // DELETE - Remover loja
+    // -----------------------------------------
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable UUID id) {
         lojaService.deletarLoja(id);

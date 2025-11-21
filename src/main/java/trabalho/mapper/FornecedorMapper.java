@@ -12,7 +12,6 @@ public interface FornecedorMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "ativo", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
-    // Ignora todas as listas OneToMany para evitar loops ou cargas desnecessárias
     @Mapping(target = "campanhas", ignore = true)
     @Mapping(target = "produtos", ignore = true)
     @Mapping(target = "condicoesPagamentos", ignore = true)
@@ -20,5 +19,7 @@ public interface FornecedorMapper {
     @Mapping(target = "usuarios", ignore = true)
     Fornecedor toEntity(FornecedorRequestDTO dto);
 
+    // Todos os campos do DTO têm o mesmo nome da entidade,
+    // então o MapStruct fará mapping automático com segurança.
     FornecedorResponseDTO toResponseDTO(Fornecedor entity);
 }

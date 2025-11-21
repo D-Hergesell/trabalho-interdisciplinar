@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record PedidoRequestDTO(
+
         @NotNull(message = "Loja é obrigatória")
         UUID lojaId,
 
@@ -16,10 +17,8 @@ public record PedidoRequestDTO(
         @NotNull(message = "Usuário criador é obrigatório")
         UUID criadoPorUsuarioId,
 
-        // Opcional
-        UUID condicaoPagamentoId,
+        UUID condicaoPagamentoId, // opcional mesmo
 
-        // A lista de itens é obrigatória e validada em cascata (@Valid)
         @NotEmpty(message = "O pedido deve ter pelo menos um item")
         @Valid
         List<PedidoItemRequestDTO> itens

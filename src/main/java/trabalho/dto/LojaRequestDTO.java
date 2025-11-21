@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
 public record LojaRequestDTO(
+
         @NotBlank(message = "Nome fantasia é obrigatório")
         String nomeFantasia,
 
@@ -22,7 +23,10 @@ public record LojaRequestDTO(
         String emailContato,
 
         String telefone,
+
+        @Size(min = 8, max = 8, message = "CEP deve ter exatamente 8 dígitos")
         String cep,
+
         String logradouro,
         String cidade,
 
@@ -30,6 +34,5 @@ public record LojaRequestDTO(
         @Size(min = 2, max = 2, message = "Use a sigla do estado (ex: SP, SC)")
         String estado,
 
-        // Opcional: Se for nulo, é uma matriz. Se tiver ID, é filial.
         UUID lojaMatrizId
 ) {}

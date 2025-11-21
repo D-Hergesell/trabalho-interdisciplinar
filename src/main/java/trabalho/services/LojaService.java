@@ -20,32 +20,35 @@ public class LojaService {
     private final LojaRepository lojaRepository;
     private final LojaMapper lojaMapper;
 
+    // -----------------------------------------
+    // CREATE
+    // -----------------------------------------
     @Transactional
     public LojaResponseDTO criarLoja(LojaRequestDTO dto) {
-        // 1. Validação de Unicidade
+
+        // Garantir unicidade de CNPJ
         if (lojaRepository.findByCnpj(dto.cnpj()).isPresent()) {
             throw new RuntimeException("CNPJ já cadastrado.");
         }
 
-        // 2. Conversão
         Loja novaLoja = lojaMapper.toEntity(dto);
 
-        // 3. Lógica de Matriz (Recursividade)
+        // Loja matriz opcional
         if (dto.lojaMatrizId() != null) {
             Loja matriz = lojaRepository.findById(dto.lojaMatrizId())
                     .orElseThrow(() -> new RuntimeException("Loja Matriz não encontrada."));
             novaLoja.setLojaMatriz(matriz);
         }
 
-        // 4. Padrões
         novaLoja.setAtivo(true);
 
-        // 5. Salvar
         Loja lojaSalva = lojaRepository.save(novaLoja);
-
         return lojaMapper.toResponseDTO(lojaSalva);
     }
 
+    // -----------------------------------------
+    // READ - Listar todas
+    // -----------------------------------------
     @Transactional(readOnly = true)
     public List<LojaResponseDTO> listarLojas() {
         return lojaRepository.findAll().stream()
@@ -53,6 +56,9 @@ public class LojaService {
                 .collect(Collectors.toList());
     }
 
+    // -----------------------------------------
+    // READ - Buscar por ID
+    // -----------------------------------------
     @Transactional(readOnly = true)
     public LojaResponseDTO buscarPorId(UUID id) {
         Loja loja = lojaRepository.findById(id)
@@ -60,27 +66,78 @@ public class LojaService {
         return lojaMapper.toResponseDTO(loja);
     }
 
+    // -----------------------------------------
+    // READ - Listar apenas lojas ativas
+    // -----------------------------------------
+    @Transactional(readOnly = true)
+    public List<LojaResponseDTO> listarAtivas() {
+        return lojaRepository.findByAtivoTrue().stream()
+                .map(lojaMapper::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    // -----------------------------------------
+    // READ - Listar filiais de uma matriz
+    // -----------------------------------------
+    @Transactional(readOnly = true)
+    public List<LojaResponseDTO> listarFiliais(UUID matrizId) {
+
+        Loja matriz = lojaRepository.findById(matrizId)
+                .orElseThrow(() -> new RuntimeException("Loja matriz não encontrada."));
+
+        return lojaRepository.findByLojaMatriz(matriz).stream()
+                .map(lojaMapper::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    // -----------------------------------------
+    // UPDATE
+    // -----------------------------------------
     @Transactional
     public LojaResponseDTO atualizarLoja(UUID id, LojaRequestDTO dto) {
         Loja loja = lojaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Loja não encontrada."));
 
-        // Atualiza campos simples via Mapper ou setters manuais
-        // Exemplo manual para controle total:
+        // Atualização de CNPJ com verificação de duplicação
+        if (!loja.getCnpj().equals(dto.cnpj())) {
+            if (lojaRepository.findByCnpj(dto.cnpj()).isPresent()) {
+                throw new RuntimeException("CNPJ já cadastrado.");
+            }
+            loja.setCnpj(dto.cnpj());
+        }
+
+        // Campos simples
         loja.setNomeFantasia(dto.nomeFantasia());
         loja.setRazaoSocial(dto.razaoSocial());
         loja.setEmailContato(dto.emailContato());
-        // ... outros campos ...
+        loja.setTelefone(dto.telefone());
+        loja.setLogradouro(dto.logradouro());
+        loja.setEstado(dto.estado());
+        loja.setCidade(dto.cidade());
+
+        // Controle da loja matriz
+        if (dto.lojaMatrizId() != null) {
+            Loja matriz = lojaRepository.findById(dto.lojaMatrizId())
+                    .orElseThrow(() -> new RuntimeException("Loja Matriz não encontrada."));
+            loja.setLojaMatriz(matriz);
+        } else {
+            loja.setLojaMatriz(null); // remove vínculo
+        }
 
         Loja atualizada = lojaRepository.save(loja);
         return lojaMapper.toResponseDTO(atualizada);
     }
 
+    // -----------------------------------------
+    // DELETE
+    // -----------------------------------------
     @Transactional
     public void deletarLoja(UUID id) {
+
         if (!lojaRepository.existsById(id)) {
             throw new RuntimeException("Loja não encontrada.");
         }
+
         lojaRepository.deleteById(id);
     }
 }

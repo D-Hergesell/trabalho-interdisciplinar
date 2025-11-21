@@ -19,6 +19,9 @@ public class ProdutoController {
 
     private final ProdutoService produtoService;
 
+    // -----------------------------------------
+    // POST - Criar Produto
+    // -----------------------------------------
     @PostMapping
     public ResponseEntity<ProdutoResponseDTO> criarProduto(
             @Valid @RequestBody ProdutoRequestDTO dto
@@ -27,22 +30,36 @@ public class ProdutoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(novoProduto);
     }
 
+    // -----------------------------------------
+    // GET - Listar todos
+    // -----------------------------------------
     @GetMapping
     public ResponseEntity<List<ProdutoResponseDTO>> listarProdutos() {
         List<ProdutoResponseDTO> produtos = produtoService.listarProdutos();
         return ResponseEntity.ok(produtos);
     }
 
-    // Se você implementou buscarPorId no Service:
-    /*
+    // -----------------------------------------
+    // GET - Buscar por ID
+    // -----------------------------------------
     @GetMapping("/{id}")
     public ResponseEntity<ProdutoResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(produtoService.buscarPorId(id));
     }
-    */
 
-    // Se você implementou atualizar no Service:
-    /*
+    // -----------------------------------------
+    // GET - Listar produtos de um fornecedor específico
+    // -----------------------------------------
+    @GetMapping("/fornecedor/{fornecedorId}")
+    public ResponseEntity<List<ProdutoResponseDTO>> listarPorFornecedor(
+            @PathVariable UUID fornecedorId
+    ) {
+        return ResponseEntity.ok(produtoService.listarPorFornecedor(fornecedorId));
+    }
+
+    // -----------------------------------------
+    // PUT - Atualizar Produto
+    // -----------------------------------------
     @PutMapping("/{id}")
     public ResponseEntity<ProdutoResponseDTO> atualizarProduto(
             @PathVariable UUID id,
@@ -51,14 +68,13 @@ public class ProdutoController {
         ProdutoResponseDTO atualizado = produtoService.atualizarProduto(id, dto);
         return ResponseEntity.ok(atualizado);
     }
-    */
 
-    // Se você implementou deletar no Service:
-    /*
+    // -----------------------------------------
+    // DELETE - Remover Produto
+    // -----------------------------------------
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable UUID id) {
         produtoService.deletarProduto(id);
         return ResponseEntity.noContent().build();
     }
-    */
 }
