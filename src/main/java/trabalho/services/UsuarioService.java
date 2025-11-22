@@ -113,6 +113,23 @@ public class UsuarioService {
     }
 
     @Transactional
+    public UsuarioResponseDTO atualizarTipoUsuario(UUID id, TipoUsuario tipo) {
+
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+
+        // Proteção extra opcional
+        if (usuario.getTipoUsuario() == TipoUsuario.ADMIN && tipo != TipoUsuario.ADMIN) {
+            throw new RuntimeException("Não é permitido alterar o tipo de um ADMIN.");
+        }
+
+        usuario.setTipoUsuario(tipo);
+
+        Usuario salvo = usuarioRepository.save(usuario);
+        return usuarioMapper.toResponseDTO(salvo);
+    }
+
+    @Transactional
     public void deletarUsuario(UUID id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));

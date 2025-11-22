@@ -28,3 +28,19 @@ public class SecurityConfig {
     }
 
 }
+
+/*
+@EnableMethodSecurity
+@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
+    http
+        .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/api/v1/usuarios/**").hasAnyRole("ADMIN") // admin gerencia usuários
+            .anyRequest().permitAll()
+        );
+
+    return http.build();
+}
+*/

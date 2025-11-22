@@ -4,9 +4,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import trabalho.dto.UsuarioRequestDTO;
 import trabalho.dto.UsuarioResponseDTO;
+import trabalho.dto.UsuarioRoleUpdateDTO;
 import trabalho.services.UsuarioService;
 
 import java.util.List;
@@ -55,8 +57,22 @@ public class UsuarioController {
         return ResponseEntity.ok(atualizado);
     }
 
+    @PatchMapping("/{id}/tipo")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UsuarioResponseDTO> atualizarTipoUsuario(
+            @PathVariable UUID id,
+            @Valid @RequestBody UsuarioRoleUpdateDTO dto
+    ) {
+        UsuarioResponseDTO resposta = usuarioService.atualizarTipoUsuario(id, dto.tipoUsuario());
+        return ResponseEntity.ok(resposta);
+    }
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable UUID id) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deletar(
+            @PathVariable UUID id,
+            @Valid @RequestBody UsuarioRequestDTO dto
+    ) {
         usuarioService.deletarUsuario(id);
         return ResponseEntity.noContent().build();
     }
