@@ -27,6 +27,10 @@ public class Categoria {
     @Column(name = "nome", nullable = false, length = 100)
     private String nome;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "fornecedor_id", nullable = false)
+    private Fornecedor fornecedor;
+
     @Column(name = "ativo", nullable = false)
     private Boolean ativo = false;
 
