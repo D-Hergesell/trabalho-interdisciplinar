@@ -8,6 +8,8 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -35,5 +37,8 @@ public class CondicoesPagamento {
 
     @Column(name = "ativo", nullable = false)
     private Boolean ativo = false;
+
+    @OneToMany(mappedBy = "condicaoPagamento")
+    private Set<Pedido> pedidos = new LinkedHashSet<>();
 
 }

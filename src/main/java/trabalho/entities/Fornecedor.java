@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.OffsetDateTime;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -80,5 +81,10 @@ public class Fornecedor {
     @OneToMany(mappedBy = "fornecedor", fetch = FetchType.LAZY)
     private Set<Usuario> usuarios;
 
+    @OneToMany(mappedBy = "fornecedor")
+    private Set<Categoria> categorias = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "fornecedor")
+    private Set<Pedido> pedidos = new LinkedHashSet<>();
 
 }

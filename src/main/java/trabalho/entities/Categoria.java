@@ -1,6 +1,7 @@
 package trabalho.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -8,6 +9,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -48,5 +50,17 @@ public class Categoria {
             fetch = FetchType.LAZY
     )
     private Set<Produto> produtos = new HashSet<>();
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "fornecedor_id", nullable = false)
+    private Fornecedor fornecedor;
+
+    @ManyToMany
+    @JoinTable(name = "fornecedor_categorias_pivot",
+            joinColumns = @JoinColumn(name = "categoria_id"),
+            inverseJoinColumns = @JoinColumn(name = "fornecedor_id"))
+    private Set<Fornecedor> fornecedores = new LinkedHashSet<>();
 
 }
