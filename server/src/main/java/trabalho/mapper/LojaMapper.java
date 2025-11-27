@@ -20,6 +20,5 @@ public interface LojaMapper {
 
 
     // ENTITY → RESPONSE
-    @Mapping(source = "lojaMatriz.id", target = "lojaMatrizId")
     LojaResponseDTO toResponseDTO(Loja entity);
 }
