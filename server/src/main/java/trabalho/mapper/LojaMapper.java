@@ -17,7 +17,6 @@ public interface LojaMapper {
     @Mapping(target = "usuarios", ignore = true)
     Loja toEntity(LojaRequestDTO dto);
 
-
     // ENTITY → RESPONSE
     LojaResponseDTO toResponseDTO(Loja entity);
 }
