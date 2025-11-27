@@ -63,9 +63,6 @@ public class Loja {
     @ColumnDefault("now()")
     private OffsetDateTime createdAt;
 
-    @OneToMany(mappedBy = "lojaMatriz", fetch = FetchType.LAZY)
-    private Set<Loja> filiais;
-
     @OneToMany(mappedBy = "loja", fetch = FetchType.LAZY)
     private Set<Pedido> pedidos;
 
