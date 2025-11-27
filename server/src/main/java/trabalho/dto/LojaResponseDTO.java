@@ -6,7 +6,6 @@ import java.util.UUID;
 public record LojaResponseDTO(
         UUID id,
         String nomeFantasia,
-        String razaoSocial,
         String cnpj,
         String responsavelNome,
         String emailContato,
@@ -16,6 +15,5 @@ public record LojaResponseDTO(
         String cidade,
         String estado,
         Boolean ativo,
-        OffsetDateTime createdAt,
-        UUID lojaMatrizId
+        OffsetDateTime createdAt
 ) {}

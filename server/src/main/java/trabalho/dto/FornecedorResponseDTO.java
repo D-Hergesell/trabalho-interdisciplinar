@@ -6,7 +6,6 @@ import java.util.UUID;
 public record FornecedorResponseDTO(
         UUID id,
         String nomeFantasia,
-        String razaoSocial,
         String cnpj,
         String responsavelNome,
         String emailContato,
