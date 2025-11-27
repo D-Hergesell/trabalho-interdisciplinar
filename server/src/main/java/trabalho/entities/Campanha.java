@@ -64,8 +64,4 @@ public class Campanha {
     @Column(name = "ativo", nullable = false)
     private Boolean ativo = false;
 
-    @ColumnDefault("now()")
-    @Column(name = "created_at")
-    private OffsetDateTime createdAt;
-
 }

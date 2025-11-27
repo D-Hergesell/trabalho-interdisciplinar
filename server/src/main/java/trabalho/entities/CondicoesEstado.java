@@ -16,7 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "condicoes_estado", schema = "public", uniqueConstraints = {
-        @UniqueConstraint(name = "condicoes_estado_fornecedor_id_estado_key", columnNames = {"fornecedor_id", "estado"})
+        @UniqueConstraint(name = "condicoes_estado_unica_por_uf", columnNames = {"fornecedor_id", "estado"})
 })
 public class CondicoesEstado {
     @Id

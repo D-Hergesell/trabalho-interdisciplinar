@@ -18,7 +18,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "categorias", schema = "public", uniqueConstraints = {
-        @UniqueConstraint(name = "unique_pai_e_nome", columnNames = {"categoria_pai_id", "nome"})
+        @UniqueConstraint(name = "categorias_fornecedor_id_nome_key", columnNames = {"fornecedor_id", "nome"})
 })
 public class Categoria {
     @Id
@@ -31,14 +31,6 @@ public class Categoria {
 
     @Column(name = "ativo", nullable = false)
     private Boolean ativo = false;
-
-    @OneToMany(
-            mappedBy = "categoriaPai", // "mapeado pelo" campo 'categoriaPai' na classe Filha
-            fetch = FetchType.LAZY,
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
-    private Set<Categoria> subCategorias = new HashSet<>();
 
     @OneToMany(
             mappedBy = "categoria",
