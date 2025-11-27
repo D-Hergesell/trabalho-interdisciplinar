@@ -29,9 +29,6 @@ public class Loja {
     @Column(name = "nome_fantasia", nullable = false)
     private String nomeFantasia;
 
-    @Column(name = "razao_social", nullable = false)
-    private String razaoSocial;
-
     @Column(name = "cnpj", nullable = false, length = 14)
     private String cnpj;
 
@@ -66,11 +63,6 @@ public class Loja {
     )
     @ColumnDefault("now()")
     private OffsetDateTime createdAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @OnDelete(action = OnDeleteAction.SET_NULL)
-    @JoinColumn(name = "loja_matriz_id")
-    private Loja lojaMatriz;
 
     @OneToMany(mappedBy = "lojaMatriz", fetch = FetchType.LAZY)
     private Set<Loja> filiais;

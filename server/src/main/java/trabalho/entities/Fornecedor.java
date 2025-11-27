@@ -28,9 +28,6 @@ public class Fornecedor {
     @Column(name = "nome_fantasia", nullable = false)
     private String nomeFantasia;
 
-    @Column(name = "razao_social", nullable = false)
-    private String razaoSocial;
-
     @Column(name = "cnpj", nullable = false, length = 14)
     private String cnpj;
 

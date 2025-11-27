@@ -32,11 +32,6 @@ public class Categoria {
     @Column(name = "ativo", nullable = false)
     private Boolean ativo = false;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @OnDelete(action = OnDeleteAction.SET_NULL)
-    @JoinColumn(name = "categoria_pai_id")
-    private Categoria categoriaPai;
-
     @OneToMany(
             mappedBy = "categoriaPai", // "mapeado pelo" campo 'categoriaPai' na classe Filha
             fetch = FetchType.LAZY,
@@ -56,11 +51,5 @@ public class Categoria {
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "fornecedor_id", nullable = false)
     private Fornecedor fornecedor;
-
-    @ManyToMany
-    @JoinTable(name = "fornecedor_categorias_pivot",
-            joinColumns = @JoinColumn(name = "categoria_id"),
-            inverseJoinColumns = @JoinColumn(name = "fornecedor_id"))
-    private Set<Fornecedor> fornecedores = new LinkedHashSet<>();
 
 }
