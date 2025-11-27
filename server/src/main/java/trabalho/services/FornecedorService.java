@@ -97,7 +97,6 @@ public class FornecedorService {
         }
 
         // Atualizações simples
-        fornecedor.setRazaoSocial(dto.razaoSocial());
         fornecedor.setNomeFantasia(dto.nomeFantasia());
         fornecedor.setEmailContato(dto.emailContato());
         fornecedor.setTelefone(dto.telefone());

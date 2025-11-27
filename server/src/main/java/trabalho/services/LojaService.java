@@ -33,13 +33,6 @@ public class LojaService {
 
         Loja novaLoja = lojaMapper.toEntity(dto);
 
-        // Loja matriz opcional
-        if (dto.lojaMatrizId() != null) {
-            Loja matriz = lojaRepository.findById(dto.lojaMatrizId())
-                    .orElseThrow(() -> new RuntimeException("Loja Matriz não encontrada."));
-            novaLoja.setLojaMatriz(matriz);
-        }
-
         novaLoja.setAtivo(true);
 
         Loja lojaSalva = lojaRepository.save(novaLoja);
@@ -108,21 +101,11 @@ public class LojaService {
 
         // Campos simples
         loja.setNomeFantasia(dto.nomeFantasia());
-        loja.setRazaoSocial(dto.razaoSocial());
         loja.setEmailContato(dto.emailContato());
         loja.setTelefone(dto.telefone());
         loja.setLogradouro(dto.logradouro());
         loja.setEstado(dto.estado());
         loja.setCidade(dto.cidade());
-
-        // Controle da loja matriz
-        if (dto.lojaMatrizId() != null) {
-            Loja matriz = lojaRepository.findById(dto.lojaMatrizId())
-                    .orElseThrow(() -> new RuntimeException("Loja Matriz não encontrada."));
-            loja.setLojaMatriz(matriz);
-        } else {
-            loja.setLojaMatriz(null); // remove vínculo
-        }
 
         Loja atualizada = lojaRepository.save(loja);
         return lojaMapper.toResponseDTO(atualizada);
