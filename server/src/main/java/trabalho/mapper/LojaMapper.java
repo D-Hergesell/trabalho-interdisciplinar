@@ -13,7 +13,6 @@ public interface LojaMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "ativo", ignore = true)        // service define
     @Mapping(target = "createdAt", ignore = true)    // gerado pelo banco
-    @Mapping(target = "filiais", ignore = true)
     @Mapping(target = "pedidos", ignore = true)
     @Mapping(target = "usuarios", ignore = true)
     Loja toEntity(LojaRequestDTO dto);
