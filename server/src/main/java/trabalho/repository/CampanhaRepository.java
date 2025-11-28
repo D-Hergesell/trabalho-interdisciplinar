@@ -11,6 +11,4 @@ public interface CampanhaRepository extends JpaRepository<Campanha, UUID> {
 
     List<Campanha> findByNomeContainingIgnoreCase(String nome);
 
-    List<Campanha> findByAtivoTrue();
-    // retorna todas campanhas ativas sem filtro extra
 }

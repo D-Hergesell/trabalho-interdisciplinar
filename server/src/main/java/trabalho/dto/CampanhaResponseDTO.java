@@ -1,26 +1,22 @@
 package trabalho.dto;
 
-import trabalho.entities.Produto;
-import trabalho.enums.TipoCampanha;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
+import trabalho.enums.TipoCampanha;
 
 public record CampanhaResponseDTO(
         UUID id,
-        String nome,
         TipoCampanha tipo,
+        String nome,
         BigDecimal valorMinimoCompra,
         BigDecimal cashbackValor,
-        Produto produtoIdBrinde,
+        UUID produtoIdBrinde,
         Integer quantidadeMinimaProduto,
         String brindeDescricao,
         BigDecimal percentualDesconto,
         LocalDate dataInicio,
         LocalDate dataFim,
         Boolean ativo,
-        UUID fornecedorId,
-        String nomeFornecedor
+        UUID fornecedorId
 ) {}
-

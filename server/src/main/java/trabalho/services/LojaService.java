@@ -70,20 +70,6 @@ public class LojaService {
     }
 
     // -----------------------------------------
-    // READ - Listar filiais de uma matriz
-    // -----------------------------------------
-    @Transactional(readOnly = true)
-    public List<LojaResponseDTO> listarFiliais(UUID matrizId) {
-
-        Loja matriz = lojaRepository.findById(matrizId)
-                .orElseThrow(() -> new RuntimeException("Loja matriz não encontrada."));
-
-        return lojaRepository.findByLojaMatriz(matriz).stream()
-                .map(lojaMapper::toResponseDTO)
-                .collect(Collectors.toList());
-    }
-
-    // -----------------------------------------
     // UPDATE
     // -----------------------------------------
     @Transactional

@@ -5,13 +5,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import trabalho.dto.CampanhaRequestDTO;
 import trabalho.dto.CampanhaResponseDTO;
-import trabalho.enums.TipoCampanha;
+import trabalho.entities.Campanha;
+import trabalho.entities.Fornecedor;
+import trabalho.entities.Produto;
 import trabalho.mapper.CampanhaMapper;
 import trabalho.repository.CampanhaRepository;
 import trabalho.repository.FornecedorRepository;
+import trabalho.repository.ProdutoRepository;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -19,88 +23,101 @@ public class CampanhaService {
 
     private final CampanhaRepository campanhaRepository;
     private final FornecedorRepository fornecedorRepository;
+    private final ProdutoRepository produtoRepository;
     private final CampanhaMapper campanhaMapper;
 
     @Transactional
     public CampanhaResponseDTO criarCampanha(CampanhaRequestDTO dto) {
+        Campanha campanha = campanhaMapper.toEntity(dto);
 
-        var fornecedor = fornecedorRepository.findById(dto.fornecedorId())
+        // buscar fornecedor (obrigatório)
+        Fornecedor fornecedor = fornecedorRepository.findById(dto.fornecedorId())
                 .orElseThrow(() -> new RuntimeException("Fornecedor não encontrado."));
-
-        var campanha = campanhaMapper.toEntity(dto);
         campanha.setFornecedor(fornecedor);
-        campanha.setAtivo(true);
 
-        var salva = campanhaRepository.save(campanha);
-        return campanhaMapper.toResponseDTO(salva);
+        // caso tenha brinde, buscar produto
+        if (dto.produtoIdBrinde() != null) {
+            Produto brinde = produtoRepository.findById(dto.produtoIdBrinde())
+                    .orElseThrow(() -> new RuntimeException("Produto de brinde não encontrado."));
+            campanha.setProdutoIdBrinde(brinde);
+        }
+
+        if (dto.ativo() != null) {
+            campanha.setAtivo(dto.ativo());
+        } else {
+            campanha.setAtivo(true);
+        }
+
+        Campanha salvo = campanhaRepository.save(campanha);
+        return campanhaMapper.toResponseDTO(salvo);
     }
 
     @Transactional(readOnly = true)
     public List<CampanhaResponseDTO> listarCampanhas() {
         return campanhaRepository.findAll().stream()
                 .map(campanhaMapper::toResponseDTO)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public List<CampanhaResponseDTO> listarAtivas() {
-        return campanhaRepository.findByAtivoTrue().stream()
+    public List<CampanhaResponseDTO> listarCampanhasAtivas() {
+        return campanhaRepository.findAll().stream()
+                .filter(Campanha::getAtivo)
                 .map(campanhaMapper::toResponseDTO)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public List<CampanhaResponseDTO> buscarPorNome(String nome) {
-        return campanhaRepository.findByNomeContainingIgnoreCase(nome)
-                .stream()
+        return campanhaRepository.findByNomeContainingIgnoreCase(nome).stream()
                 .map(campanhaMapper::toResponseDTO)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public CampanhaResponseDTO buscarPorId(UUID id) {
-        var campanha = campanhaRepository.findById(id)
+        Campanha campanha = campanhaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Campanha não encontrada."));
         return campanhaMapper.toResponseDTO(campanha);
     }
 
     @Transactional
-    public CampanhaResponseDTO atualizar(UUID id, CampanhaRequestDTO dto) {
+    public CampanhaResponseDTO atualizarCampanha(UUID id, CampanhaRequestDTO dto) {
 
-        var campanha = campanhaRepository.findById(id)
+        Campanha campanha = campanhaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Campanha não encontrada."));
 
-        // atualiza apenas os campos enviados
         campanha.setNome(dto.nome());
-        campanha.setTipo(dto.tipo()); //arrumar
+        campanha.setTipo(dto.tipo());
         campanha.setValorMinimoCompra(dto.valorMinimoCompra());
         campanha.setCashbackValor(dto.cashbackValor());
-        campanha.setProdutoIdBrinde(dto.produtoIdBrinde());
         campanha.setQuantidadeMinimaProduto(dto.quantidadeMinimaProduto());
         campanha.setBrindeDescricao(dto.brindeDescricao());
         campanha.setPercentualDesconto(dto.percentualDesconto());
         campanha.setDataInicio(dto.dataInicio());
         campanha.setDataFim(dto.dataFim());
 
-        // se o fornecedor foi alterado, atualiza relação
-        if (dto.fornecedorId() != null &&
-                !campanha.getFornecedor().getId().equals(dto.fornecedorId())) {
-
-            var fornecedor = fornecedorRepository.findById(dto.fornecedorId())
-                    .orElseThrow(() -> new RuntimeException("Fornecedor não encontrado."));
-            campanha.setFornecedor(fornecedor);
+        if (dto.produtoIdBrinde() != null) {
+            Produto brinde = produtoRepository.findById(dto.produtoIdBrinde())
+                    .orElseThrow(() -> new RuntimeException("Produto de brinde não encontrado."));
+            campanha.setProdutoIdBrinde(brinde);
+        } else {
+            campanha.setProdutoIdBrinde(null);
         }
 
-        var salva = campanhaRepository.save(campanha);
-        return campanhaMapper.toResponseDTO(salva);
+        if (dto.ativo() != null) {
+            campanha.setAtivo(dto.ativo());
+        }
+
+        Campanha atualizado = campanhaRepository.save(campanha);
+        return campanhaMapper.toResponseDTO(atualizado);
     }
 
     @Transactional
-    public void deletar(UUID id) {
+    public void deletarCampanha(UUID id) {
         if (!campanhaRepository.existsById(id)) {
             throw new RuntimeException("Campanha não encontrada.");
         }
         campanhaRepository.deleteById(id);
     }
 }
-

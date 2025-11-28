@@ -19,18 +19,23 @@ public class CampanhaController {
 
     private final CampanhaService campanhaService;
 
+    @PostMapping
+    public ResponseEntity<CampanhaResponseDTO> criar(@Valid @RequestBody CampanhaRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(campanhaService.criarCampanha(dto));
+    }
+
     @GetMapping
-    public ResponseEntity<List<CampanhaResponseDTO>> listarTodas() {
+    public ResponseEntity<List<CampanhaResponseDTO>> listarTudo() {
         return ResponseEntity.ok(campanhaService.listarCampanhas());
     }
 
-    @GetMapping("/ativas")
-    public ResponseEntity<List<CampanhaResponseDTO>> listarAtivas() {
-        return ResponseEntity.ok(campanhaService.listarAtivas());
+    @GetMapping("/ativos")
+    public ResponseEntity<List<CampanhaResponseDTO>> listarAtivos() {
+        return ResponseEntity.ok(campanhaService.listarCampanhasAtivas());
     }
 
-    @GetMapping("/nome/{nome}")
-    public ResponseEntity<List<CampanhaResponseDTO>> buscarPorNome(@PathVariable String nome) {
+    @GetMapping("/buscar")
+    public ResponseEntity<List<CampanhaResponseDTO>> buscarPorNome(@RequestParam String nome) {
         return ResponseEntity.ok(campanhaService.buscarPorNome(nome));
     }
 
@@ -39,24 +44,14 @@ public class CampanhaController {
         return ResponseEntity.ok(campanhaService.buscarPorId(id));
     }
 
-    @PostMapping
-    public ResponseEntity<CampanhaResponseDTO> criar(@Valid @RequestBody CampanhaRequestDTO dto) {
-        var criada = campanhaService.criarCampanha(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(criada);
-    }
-
     @PutMapping("/{id}")
-    public ResponseEntity<CampanhaResponseDTO> atualizar(
-            @PathVariable UUID id,
-            @Valid @RequestBody CampanhaRequestDTO dto
-    ) {
-        return ResponseEntity.ok(campanhaService.atualizar(id, dto));
+    public ResponseEntity<CampanhaResponseDTO> atualizar(@PathVariable UUID id, @Valid @RequestBody CampanhaRequestDTO dto) {
+        return ResponseEntity.ok(campanhaService.atualizarCampanha(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        campanhaService.deletar(id);
+    public ResponseEntity<Void> deletar(@PathVariable UUID id) {
+        campanhaService.deletarCampanha(id);
         return ResponseEntity.noContent().build();
     }
 }
-

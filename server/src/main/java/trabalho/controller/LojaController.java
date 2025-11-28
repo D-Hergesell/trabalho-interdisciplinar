@@ -56,14 +56,6 @@ public class LojaController {
     }
 
     // -----------------------------------------
-    // GET - Listar filiais de uma loja matriz
-    // -----------------------------------------
-    @GetMapping("/{matrizId}/filiais")
-    public ResponseEntity<List<LojaResponseDTO>> listarFiliais(@PathVariable UUID matrizId) {
-        return ResponseEntity.ok(lojaService.listarFiliais(matrizId));
-    }
-
-    // -----------------------------------------
     // PUT - Atualizar loja
     // -----------------------------------------
     @PutMapping("/{id}")

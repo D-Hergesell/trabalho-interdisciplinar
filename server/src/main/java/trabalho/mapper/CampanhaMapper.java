@@ -16,8 +16,13 @@ public interface CampanhaMapper {
     Campanha toEntity(CampanhaRequestDTO dto);
 
     @Mapping(source = "fornecedor.id", target = "fornecedorId")
-    @Mapping(source = "fornecedor.nomeFantasia", target = "fornecedorNome")
-    @Mapping(source = "produtoIdBrinde", target = "produtoIdBrinde")
+    @Mapping(source = "produtoIdBrinde.id", target = "produtoIdBrinde")
+    @Mapping(source = "entity.dataInicio", target = "dataInicio")
+    @Mapping(source = "entity.dataFim", target = "dataFim")
+    @Mapping(source = "entity.percentualDesconto", target = "percentualDesconto")
+    @Mapping(source = "entity.cashbackValor", target = "cashbackValor")
+    @Mapping(source = "entity.brindeDescricao", target = "brindeDescricao")
     CampanhaResponseDTO toResponseDTO(Campanha entity);
 }
+
 
