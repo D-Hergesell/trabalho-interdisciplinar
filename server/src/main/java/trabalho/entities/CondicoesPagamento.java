@@ -18,6 +18,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "condicoes_pagamento", schema = "public")
 public class CondicoesPagamento {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id", nullable = false)
@@ -32,13 +33,12 @@ public class CondicoesPagamento {
     private String descricao;
 
     @ColumnDefault("0")
-    @Column(name = "prazo_dias")
+    @Column(name = "prazo_dias", nullable = false)
     private Integer prazoDias = 0;
 
     @Column(name = "ativo", nullable = false)
-    private Boolean ativo = false;
+    private Boolean ativo = true;
 
-    @OneToMany(mappedBy = "condicaoPagamento")
+    @OneToMany(mappedBy = "condicaoPagamento", fetch = FetchType.LAZY)
     private Set<Pedido> pedidos = new LinkedHashSet<>();
-
 }
