@@ -8,5 +8,5 @@ import java.util.UUID;
 
 @Repository
 public interface CondicoesEstadoRepository extends JpaRepository<CondicoesEstado, UUID> {
-    Optional<CondicoesEstado> findByFornecedorIdAndEstado(UUID fornecedorId, String estado);
+
 }
