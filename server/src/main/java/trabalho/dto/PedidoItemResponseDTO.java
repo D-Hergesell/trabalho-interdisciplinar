@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public record PedidoItemResponseDTO(
         UUID produtoId,
-        String produtoNome, // Facilitador para o front
+        String produtoNome,
         Integer quantidade,
         BigDecimal precoUnitarioMomento,
         BigDecimal ajusteUnitarioAplicado

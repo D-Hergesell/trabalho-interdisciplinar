@@ -11,17 +11,11 @@ public record PedidoResponseDTO(
         StatusPedido status,
         BigDecimal valorTotal,
         OffsetDateTime dataPedido,
-
-        // Dados achatados para exibição
         UUID lojaId,
         String lojaNome,
-
         UUID fornecedorId,
         String fornecedorNome,
-
         UUID criadoPorUsuarioId,
         String criadoPorUsuarioNome,
-
-        // A lista de itens detalhada
         List<PedidoItemResponseDTO> itens
 ) {}

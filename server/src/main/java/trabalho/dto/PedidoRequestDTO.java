@@ -17,7 +17,7 @@ public record PedidoRequestDTO(
         @NotNull(message = "Usuário criador é obrigatório")
         UUID criadoPorUsuarioId,
 
-        UUID condicaoPagamentoId, // opcional mesmo
+        UUID condicaoPagamentoId,
 
         @NotEmpty(message = "O pedido deve ter pelo menos um item")
         @Valid
