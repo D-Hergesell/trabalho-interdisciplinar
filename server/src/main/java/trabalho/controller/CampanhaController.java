@@ -19,17 +19,19 @@ public class CampanhaController {
 
     private final CampanhaService campanhaService;
 
-    @PostMapping
-    public ResponseEntity<CampanhaResponseDTO> criarCampanha(
-            @Valid @RequestBody CampanhaRequestDTO dto
-    ) {
-        CampanhaResponseDTO nova = campanhaService.criarCampanha(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(nova);
+    @GetMapping
+    public ResponseEntity<List<CampanhaResponseDTO>> listarTodas() {
+        return ResponseEntity.ok(campanhaService.listarCampanhas());
     }
 
-    @GetMapping
-    public ResponseEntity<List<CampanhaResponseDTO>> listarCampanhas() {
-        return ResponseEntity.ok(campanhaService.listarCampanhas());
+    @GetMapping("/ativas")
+    public ResponseEntity<List<CampanhaResponseDTO>> listarAtivas() {
+        return ResponseEntity.ok(campanhaService.listarAtivas());
+    }
+
+    @GetMapping("/nome/{nome}")
+    public ResponseEntity<List<CampanhaResponseDTO>> buscarPorNome(@PathVariable String nome) {
+        return ResponseEntity.ok(campanhaService.buscarPorNome(nome));
     }
 
     @GetMapping("/{id}")
@@ -37,18 +39,24 @@ public class CampanhaController {
         return ResponseEntity.ok(campanhaService.buscarPorId(id));
     }
 
+    @PostMapping
+    public ResponseEntity<CampanhaResponseDTO> criar(@Valid @RequestBody CampanhaRequestDTO dto) {
+        var criada = campanhaService.criarCampanha(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(criada);
+    }
+
     @PutMapping("/{id}")
-    public ResponseEntity<CampanhaResponseDTO> atualizarCampanha(
+    public ResponseEntity<CampanhaResponseDTO> atualizar(
             @PathVariable UUID id,
             @Valid @RequestBody CampanhaRequestDTO dto
     ) {
-        CampanhaResponseDTO atualizada = campanhaService.atualizarCampanha(id, dto);
-        return ResponseEntity.ok(atualizada);
+        return ResponseEntity.ok(campanhaService.atualizar(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable UUID id) {
-        campanhaService.deletarCampanha(id);
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        campanhaService.deletar(id);
         return ResponseEntity.noContent().build();
     }
 }
+
