@@ -48,16 +48,6 @@ public class ProdutoController {
     }
 
     // -----------------------------------------
-    // GET - Listar produtos de um fornecedor específico
-    // -----------------------------------------
-    @GetMapping("/fornecedor/{fornecedorId}")
-    public ResponseEntity<List<ProdutoResponseDTO>> listarPorFornecedor(
-            @PathVariable UUID fornecedorId
-    ) {
-        return ResponseEntity.ok(produtoService.listarPorFornecedor(fornecedorId));
-    }
-
-    // -----------------------------------------
     // PUT - Atualizar Produto
     // -----------------------------------------
     @PutMapping("/{id}")

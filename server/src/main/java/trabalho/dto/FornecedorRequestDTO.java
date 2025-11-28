@@ -3,9 +3,10 @@ package trabalho.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.util.UUID;
 
 public record FornecedorRequestDTO(
-        @NotBlank(message = "Nome fantasia é obrigatório")
+        @NotBlank(message = "Nome do fornecedor é obrigatório")
         String nomeFantasia,
 
         @NotBlank(message = "CNPJ é obrigatório")
@@ -21,8 +22,5 @@ public record FornecedorRequestDTO(
         String cep,
         String logradouro,
         String cidade,
-
-        @NotBlank(message = "Estado é obrigatório")
-        @Size(min = 2, max = 2)
         String estado
 ) {}

@@ -19,64 +19,34 @@ public class FornecedorController {
 
     private final FornecedorService fornecedorService;
 
-    // -----------------------------------------
-    // POST - Criar fornecedor
-    // -----------------------------------------
     @PostMapping
-    public ResponseEntity<FornecedorResponseDTO> criarFornecedor(
-            @Valid @RequestBody FornecedorRequestDTO dto
-    ) {
-        FornecedorResponseDTO novoFornecedor = fornecedorService.criarFornecedor(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(novoFornecedor);
+    public ResponseEntity<FornecedorResponseDTO> criar(@Valid @RequestBody FornecedorRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(fornecedorService.criarFornecedor(dto));
     }
 
-    // -----------------------------------------
-    // GET - Listar todos
-    // -----------------------------------------
     @GetMapping
-    public ResponseEntity<List<FornecedorResponseDTO>> listarFornecedores() {
+    public ResponseEntity<List<FornecedorResponseDTO>> listarTudo() {
         return ResponseEntity.ok(fornecedorService.listarFornecedores());
     }
 
-    // -----------------------------------------
-    // GET - Listar somente ativos
-    // -----------------------------------------
     @GetMapping("/ativos")
     public ResponseEntity<List<FornecedorResponseDTO>> listarAtivos() {
         return ResponseEntity.ok(fornecedorService.listarAtivos());
     }
 
-    // -----------------------------------------
-    // GET - Buscar por ID
-    // -----------------------------------------
     @GetMapping("/{id}")
     public ResponseEntity<FornecedorResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(fornecedorService.buscarPorId(id));
     }
 
     // -----------------------------------------
-    // GET - Buscar por CNPJ
-    // -----------------------------------------
-    @GetMapping("/cnpj/{cnpj}")
-    public ResponseEntity<FornecedorResponseDTO> buscarPorCnpj(@PathVariable String cnpj) {
-        return ResponseEntity.ok(fornecedorService.buscarPorCnpj(cnpj));
-    }
-
-    // -----------------------------------------
     // PUT - Atualizar fornecedor
     // -----------------------------------------
     @PutMapping("/{id}")
-    public ResponseEntity<FornecedorResponseDTO> atualizarFornecedor(
-            @PathVariable UUID id,
-            @Valid @RequestBody FornecedorRequestDTO dto
-    ) {
-        FornecedorResponseDTO atualizado = fornecedorService.atualizarFornecedor(id, dto);
-        return ResponseEntity.ok(atualizado);
+    public ResponseEntity<FornecedorResponseDTO> atualizar(@PathVariable UUID id, @Valid @RequestBody FornecedorRequestDTO dto) {
+        return ResponseEntity.ok(fornecedorService.atualizarFornecedor(id, dto));
     }
 
-    // -----------------------------------------
-    // DELETE - Remover fornecedor
-    // -----------------------------------------
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable UUID id) {
         fornecedorService.deletarFornecedor(id);

@@ -12,6 +12,5 @@ import java.util.UUID;
 @Repository
 public interface ProdutoRepository extends JpaRepository<Produto, UUID> {
     List<Produto> findByNomeContainingIgnoreCase(String nome);
-    List<Produto> findByAtivoTrue (Boolean ativo);
-    Collection<Produto> findByFornecedor(Fornecedor fornecedor);
+    List<Produto> findByAtivoTrue();
 }

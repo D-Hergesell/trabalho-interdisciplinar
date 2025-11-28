@@ -77,20 +77,6 @@ public class ProdutoService {
     }
 
     // -------------------------------
-    // READ 3 - Listar por fornecedor
-    // -------------------------------
-    @Transactional(readOnly = true)
-    public List<ProdutoResponseDTO> listarPorFornecedor(UUID fornecedorId) {
-
-        Fornecedor fornecedor = fornecedorRepository.findById(fornecedorId)
-                .orElseThrow(() -> new RuntimeException("Fornecedor não encontrado."));
-
-        return produtoRepository.findByFornecedor(fornecedor).stream()
-                .map(produtoMapper::toResponseDTO)
-                .collect(Collectors.toList());
-    }
-
-    // -------------------------------
     // UPDATE
     // -------------------------------
     @Transactional

@@ -7,7 +7,6 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.OffsetDateTime;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -19,15 +18,16 @@ import java.util.UUID;
         @UniqueConstraint(name = "fornecedores_cnpj_key", columnNames = {"cnpj"})
 })
 public class Fornecedor {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id", nullable = false)
+    @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
     @Column(name = "nome_fantasia", nullable = false)
     private String nomeFantasia;
 
-    @Column(name = "cnpj", nullable = false, length = 14)
+    @Column(name = "cnpj", nullable = false, length = 14, unique = true)
     private String cnpj;
 
     @Column(name = "responsavel_nome")
@@ -42,7 +42,7 @@ public class Fornecedor {
     @Column(name = "cep", length = 8)
     private String cep;
 
-    @Column(name = "logradouro")
+    @Column(name = "logradouro", length = 255)
     private String logradouro;
 
     @Column(name = "cidade", length = 100)
@@ -52,24 +52,20 @@ public class Fornecedor {
     private String estado;
 
     @Column(name = "ativo", nullable = false)
-    private Boolean ativo = false;
+    private Boolean ativo = true;
 
-    @Column(
-            name = "created_at",
-            insertable = false, // <-- "Não inclua no INSERT"
-            updatable = false   // <-- "Não inclua no UPDATE"
-    )
+    @Column(name = "created_at", insertable = false, updatable = false)
     @ColumnDefault("now()")
     private OffsetDateTime createdAt;
-
-    @OneToMany(mappedBy = "fornecedor", fetch = FetchType.LAZY)
-    private Set<Campanha> campanhas;
 
     @OneToMany(mappedBy = "fornecedor", fetch = FetchType.LAZY)
     private Set<Produto> produtos;
 
     @OneToMany(mappedBy = "fornecedor", fetch = FetchType.LAZY)
-    private Set<CondicoesPagamento> condicoesPagamentos;
+    private Set<Campanha> campanhas;
+
+    @OneToMany(mappedBy = "fornecedor", fetch = FetchType.LAZY)
+    private Set<Categoria> categorias;
 
     @OneToMany(mappedBy = "fornecedor", fetch = FetchType.LAZY)
     private Set<CondicoesEstado> condicoesEstados;
@@ -77,10 +73,6 @@ public class Fornecedor {
     @OneToMany(mappedBy = "fornecedor", fetch = FetchType.LAZY)
     private Set<Usuario> usuarios;
 
-    @OneToMany(mappedBy = "fornecedor")
-    private Set<Categoria> categorias = new LinkedHashSet<>();
-
-    @OneToMany(mappedBy = "fornecedor")
-    private Set<Pedido> pedidos = new LinkedHashSet<>();
-
+    @OneToMany(mappedBy = "fornecedor", fetch = FetchType.LAZY)
+    private Set<Pedido> pedidos;
 }
