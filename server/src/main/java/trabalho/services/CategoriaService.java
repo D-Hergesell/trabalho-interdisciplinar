@@ -26,26 +26,21 @@ public class CategoriaService {
     @Transactional
     public CategoriaResponseDTO criarCategoria(CategoriaRequestDTO dto) {
 
-        // 1. Validação correta: existe categoria repetida (nome + fornecedor)?
         categoriaRepository
                 .findByFornecedor_IdAndNomeIgnoreCase(dto.fornecedorId(), dto.nome())
                 .ifPresent(cat -> {
                     throw new RuntimeException("Já existe uma categoria com esse nome para esse fornecedor.");
                 });
 
-        // 2. Buscar fornecedor (obrigatório)
         Fornecedor fornecedor = fornecedorRepository.findById(dto.fornecedorId())
                 .orElseThrow(() -> new RuntimeException("Fornecedor não encontrado."));
 
-        // 3. Converter DTO → entity e setar relações
         Categoria categoria = categoriaMapper.toEntity(dto);
         categoria.setFornecedor(fornecedor);
         categoria.setAtivo(true);
 
-        // 4. Salvar no banco
         Categoria salva = categoriaRepository.save(categoria);
 
-        // 5. Converter entity → response DTO
         return categoriaMapper.toResponseDTO(salva);
     }
 
