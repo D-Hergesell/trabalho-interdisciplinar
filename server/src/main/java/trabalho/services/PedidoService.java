@@ -13,6 +13,7 @@ import trabalho.repository.*;
 import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -25,6 +26,7 @@ public class PedidoService {
     private final FornecedorRepository fornecedorRepository;
     private final UsuarioRepository usuarioRepository;
     private final ProdutoRepository produtoRepository;
+    private final CondicoesEstadoRepository condicoesEstadoRepository;
     private final PedidoMapper pedidoMapper;
 
     // -----------------------------------------
@@ -44,6 +46,26 @@ public class PedidoService {
         Usuario usuario = usuarioRepository.findById(dto.criadoPorUsuarioId())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
 
+        // O repositório busca pela combinação Fornecedor + Estado da Loja
+        Optional<CondicoesEstado> condicaoEstadoOpt = condicoesEstadoRepository
+                .findByFornecedor_IdAndEstado(fornecedor.getId(), loja.getEstado());
+
+        BigDecimal ajustePorUnidade = BigDecimal.ZERO;
+
+        // Se houver condição cadastrada e ela estiver ativa
+        if (condicaoEstadoOpt.isPresent() && Boolean.TRUE.equals(condicaoEstadoOpt.get().getAtivo())) {
+            CondicoesEstado cond = condicaoEstadoOpt.get();
+
+            // Pega o valor do ajuste (pode ser positivo ou negativo)
+            if (cond.getAjusteUnitarioAplicado() != null) {
+                ajustePorUnidade = cond.getAjusteUnitarioAplicado();
+            }
+
+            // Nota: Se quiser implementar Cashback ou Prazo, você faria aqui.
+            // Como 'Pedido' não tem campo de cashback explícito no código atual,
+            // focaremos no ajuste de preço unitário que já existe em 'PedidoItem'.
+        }
+
         pedido.setLoja(loja);
         pedido.setFornecedor(fornecedor);
         pedido.setCriadoPorUsuario(usuario);
@@ -62,8 +84,17 @@ public class PedidoService {
             item.setProduto(produto);
             item.setQuantidade(itemDto.quantidade());
 
-            item.setPrecoUnitarioMomento(produto.getPrecoBase());
-            item.setAjusteUnitarioAplicado(BigDecimal.ZERO);
+            // Preço Final = Preço Base do Produto + Ajuste Regional
+            BigDecimal precoBase = produto.getPrecoBase();
+            BigDecimal precoFinal = precoBase.add(ajustePorUnidade);
+
+            // Garante que o preço não fique negativo
+            if (precoFinal.compareTo(BigDecimal.ZERO) < 0) {
+                precoFinal = BigDecimal.ZERO;
+            }
+
+            item.setPrecoUnitarioMomento(precoFinal);
+            item.setAjusteUnitarioAplicado(ajustePorUnidade); // Registra quanto foi o ajuste
 
             pedido.getItens().add(item);
 
