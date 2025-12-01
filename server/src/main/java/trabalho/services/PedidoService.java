@@ -8,6 +8,7 @@ import trabalho.dto.PedidoResponseDTO;
 import trabalho.entities.*;
 import trabalho.enums.StatusPedido;
 import trabalho.enums.TipoCampanha;
+import trabalho.enums.TipoUsuario;
 import trabalho.mapper.PedidoMapper;
 import trabalho.repository.*;
 
@@ -211,13 +212,85 @@ public class PedidoService {
     // UPDATE - Alterar status do pedido
     // -----------------------------------------
     @Transactional
-    public PedidoResponseDTO atualizarStatus(UUID pedidoId, StatusPedido novoStatus) {
+    public PedidoResponseDTO atualizarStatus(UUID pedidoId, StatusPedido novoStatus, UUID usuarioId) {
+
         Pedido pedido = pedidoRepository.findById(pedidoId)
                 .orElseThrow(() -> new RuntimeException("Pedido não encontrado."));
 
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+
+        // 1. Verificar se é ADMIN
+        boolean isAdmin = usuario.getTipoUsuario() == TipoUsuario.ADMIN;
+
+        // 2. Se NÃO for Admin, verifica se o usuário pertence à Loja ou Fornecedor do pedido
+        boolean isUsuarioDaLoja = false;
+        boolean isUsuarioDoFornecedor = false;
+
+        if (!isAdmin) {
+            isUsuarioDaLoja = pedido.getLoja().getUsuarios().stream()
+                    .anyMatch(u -> u.getId().equals(usuarioId));
+
+            isUsuarioDoFornecedor = pedido.getFornecedor().getUsuarios().stream()
+                    .anyMatch(u -> u.getId().equals(usuarioId));
+
+            if (!isUsuarioDaLoja && !isUsuarioDoFornecedor) {
+                throw new RuntimeException("Apenas os envolvidos (ou Administradores) podem alterar este pedido.");
+            }
+        }
+
+        // 3. Se NÃO for Admin, aplica a Máquina de Estados estrita
+        // (Admins pulam essa validação para poderem corrigir erros manuais)
+        if (!isAdmin) {
+            validarTransicao(pedido.getStatus(), novoStatus, isUsuarioDaLoja, isUsuarioDoFornecedor);
+        }
+
+        // 4. Efetivar mudança
         pedido.setStatus(novoStatus);
         Pedido atualizado = pedidoRepository.save(pedido);
+
         return pedidoMapper.toResponseDTO(atualizado);
+    }
+
+    /**
+     * Valida se a mudança de 'atual' para 'novo' é válida para usuários comuns.
+     */
+    private void validarTransicao(StatusPedido atual, StatusPedido novo, boolean isLoja, boolean isFornecedor) {
+
+        // Regra Geral: Usuário comum não mexe em pedido finalizado
+        if (atual == StatusPedido.ENTREGUE || atual == StatusPedido.CANCELADO) {
+            throw new RuntimeException("O pedido já foi finalizado. Contate o suporte para alterações.");
+        }
+
+        switch (novo) {
+            case EM_SEPARACAO:
+                if (!isFornecedor) throw new RuntimeException("Apenas o fornecedor pode iniciar a separação.");
+                if (atual != StatusPedido.PENDENTE) throw new RuntimeException("Fluxo inválido: Deve estar PENDENTE.");
+                break;
+
+            case ENVIADO:
+                if (!isFornecedor) throw new RuntimeException("Apenas o fornecedor pode marcar como enviado.");
+                if (atual != StatusPedido.EM_SEPARACAO) throw new RuntimeException("Fluxo inválido: Deve estar EM SEPARAÇÃO.");
+                break;
+
+            case ENTREGUE:
+                if (!isLoja) throw new RuntimeException("Apenas a loja pode confirmar o recebimento.");
+                if (atual != StatusPedido.ENVIADO) throw new RuntimeException("Fluxo inválido: Deve estar ENVIADO.");
+                break;
+
+            case CANCELADO:
+                if (isLoja) {
+                    // Loja só cancela se ainda não saiu para entrega
+                    if (atual == StatusPedido.ENVIADO || atual == StatusPedido.EM_SEPARACAO) {
+                        throw new RuntimeException("Pedido já em processo. Contate o fornecedor para cancelar.");
+                    }
+                }
+                break;
+
+            default:
+                // Se tentar voltar status (ex: de ENVIADO para PENDENTE) sem ser admin
+                throw new RuntimeException("Mudança de status não permitida ou inválida.");
+        }
     }
 
     // -----------------------------------------

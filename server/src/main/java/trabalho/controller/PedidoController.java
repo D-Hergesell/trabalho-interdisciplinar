@@ -69,9 +69,11 @@ public class PedidoController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<PedidoResponseDTO> atualizarStatus(
             @PathVariable UUID id,
-            @RequestParam StatusPedido status
+            @RequestParam StatusPedido status,
+            @RequestParam UUID usuarioId
     ) {
-        PedidoResponseDTO atualizado = pedidoService.atualizarStatus(id, status);
+        // Agora passamos o ID do usuário para o Service validar a permissão
+        PedidoResponseDTO atualizado = pedidoService.atualizarStatus(id, status, usuarioId);
         return ResponseEntity.ok(atualizado);
     }
 
