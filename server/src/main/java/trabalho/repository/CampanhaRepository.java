@@ -11,4 +11,6 @@ public interface CampanhaRepository extends JpaRepository<Campanha, UUID> {
 
     List<Campanha> findByNomeContainingIgnoreCase(String nome);
 
+    List<Campanha> findByFornecedor_IdAndAtivoTrue(UUID fornecedorId);
+
 }

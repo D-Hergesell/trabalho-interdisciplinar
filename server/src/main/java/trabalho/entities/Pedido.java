@@ -50,6 +50,10 @@ public class Pedido {
     @Column(name = "valor_total", precision = 10, scale = 2)
     private BigDecimal valorTotal;
 
+    @Column(name = "cashback_gerado", precision = 10, scale = 2)
+    @ColumnDefault("0.00")
+    private BigDecimal cashbackGerado = BigDecimal.ZERO;
+
     @Column(
             name = "data_pedido",
             insertable = false,
