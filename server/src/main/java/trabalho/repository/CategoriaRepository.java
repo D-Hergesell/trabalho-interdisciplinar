@@ -12,5 +12,5 @@ import java.util.UUID;
 @Repository
 public interface CategoriaRepository extends JpaRepository<Categoria, UUID> {
     List<Categoria> findByNomeContainingIgnoreCase(String nome);
-    Optional<Object> findByFornecedor_IdAndNomeIgnoreCase(@NotNull(message = "Fornecedor é obrigatório") UUID uuid, @NotBlank(message = "Nome é obrigatório") String nome);
+    Optional<Categoria> findByFornecedor_IdAndNomeIgnoreCase(@NotNull(message = "Fornecedor é obrigatório") UUID uuid, @NotBlank(message = "Nome é obrigatório") String nome);
 }

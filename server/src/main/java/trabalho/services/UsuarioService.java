@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import trabalho.dto.UsuarioRequestDTO;
 import trabalho.dto.UsuarioResponseDTO;
+import trabalho.dto.LoginRequestDTO;
 import trabalho.entities.Usuario;
 import trabalho.mapper.UsuarioMapper;
 import trabalho.repository.UsuarioRepository;
@@ -56,6 +57,29 @@ public class UsuarioService {
 
         // 6. TRADUÇÃO: Entidade -> DTO
         return usuarioMapper.toResponseDTO(usuarioSalvo);
+    }
+
+    /**
+     * Verifica as credenciais e retorna o usuário se estiverem corretas.
+     */
+    @Transactional(readOnly = true)
+    public UsuarioResponseDTO autenticar(LoginRequestDTO loginDTO) {
+        // 1. Busca o usuário pelo email
+        Usuario usuario = usuarioRepository.findByEmail(loginDTO.email())
+                .orElseThrow(() -> new RuntimeException("Usuário ou senha inválidos")); // Mensagem genérica por segurança
+
+        // 2. Verifica se a senha bate com o hash
+        if (!passwordEncoder.matches(loginDTO.senha(), usuario.getSenhaHash())) {
+            throw new RuntimeException("Usuário ou senha inválidos");
+        }
+
+        // 3. Verifica se está ativo
+        if (!usuario.getAtivo()) {
+            throw new RuntimeException("Usuário desativado.");
+        }
+
+        // 4. Retorna o DTO do usuário
+        return usuarioMapper.toResponseDTO(usuario);
     }
 
     /**
