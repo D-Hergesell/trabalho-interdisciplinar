@@ -1,24 +1,543 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import api from '../../services/api'; // axios configurado
-
+import api from '../../services/api';
 import styles from '../../styles/Loja.module.css';
-import { FiGrid, FiUsers, FiPackage, FiUser, FiLogOut, FiBox } from 'react-icons/fi';
+import {
+  FiGrid, FiUsers, FiPackage, FiUser, FiLogOut, FiBox,
+  FiSearch, FiTrash2, FiChevronLeft, FiChevronRight,
+  FiChevronRight as FiArrowRight, FiEdit,
+} from 'react-icons/fi';
+
+// --- NOVO COMPONENTE: MODAL DE EDIÇÃO ---
+
+const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
+    const [formData, setFormData] = useState(fornecedor);
+
+    // Garante que o estado interno do formulário é resetado se o 'fornecedor' mudar
+    useEffect(() => {
+        setFormData(fornecedor);
+    }, [fornecedor]);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        // A função onSave será responsável por chamar a API PUT
+        onSave(formData);
+    };
+
+    return (
+        <div className={styles.modalBackdrop}>
+            {/* O tamanho do modal é melhor controlado via CSS. Se precisar de 600px, defina no Loja.module.css para .modalContent */}
+            <div className={styles.modalContent}>
+                <h3 className={styles.modalTitle}>Editar Fornecedor: {fornecedor.supplier_name}</h3>
+
+                <form onSubmit={handleSubmit}>
+
+                    {/* Linha 1: Nome e Categoria */}
+                    <div className={styles.row}>
+                        <div className={styles.fieldGroup}>
+                            <label>Nome da Loja</label>
+                            {/* AJUSTE 2: Aplicação da classe inputModal */}
+                            <input type="text" name="supplier_name" value={formData.supplier_name} onChange={handleChange} required className={styles.inputModal} />
+                        </div>
+                        <div className={styles.fieldGroup}>
+                            <label>Categoria</label>
+                            {/* AJUSTE 2: Aplicação da classe inputModal */}
+                            <input type="text" name="supplier_category" value={formData.supplier_category || ''} onChange={handleChange} className={styles.inputModal} />
+                        </div>
+                    </div>
+
+                    {/* Linha 2: Responsável e Email (Email não deve ser alterado) */}
+                    <div className={styles.row}>
+                        <div className={styles.fieldGroup}>
+                            <label>Responsável</label>
+                            {/* AJUSTE 2: Aplicação da classe inputModal */}
+                            <input type="text" name="responsavel" value={formData.responsavel || ''} onChange={handleChange} className={styles.inputModal} />
+                        </div>
+                        <div className={styles.fieldGroup}>
+                            <label>Email (Login)</label>
+                            {/* AJUSTE 2: Aplicação da classe inputModal */}
+                            <input type="email" name="contact_email" value={formData.contact_email} disabled className={styles.inputModal} />
+                        </div>
+                    </div>
+
+                    {/* Linha 3: Telefone */}
+                    <div className={styles.row}>
+                         <div className={styles.fieldGroup}>
+                            <label>Telefone</label>
+                            {/* AJUSTE 2: Aplicação da classe inputModal */}
+                            <input type="text" name="phone_number" value={formData.phone_number || ''} onChange={handleChange} className={styles.inputModal} />
+                        </div>
+                    </div>
+
+                    {/* Linha 4: Endereço - AQUI ESTAVA O PROBLEMA DE VAZAMENTO */}
+                    <h4 className={styles.sectionTitle} style={{ marginTop: '15px' }}>Endereço</h4>
+                    {/* AQUI ESTÁ A CORREÇÃO: Usamos classes auxiliares (.fieldGroupThird) para garantir que
+                        os 3 campos de endereço se dividam em 3 colunas iguais, o que resolve o vazamento.
+                        Você precisará definir essa nova classe no seu CSS (veja as instruções acima). */}
+                    <div className={styles.row}>
+                        <div className={`${styles.fieldGroup} ${styles.fieldGroupThird}`}>
+                            <label>Rua/Avenida</label>
+                            {/* AJUSTE 2: Aplicação da classe inputModal */}
+                            <input type="text" name="rua" value={formData.rua || ''} onChange={handleChange} className={styles.inputModal} />
+                        </div>
+                        <div className={`${styles.fieldGroup} ${styles.fieldGroupThird}`}>
+                            <label>Cidade</label>
+                            {/* AJUSTE 2: Aplicação da classe inputModal */}
+                            <input type="text" name="cidade" value={formData.cidade || ''} onChange={handleChange} className={styles.inputModal} />
+                        </div>
+                        <div className={`${styles.fieldGroup} ${styles.fieldGroupThird}`}>
+                            <label>Estado (UF)</label>
+                            {/* AJUSTE 2: Aplicação da classe inputModal. A classe inputModal resolve o problema se o CSS for adicionado/verificado. */}
+                            <input type="text" name="estado" value={formData.estado || ''} onChange={handleChange} className={styles.inputModal} />
+                        </div>
+                    </div>
+
+                    {/* Status */}
+                    <h4 className={styles.sectionTitle} style={{ marginTop: '15px' }}>Status</h4>
+                     <div className={styles.row}>
+                        <div className={styles.fieldGroup}>
+                             <label>Status</label>
+                             {/* AJUSTE 2: Aplicação da classe inputModal ao select para consistência */}
+                             <select name="status" value={formData.status || 'on'} onChange={handleChange} className={styles.inputModal}>
+                                 <option value="on">Ativo</option>
+                                 <option value="off">Inativo</option>
+                             </select>
+                         </div>
+                    </div>
+
+
+                    <div className={styles.modalActions}>
+                        <button
+                            className={`${styles.submitButton} ${styles.btnCancel}`}
+                            type="button"
+                            onClick={onCancel}
+                            disabled={loading}
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            className={styles.submitButton}
+                            type="submit"
+                            disabled={loading}
+                        >
+                            {loading ? 'Salvando...' : 'Salvar Alterações'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+
+// --- COMPONENTE PRINCIPAL: BUSCA E DELETE/UPDATE ---
+
+const BuscaFornecedores = () => {
+  const [searchId, setSearchId] = useState('');
+  const [searchName, setSearchName] = useState('');
+  const [searchEmail, setSearchIdEmail] = useState('');
+
+  const [fornecedores, setFornecedores] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
+
+  // ⭐️ NOVOS ESTADOS PARA EDIÇÃO
+  const [editingFornecedor, setEditingFornecedor] = useState(null); // Armazena o objeto do fornecedor a ser editado
+
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
+  const [message, setMessage] = useState(null);
+  const [currentAction, setCurrentAction] = useState('deactivate'); // Ação: 'deactivate', 'delete'
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const itemsPerPage = 5;
+
+  const handleToggleExpand = (id) => {
+    setExpandedId(currentId => (currentId === id ? null : id));
+  };
+
+  const handleSearch = async () => {
+    setLoading(true);
+    setSearched(true);
+    setMessage(null);
+    setCurrentIndex(0);
+    setExpandedId(null);
+    setEditingFornecedor(null); // Fecha o modal de edição ao buscar
+
+    try {
+      // Usando a rota raiz para listagem
+      const response = await api.get('/api/fornecedores');
+      let dados = response.data;
+
+      if (searchId) dados = dados.filter(f => f._id.includes(searchId));
+      if (searchName) dados = dados.filter(f => f.supplier_name.toLowerCase().includes(searchName.toLowerCase()));
+      if (searchEmail) dados = dados.filter(f => f.contact_email.toLowerCase().includes(searchEmail.toLowerCase()));
+
+      setFornecedores(dados);
+    } catch (error) {
+      console.error("Erro ao buscar:", error);
+      const errorMsg = error.response ? `Status: ${error.response.status} - ${error.response.data.error || error.message}` : 'Erro de conexão/rede.';
+      setMessage({ type: 'error', text: `Erro ao buscar fornecedores. Detalhe: ${errorMsg}` });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ⭐️ Iniciar a Edição
+  const startEdit = (fornecedor) => {
+    setMessage(null);
+    setEditingFornecedor(fornecedor);
+  };
+
+  // ⭐️ Cancelar a Edição
+  const cancelEdit = () => {
+    setEditingFornecedor(null);
+  };
+
+  // ⭐️ Submissão da Atualização (PUT)
+  const handleUpdateSubmit = async (updatedData) => {
+    setLoading(true);
+    setMessage(null);
+    const id = updatedData._id;
+
+    // Remove campos que não devem ser enviados ou que não serão usados no PUT do fornecedor, como o id e email
+    // NOTE: O backend está configurado para lidar com a mudança de email de contato, então estamos enviando todos os dados.
+    const { _id, ...dataToSend } = updatedData; // Agora enviamos todos os campos, exceto o _id.
+
+    try {
+        // Envia apenas os dados atualizáveis. A rota PUT ainda usa o subcaminho
+        await api.put(`/api/fornecedores/cadastroFornecedor/${id}`, dataToSend);
+
+        // Atualiza o estado da lista no frontend com os novos dados
+        setFornecedores(oldList => oldList.map(item =>
+            item._id === id ? { ...item, ...dataToSend } : item
+        ));
+
+        setEditingFornecedor(null); // Fecha o modal
+        setMessage({ type: 'success', text: "Fornecedor atualizado com sucesso!" });
+
+    } catch (error) {
+        console.error("Erro ao atualizar:", error);
+        const errorMessage = error.response?.data?.error || "Erro desconhecido.";
+        setMessage({ type: 'error', text: `Erro ao atualizar fornecedor: ${errorMessage}` });
+    } finally {
+        setLoading(false);
+    }
+  };
+
+
+  // Função para iniciar a ação (Deactivate ou Delete)
+  const startAction = (id, action) => {
+    setDeleteId(id);
+    setCurrentAction(action);
+    setShowConfirm(true);
+  };
+
+  const cancelAction = () => {
+    setDeleteId(null);
+    setShowConfirm(false);
+    setCurrentAction('deactivate'); // Reset
+  };
+
+  // Lida tanto com Desativação (PUT) quanto com Exclusão (DELETE)
+  const handleConfirmAction = async () => {
+    if (!deleteId) return;
+    setShowConfirm(false);
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      // Ações PUT e DELETE ainda usam o subcaminho para manter a compatibilidade
+      if (currentAction === 'deactivate') {
+        // --- DESATIVAÇÃO (SOFT DELETE) ---
+        // Aqui estamos usando o PUT para atualizar o status para 'off'
+        await api.put(`/api/fornecedores/cadastroFornecedor/${deleteId}`, { status: 'off' });
+
+        setFornecedores(oldList => oldList.map(item =>
+          item._id === deleteId ? { ...item, status: 'off' } : item
+        ));
+
+        setMessage({ type: 'success', text: "Fornecedor desativado com sucesso!" });
+
+      } else if (currentAction === 'delete') {
+        // --- EXCLUSÃO PERMANENTE (HARD DELETE) ---
+        await api.delete(`/api/fornecedores/cadastroFornecedor/${deleteId}`);
+
+        // Filtra a lista para remover o item do frontend
+        setFornecedores(oldList => oldList.filter(item => item._id !== deleteId));
+
+        setMessage({ type: 'success', text: "Fornecedor e usuário associado deletados permanentemente!" });
+
+      }
+
+      if (expandedId === deleteId) setExpandedId(null);
+
+    } catch (error) {
+      console.error(`Erro ao ${currentAction}:`, error);
+      const errorMessage = error.response?.data?.error || "Erro desconhecido.";
+      setMessage({ type: 'error', text: `Erro ao ${currentAction}: ${errorMessage}` });
+    } finally {
+      setLoading(false);
+      setDeleteId(null);
+      setCurrentAction('deactivate'); // Reset
+    }
+  };
+
+  const nextSlide = () => {
+    if (currentIndex + itemsPerPage < fornecedores.length) {
+      setCurrentIndex(currentIndex + itemsPerPage);
+      setExpandedId(null);
+    }
+  };
+
+  const prevSlide = () => {
+    if (currentIndex - itemsPerPage >= 0) {
+      setCurrentIndex(currentIndex - itemsPerPage);
+      setExpandedId(null);
+    }
+  };
+
+  const visibleItems = fornecedores.slice(currentIndex, currentIndex + itemsPerPage);
+  const totalPages = Math.ceil(fornecedores.length / itemsPerPage);
+  const currentPage = Math.floor(currentIndex / itemsPerPage) + 1;
+
+  // --- Modal de Confirmação (Sem alterações) ---
+  const ConfirmationModal = () => {
+    const isDeleting = currentAction === 'delete';
+
+    return (
+      <div className={styles.modalBackdrop}>
+        <div className={styles.modalContent}>
+          <h3 className={styles.modalTitle}>
+            Confirmação de {isDeleting ? 'Exclusão Permanente' : 'Desativação'}
+          </h3>
+          <p className={styles.modalText}>
+            Tem certeza que quer {isDeleting ? 'EXCLUIR PERMANENTEMENTE este fornecedor e seu usuário associado?' : 'DESATIVAR este fornecedor?'}
+          </p>
+
+          <div className={styles.modalActions}>
+            <button
+              className={`${styles.submitButton} ${styles.btnCancel}`}
+              onClick={cancelAction}
+            >
+              Cancelar
+            </button>
+            <button
+              className={`${styles.submitButton} ${styles.btnDanger}`}
+              onClick={handleConfirmAction}
+              disabled={loading}
+            >
+              {loading ? 'Processando...' : `Confirmar ${isDeleting ? 'Exclusão' : 'Desativação'}`}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // --- Linha Expandida (Sem alterações) ---
+  const ExpandedDetailsRow = ({ fornecedor }) => (
+    <div className={styles['expanded-details-row']}>
+      <div className={styles['detail-full-span']}>
+        <p className={styles['detail-text-p']}>
+          <strong className={styles.detailLabel}>ID Completo:</strong> {fornecedor._id}
+        </p>
+      </div>
+      <div className={styles['detail-half-span']}>
+        <p className={styles['detail-text-p']}>
+          <strong className={styles.detailLabel}>Categoria:</strong> {fornecedor.supplier_category || 'N/A'}
+        </p>
+      </div>
+      <div className={styles['detail-half-span']}>
+        <p className={styles['detail-text-p']}>
+          <strong className={styles.detailLabel}>Telefone:</strong> {fornecedor.phone_number || 'N/A'}
+        </p>
+      </div>
+      <div className={`${styles['detail-half-span']} ${styles['detail-status']}`}>
+        <p className={styles['detail-text-p']}>
+          <strong className={styles.detailLabel}>Status:</strong>
+          <span className={fornecedor.status === 'off' ? styles.statusOff : styles.statusOn}>
+            {' '}{fornecedor.status || 'on'}
+          </span>
+        </p>
+      </div>
+      <div className={styles['detail-full-span']}>
+        <p className={styles['detail-text-p']}>
+          <strong className={styles.detailLabel}>Endereço:</strong> {fornecedor.rua || 'N/A'}, {fornecedor.cidade || ''} - {fornecedor.estado || ''}
+        </p>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <div className={styles['search-section']}>
+        <h2 className={styles['search-header']}>Consultar / Gerenciar Fornecedor</h2>
+
+        {message && (
+          <div className={`${styles.alertMessage} ${styles[message.type]}`}>
+            {message.text.split('\n').map((line, index) => (
+                <p key={index} className={styles.messageLine}>{line}</p>
+            ))}
+          </div>
+        )}
+
+        <div className={styles['search-inputs']}>
+          <div className={styles['search-group']}>
+            <label>ID</label>
+            <input type="text" placeholder="Ex: 64b..." value={searchId} onChange={e => setSearchId(e.target.value)} />
+          </div>
+          <div className={styles['search-group']}>
+            <label>Nome da Loja</label>
+            <input type="text" placeholder="Ex: Eletrônicos..." value={searchName} onChange={e => setSearchName(e.target.value)} />
+          </div>
+          <div className={styles['search-group']}>
+            <label>Email</label>
+            <input type="text" placeholder="Ex: contato@..." value={searchEmail} onChange={e => setSearchIdEmail(e.target.value)} />
+          </div>
+          <button className={styles['btn-search']} onClick={handleSearch} disabled={loading}>
+            <FiSearch size={20} />
+            {loading ? 'Buscando...' : 'Buscar'}
+          </button>
+        </div>
+
+        {fornecedores.length > 0 && (
+          <>
+            <div className={styles['provider-list-container']}>
+              <div className={`${styles['provider-list-item']} ${styles['provider-list-header']}`}>
+                <div className={styles['header-cell']}>Nome da Loja</div>
+                <div className={styles['header-cell']}>ID (Início)</div>
+                <div className={styles['header-cell']}>Email</div>
+                <div className={styles['header-cell']}>Responsável</div>
+                <div className={styles['header-cell-actions']}>Ações</div>
+              </div>
+
+              {visibleItems.map(fornecedor => {
+                const isExpanded = expandedId === fornecedor._id;
+                const isDeactivated = fornecedor.status === 'off';
+
+                let itemClasses = styles['provider-list-item'];
+                if (isExpanded) itemClasses += ` ${styles['item-expanded']}`;
+                if (isDeactivated) itemClasses += ` ${styles['item-status-off']}`;
+
+                return (
+                    <React.Fragment key={fornecedor._id}>
+                      <div
+                          className={itemClasses}
+                          onClick={() => handleToggleExpand(fornecedor._id)}
+                      >
+                        <div className={styles['detail-cell-name']}>
+                            <p>{fornecedor.supplier_name}</p>
+                        </div>
+                        <div className={styles['detail-cell']}>
+                            <p>{fornecedor._id.substring(0, 10) + '...'}</p>
+                        </div>
+                        <div className={styles['detail-cell']}>
+                            <p>{fornecedor.contact_email}</p>
+                        </div>
+                        <div className={styles['detail-cell']}>
+                            <p>{fornecedor.responsavel || '-'}</p>
+                        </div>
+                        {/* AJUSTE 1: REORGANIZAÇÃO DOS BOTÕES PARA (Expandir -> Editar -> Excluir) */}
+                        <div className={styles['item-actions']}>
+
+                          {/* 1. Botão de Expandir/Detalhes */}
+                          <button
+                              className={`${styles['btn-detail']} ${isExpanded ? styles['btn-rotated'] : ''}`}
+                              title={isExpanded ? "Esconder Detalhes" : "Ver Detalhes"}
+                              onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleExpand(fornecedor._id);
+                              }}
+                          >
+                              <FiArrowRight size={20} />
+                          </button>
+
+                          {/* 2. Botão de Editar */}
+                          <button
+                            className={styles['btn-edit']}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                startEdit(fornecedor);
+                            }}
+                            title="Editar Fornecedor"
+                            disabled={loading}
+                          >
+                            <FiEdit size={18} />
+                          </button>
+
+                          {/* 3. Botão de Excluir/Desativar */}
+                          <button
+                            className={styles['btn-delete']}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (isDeactivated) {
+                                  startAction(fornecedor._id, 'delete'); // Exclusão definitiva (Hard Delete)
+                                } else {
+                                  startAction(fornecedor._id, 'deactivate'); // Desativação (Soft Delete)
+                                }
+                            }}
+                            title={isDeactivated ? "Excluir Permanentemente" : "Desativar Fornecedor"}
+                            disabled={loading}
+                          >
+                            <FiTrash2 size={18} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {isExpanded && <ExpandedDetailsRow fornecedor={fornecedor} />}
+                    </React.Fragment>
+                );
+              })}
+            </div>
+
+            <div className={styles.paginationControls}>
+                <button className={styles['nav-btn']} onClick={prevSlide} disabled={currentIndex === 0 || loading}>
+                    <FiChevronLeft size={24} />
+                </button>
+                <span className={styles.pageInfo}>Página {currentPage} de {totalPages}</span>
+                <button className={styles['nav-btn']} onClick={nextSlide} disabled={currentIndex + itemsPerPage >= fornecedores.length || loading}>
+                    <FiChevronRight size={24} />
+                </button>
+            </div>
+          </>
+        )}
+
+        {!loading && searched && fornecedores.length === 0 && (
+          <p className={styles['no-data']}>Nenhum fornecedor encontrado.</p>
+        )}
+      </div>
+
+      {showConfirm && <ConfirmationModal />}
+      {/* ⭐️ Renderiza o Modal de Edição se houver um fornecedor selecionado */}
+      {editingFornecedor && (
+          <EditFornecedorModal
+              fornecedor={editingFornecedor}
+              onSave={handleUpdateSubmit}
+              onCancel={cancelEdit}
+              loading={loading}
+          />
+      )}
+    </>
+  );
+};
+
+// --- COMPONENTE CADASTROFORNECEDOR (Sem alterações significativas, exceto na importação) ---
 
 export default function CadastroFornecedor() {
-  const [loading, setLoading] = useState(false); // 🔥 Novo estado para Loading
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null);
 
   const [formData, setFormData] = useState({
-    supplier_name: '',
-    responsavel: '',
-    contact_email: '',
-    rua: '',
-    cidade: '',
-    estado: '',
-    phone_number: '',
-    emailContato: '',
-    gerarAutomaticamente: false,
-    senhaManual: ''
+    supplier_name: '', supplier_category: '', responsavel: '', contact_email: '',
+    rua: '', cidade: '', estado: '', phone_number: '',
+    gerarAutomaticamente: false, senhaManual: ''
   });
 
   const handleChange = (e) => {
@@ -28,97 +547,43 @@ export default function CadastroFornecedor() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true); // ⏳ Ativa o loading
+    setLoading(true);
+    setMessage(null);
 
     const dadosParaBackend = {
-      supplier_name: formData.supplier_name,
-      responsavel: formData.responsavel,
-      contact_email: formData.contact_email,
-      phone_number: formData.phone_number,
-      rua: formData.rua,
-      cidade: formData.cidade,
-      estado: formData.estado,
-      emailContato: formData.emailContato,
-      pwd: formData.gerarAutomaticamente ? null : formData.senhaManual
+      ...formData,
+      pwd: formData.gerarAutomaticamente ? null : formData.senhaManual,
+      status: 'on'
     };
 
     try {
-      const response = await api.post('/api/fornecedores/cadastroFornecedor', dadosParaBackend);
-
-      // ✅ Sucesso: Mostra os dados gerados
-      alert(
-        `✅ Sucesso!\n\nFornecedor: ${response.data.fornecedor.supplier_name}\nLogin: ${response.data.usuarioGerado.user}\nSenha: ${response.data.usuarioGerado.pwd}`
-      );
-
-      // Limpa o formulário
+      // POST já está correto na rota raiz
+      const response = await api.post('/api/fornecedores', dadosParaBackend);
+      const successText = `✅ Sucesso!\n\nFornecedor: ${response.data.fornecedor.supplier_name}\nLogin: ${response.data.usuarioGerado.user}\nSenha: ${response.data.usuarioGerado.pwd}`;
+      setMessage({ type: 'success', text: successText });
       setFormData({
-        supplier_name: '', responsavel: '', contact_email: '', rua: '',
-        cidade: '', estado: '', phone_number: '', emailContato: '',
+        supplier_name: '', supplier_category: '', responsavel: '', contact_email: '',
+        rua: '', cidade: '', estado: '', phone_number: '',
         gerarAutomaticamente: false, senhaManual: ''
       });
-
     } catch (error) {
-      console.error("Erro no cadastro:", error);
-
-      // ❌ Tratamento de Erro Inteligente
-      if (error.response && error.response.data && error.response.data.error) {
-        // Mostra a mensagem exata que veio do Backend (ex: Nome duplicado)
-        alert(`❌ Erro: ${error.response.data.error}`);
-      } else {
-        alert("❌ Erro ao conectar com o servidor. Tente novamente.");
-      }
+        const errorText = error.response?.data?.error || "Erro ao conectar com o servidor.";
+        setMessage({ type: 'error', text: `❌ Erro: ${errorText}` });
     } finally {
-      setLoading(false); // ⏹ Desativa o loading independente do resultado
+      setLoading(false);
     }
   };
 
   return (
     <div className={styles['dashboard-container']}>
-
       <nav className={styles.sidebar}>
         <ul>
-          <li>
-            <Link href="/loja" className={styles.linkReset}>
-              <div className={styles.menuItem}>
-                <FiGrid size={20} /><span>Dashboard</span>
-              </div>
-            </Link>
-          </li>
-          <li className={styles.active}>
-            <Link href="/admin/CadastroFornecedor" className={styles.linkReset}>
-              <div className={styles.menuItem}>
-                <FiUsers size={20} /><span>Cadastrar Fornecedores</span>
-              </div>
-            </Link>
-          </li>
-          <li>
-            <Link href="/admin/CadastroLogista" className={styles.linkReset}>
-              <div className={styles.menuItem}>
-                <FiBox size={20} /><span>Cadastrar Lojistas</span>
-              </div>
-            </Link>
-          </li>
-          <li>
-            <Link href="/admin/CadastroProdutos" className={styles.linkReset}>
-              <div className={styles.menuItem}>
-                <FiPackage size={20} /><span>Cadastrar Produtos</span>
-              </div>
-            </Link>
-          </li>
-          <li>
-            <Link href="/admin/perfil" className={styles.linkReset}>
-              <div className={styles.menuItem}>
-                <FiUser size={20} /><span>Perfil</span>
-              </div>
-            </Link>
-          </li>
-          <li>
-            <Link href="/Login" className={styles.linkReset}>
-              <div className={styles.menuItem}>
-                <FiLogOut size={20} /><span>Sair</span>
-              </div>
-            </Link>
-          </li>
+          <li><Link href="/admin/Dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
+          <li className={styles.active}><Link href="/admin/CadastroFornecedor" className={styles.linkReset}><div className={styles.menuItem}><FiUsers size={20} /><span>Cadastrar Fornecedores</span></div></Link></li>
+          <li><Link href="/admin/CadastroLogista" className={styles.linkReset}><div className={styles.menuItem}><FiBox size={20} /><span>Cadastrar Lojistas</span></div></Link></li>
+          <li><Link href="/admin/CadastroProduto" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Cadastrar Produtos</span></div></Link></li>
+          <li><Link href="/admin/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li>
+          <li><Link href="/Login" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
         </ul>
       </nav>
 
@@ -127,19 +592,25 @@ export default function CadastroFornecedor() {
           <h1>Cadastrar Fornecedor</h1>
         </header>
 
+        {message && message.type !== 'info' && (
+          <div className={`${styles.alertMessage} ${styles[message.type]}`}>
+            {message.text.split('\n').map((line, index) => (
+                <p key={index} className={styles.messageLine}>{line}</p>
+            ))}
+          </div>
+        )}
+
         <form className={styles.formCard} onSubmit={handleSubmit}>
           <h2 className={styles.sectionTitle}>Dados do Fornecedor</h2>
 
           <div className={styles.fieldGroup}>
-            <label>Nome da loja <span style={{color:'red'}}>*</span></label>
-            <input
-              type="text"
-              name="supplier_name"
-              className={styles.inputLong}
-              value={formData.supplier_name}
-              onChange={handleChange}
-              required // 🔥 Validação HTML5
-            />
+            <label>Nome da loja <span className={styles.requiredAsterisk}>*</span></label>
+            <input type="text" name="supplier_name" className={styles.inputLong} value={formData.supplier_name} onChange={handleChange} required />
+          </div>
+
+          <div className={styles.fieldGroup}>
+            <label>Categoria da Loja <span className={styles.requiredAsterisk}>*</span></label>
+            <input type="text" name="supplier_category" className={styles.inputLong} placeholder="Ex: Eletrônicos..." value={formData.supplier_category} onChange={handleChange} required />
           </div>
 
           <div className={styles.fieldGroup}>
@@ -148,61 +619,38 @@ export default function CadastroFornecedor() {
           </div>
 
           <div className={styles.fieldGroup}>
-            <label>Email (Login) <span style={{color:'red'}}>*</span></label>
-            <input
-              type="email"
-              name="contact_email"
-              className={styles.inputLong}
-              value={formData.contact_email}
-              onChange={handleChange}
-              required // 🔥 Validação HTML5
-            />
+            <label>Email (Login) <span className={styles.requiredAsterisk}>*</span></label>
+            <input type="email" name="contact_email" className={styles.inputLong} value={formData.contact_email} onChange={handleChange} required />
           </div>
 
           <h2 className={styles.sectionTitle}>Endereço</h2>
-
           <div className={styles.row}>
             <div className={styles.fieldGroup}>
               <label>Rua/Avenida</label>
               <input type="text" name="rua" className={styles.inputMedium} value={formData.rua} onChange={handleChange} />
             </div>
-
             <div className={styles.fieldGroup}>
               <label>Cidade</label>
               <input type="text" name="cidade" className={styles.inputMedium} value={formData.cidade} onChange={handleChange} />
             </div>
-
             <div className={styles.fieldGroup}>
               <label>Estado (UF)</label>
-              <input type="text" name="estado" className={styles.inputMedium} value={formData.estado} onChange={handleChange} />
+              <input type="text" name="estado" className={styles.inputMedium} placeholder="Ex: SP" value={formData.estado} onChange={handleChange} />
             </div>
           </div>
 
           <h2 className={styles.sectionTitle}>Contatos</h2>
-
           <div className={styles.row}>
             <div className={styles.fieldGroup}>
               <label>Telefone</label>
               <input type="text" name="phone_number" className={styles.inputMedium} value={formData.phone_number} onChange={handleChange} />
-            </div>
-
-            <div className={styles.fieldGroup}>
-              <label>Email Secundário</label>
-              <input type="email" name="emailContato" className={styles.inputMedium} value={formData.emailContato} onChange={handleChange} />
             </div>
           </div>
 
           {!formData.gerarAutomaticamente && (
             <div className={styles.fieldGroup}>
               <label>Senha (opcional)</label>
-              <input
-                type="password"
-                name="senhaManual"
-                className={styles.inputMedium}
-                value={formData.senhaManual}
-                onChange={handleChange}
-                placeholder="Deixe vazio para gerar auto"
-              />
+              <input type="password" name="senhaManual" className={styles.inputMedium} value={formData.senhaManual} onChange={handleChange} placeholder="Deixe vazio para gerar auto" />
             </div>
           )}
 
@@ -210,20 +658,16 @@ export default function CadastroFornecedor() {
             <label className={styles.checkboxContainer}>
               <input type="checkbox" name="gerarAutomaticamente" checked={formData.gerarAutomaticamente} onChange={handleChange} />
               <span className={styles.checkmark}></span>
-              Gerar senha e usuário automaticamente
+              Gerar senha automaticamente
             </label>
-
-            {/* 🔥 Botão inteligente com Loading */}
-            <button
-              type="submit"
-              className={styles.submitButton}
-              disabled={loading}
-              style={{ opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
-            >
+            <button type="submit" className={styles.submitButton} disabled={loading}>
               {loading ? 'Cadastrando...' : 'Criar Fornecedor'}
             </button>
           </div>
         </form>
+
+        <hr className={styles.divider} />
+        <BuscaFornecedores />
       </main>
     </div>
   );
