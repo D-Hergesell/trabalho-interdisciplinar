@@ -34,6 +34,18 @@ public class FornecedorController {
         return ResponseEntity.ok(fornecedorService.listarAtivos());
     }
 
+    // GET /api/v1/fornecedores/buscar?categoria=Eletronicos
+    @GetMapping("/buscar")
+    public ResponseEntity<List<FornecedorResponseDTO>> buscarPorFiltro(
+            @RequestParam(value = "categoria", required = false) String categoria
+    ) {
+        if (categoria != null && !categoria.isBlank()) {
+            return ResponseEntity.ok(fornecedorService.buscarPorCategoria(categoria));
+        }
+        // Se não passar categoria, retorna todos (comportamento padrão)
+        return ResponseEntity.ok(fornecedorService.listarFornecedores());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<FornecedorResponseDTO> buscarPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(fornecedorService.buscarPorId(id));

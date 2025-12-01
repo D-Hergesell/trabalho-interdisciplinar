@@ -48,6 +48,14 @@ public class FornecedorService {
     }
 
     @Transactional(readOnly = true)
+    public List<FornecedorResponseDTO> buscarPorCategoria(String nomeCategoria) {
+        return fornecedorRepository.findByCategorias_NomeContainingIgnoreCase(nomeCategoria)
+                .stream()
+                .map(fornecedorMapper::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public FornecedorResponseDTO buscarPorId(UUID id) {
         Fornecedor fornecedor = fornecedorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Fornecedor não encontrado."));

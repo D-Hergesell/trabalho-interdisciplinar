@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface FornecedorRepository extends JpaRepository<Fornecedor, UUID> {
     Optional<Fornecedor> findByCnpj(String cnpj);
     List<Fornecedor> findByAtivoTrue();
+    List<Fornecedor> findByCategorias_NomeContainingIgnoreCase(String nomeCategoria);
 }
