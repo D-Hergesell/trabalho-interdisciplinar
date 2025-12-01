@@ -79,6 +79,14 @@ public class PedidoService {
             Produto produto = produtoRepository.findById(itemDto.produtoId())
                     .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + itemDto.produtoId()));
 
+            // 1. Validação: Verifica se há estoque suficiente
+            if (produto.getQuantidadeEstoque() < itemDto.quantidade()) {
+                throw new RuntimeException("Estoque insuficiente para o produto: " + produto.getNome());
+            }
+
+            // 2. Baixa de Estoque: Subtrai a quantidade do pedido do estoque atual
+            produto.setQuantidadeEstoque(produto.getQuantidadeEstoque() - itemDto.quantidade());
+
             PedidoItem item = new PedidoItem();
             item.setPedido(pedido);
             item.setProduto(produto);
