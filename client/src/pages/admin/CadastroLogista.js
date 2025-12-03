@@ -4,7 +4,7 @@ import styles from '../../styles/Loja.module.css'; // Usando o mesmo arquivo CSS
 import api from '../../services/api';
 import {
   FiGrid, FiUsers, FiPackage, FiUser, FiLogOut, FiBox,
-  FiSearch, FiArrowRight, FiTrash2, FiChevronLeft, FiChevronRight, FiEdit
+  FiSearch, FiArrowRight, FiTrash2, FiChevronLeft, FiChevronRight, FiEdit, FiShoppingBag, FiTag
 } from 'react-icons/fi';
 
 // --- NOVO COMPONENTE: MODAL DE EDIÇÃO PARA LOGISTAS ---
@@ -586,18 +586,20 @@ export default function CadastroLogista() {
       <nav className={styles.sidebar}>
         <ul>
           <li><Link href="/admin/Dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
-          <li><Link href="/admin/CadastroFornecedor" className={styles.linkReset}><div className={styles.menuItem}><FiUsers size={20} /><span>Cadastrar Fornecedores</span></div></Link></li>
-          <li className={styles.active}><Link href="/admin/CadastroLogista" className={styles.linkReset}><div className={styles.menuItem}><FiBox size={20} /><span>Cadastrar Logistas</span></div></Link></li>
-          <li><Link href="/admin/CadastroProduto" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Cadastrar Produtos</span></div></Link></li>
-          <li><Link href="/admin/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li>
-          <li><Link href="/Login" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
+          <li><Link href="/admin/CadastroFornecedor" className={styles.linkReset}><div className={styles.menuItem}><FiUsers size={20} /><span>Fornecedores</span></div></Link></li>
+          <li className={styles.active}><Link href="/admin/CadastroLogista" className={styles.linkReset}><div className={styles.menuItem}><FiBox size={20} /><span>Lojistas</span></div></Link></li>
+          <li><Link href="/admin/CadastroProduto" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Produtos</span></div></Link></li>
+          <li><Link href="/admin/CadastroPedidos" className={styles.linkReset}><div className={styles.menuItem}><FiShoppingBag size={20} /><span>Pedidos</span></div></Link></li>
+          <li><Link href="/admin/CadastroCampanha" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Campanhas</span></div></Link></li>
+      {/*    <li><Link href="/admin/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li> */}
+          <li><Link href="/admin/Login" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
         </ul>
       </nav>
 
       {/* --- CONTEÚDO PRINCIPAL --- */}
       <main className={styles['main-content']}>
         <header className={styles.header}>
-          <h1>Cadastrar Logista</h1>
+          <h1>Cadastrar Lojista</h1>
         </header>
 
         {/* Mensagens de Feedback no Topo */}
@@ -610,7 +612,7 @@ export default function CadastroLogista() {
         )}
 
         <form className={styles.formCard} onSubmit={handleSubmit}>
-          <h2 className={styles.sectionTitle}>Dados do Logista</h2>
+          <h2 className={styles.sectionTitle}>Dados do Lojista</h2>
 
           <div className={styles.fieldGroup}>
             <label>Nome da Loja <span className={styles.requiredAsterisk}>*</span></label>

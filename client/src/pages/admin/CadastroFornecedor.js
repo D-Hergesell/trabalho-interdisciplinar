@@ -5,7 +5,7 @@ import styles from '../../styles/Loja.module.css';
 import {
   FiGrid, FiUsers, FiPackage, FiUser, FiLogOut, FiBox,
   FiSearch, FiTrash2, FiChevronLeft, FiChevronRight,
-  FiChevronRight as FiArrowRight, FiEdit,
+  FiChevronRight as FiArrowRight, FiEdit, FiShoppingBag, FiTag
 } from 'react-icons/fi';
 
 // --- NOVO COMPONENTE: MODAL DE EDIÇÃO ---
@@ -212,7 +212,7 @@ const BuscaFornecedores = () => {
 
     try {
         // Envia apenas os dados atualizáveis. A rota PUT ainda usa o subcaminho
-        await api.put(`/api/fornecedores/cadastroFornecedor/${id}`, dataToSend);
+        await api.put(`/api/fornecedores/id/${id}`, dataToSend);
 
         // Atualiza o estado da lista no frontend com os novos dados
         setFornecedores(oldList => oldList.map(item =>
@@ -257,7 +257,7 @@ const BuscaFornecedores = () => {
       if (currentAction === 'deactivate') {
         // --- DESATIVAÇÃO (SOFT DELETE) ---
         // Aqui estamos usando o PUT para atualizar o status para 'off'
-        await api.put(`/api/fornecedores/cadastroFornecedor/${deleteId}`, { status: 'off' });
+        await api.put(`/api/fornecedores/id/${deleteId}`, { status: 'off' });
 
         setFornecedores(oldList => oldList.map(item =>
           item._id === deleteId ? { ...item, status: 'off' } : item
@@ -267,7 +267,7 @@ const BuscaFornecedores = () => {
 
       } else if (currentAction === 'delete') {
         // --- EXCLUSÃO PERMANENTE (HARD DELETE) ---
-        await api.delete(`/api/fornecedores/cadastroFornecedor/${deleteId}`);
+        await api.delete(`/api/fornecedores/id/${deleteId}`);
 
         // Filtra a lista para remover o item do frontend
         setFornecedores(oldList => oldList.filter(item => item._id !== deleteId));
@@ -579,11 +579,13 @@ export default function CadastroFornecedor() {
       <nav className={styles.sidebar}>
         <ul>
           <li><Link href="/admin/Dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
-          <li className={styles.active}><Link href="/admin/CadastroFornecedor" className={styles.linkReset}><div className={styles.menuItem}><FiUsers size={20} /><span>Cadastrar Fornecedores</span></div></Link></li>
-          <li><Link href="/admin/CadastroLogista" className={styles.linkReset}><div className={styles.menuItem}><FiBox size={20} /><span>Cadastrar Lojistas</span></div></Link></li>
-          <li><Link href="/admin/CadastroProduto" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Cadastrar Produtos</span></div></Link></li>
-          <li><Link href="/admin/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li>
-          <li><Link href="/Login" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
+          <li className={styles.active}><Link href="/admin/CadastroFornecedor" className={styles.linkReset}><div className={styles.menuItem}><FiUsers size={20} /><span>Fornecedores</span></div></Link></li>
+          <li><Link href="/admin/CadastroLogista" className={styles.linkReset}><div className={styles.menuItem}><FiBox size={20} /><span>Lojistas</span></div></Link></li>
+          <li><Link href="/admin/CadastroProduto" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Produtos</span></div></Link></li>
+          <li><Link href="/admin/CadastroPedidos" className={styles.linkReset}><div className={styles.menuItem}><FiShoppingBag size={20} /><span>Pedidos</span></div></Link></li>
+          <li><Link href="/admin/CadastroCampanha" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Campanhas</span></div></Link></li>
+      {/* <li><Link href="/admin/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li> */}
+          <li><Link href="/admin/Login" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
         </ul>
       </nav>
 
@@ -604,12 +606,12 @@ export default function CadastroFornecedor() {
           <h2 className={styles.sectionTitle}>Dados do Fornecedor</h2>
 
           <div className={styles.fieldGroup}>
-            <label>Nome da loja <span className={styles.requiredAsterisk}>*</span></label>
+            <label>Nome do Fornecedor <span className={styles.requiredAsterisk}>*</span></label>
             <input type="text" name="supplier_name" className={styles.inputLong} value={formData.supplier_name} onChange={handleChange} required />
           </div>
 
           <div className={styles.fieldGroup}>
-            <label>Categoria da Loja <span className={styles.requiredAsterisk}>*</span></label>
+            <label>Categoria do fornecedor <span className={styles.requiredAsterisk}>*</span></label>
             <input type="text" name="supplier_category" className={styles.inputLong} placeholder="Ex: Eletrônicos..." value={formData.supplier_category} onChange={handleChange} required />
           </div>
 
