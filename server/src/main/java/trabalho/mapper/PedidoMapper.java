@@ -18,6 +18,7 @@ public interface PedidoMapper {
     @Mapping(target = "criadoPorUsuario", ignore = true)
     @Mapping(target = "condicaoPagamento", ignore = true)
     @Mapping(target = "itens", ignore = true)
+    @Mapping(target = "cashbackGerado", ignore = true)
     Pedido toEntity(PedidoRequestDTO dto);
 
     @Mapping(source = "loja.id", target = "lojaId")
