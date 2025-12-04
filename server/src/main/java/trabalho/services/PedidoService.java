@@ -274,7 +274,7 @@ public class PedidoService {
                 break;
 
             case ENTREGUE:
-                if (!isLoja) throw new RuntimeException("Apenas a loja pode confirmar o recebimento.");
+                if (!isFornecedor) throw new RuntimeException("Apenas o fornecedor pode confirmar a entrega.");
                 if (atual != StatusPedido.ENVIADO) throw new RuntimeException("Fluxo inválido: Deve estar ENVIADO.");
                 break;
 

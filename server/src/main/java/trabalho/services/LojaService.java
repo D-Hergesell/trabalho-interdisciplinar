@@ -50,6 +50,16 @@ public class LojaService {
     }
 
     // -----------------------------------------
+    // READ - Buscar por nome
+    // -----------------------------------------
+    @Transactional(readOnly = true)
+    public List<LojaResponseDTO> listarLojasPorNome(String nomeFantasia) {
+        return lojaRepository.findByNomeFantasiaContainingIgnoreCase(nomeFantasia).stream()
+                .map(lojaMapper::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    // -----------------------------------------
     // READ - Buscar por ID
     // -----------------------------------------
     @Transactional(readOnly = true)

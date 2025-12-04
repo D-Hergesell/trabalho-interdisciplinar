@@ -48,6 +48,13 @@ public class LojaController {
     }
 
     // -----------------------------------------
+    // READ - Buscar por nome
+    // -----------------------------------------
+    @GetMapping("/buscar")
+    public ResponseEntity<List<LojaResponseDTO>> buscarPorNome(@RequestParam String nomeFantasia) {
+        return ResponseEntity.ok(lojaService.listarLojasPorNome(nomeFantasia));
+    }
+    // -----------------------------------------
     // GET - Buscar por ID
     // -----------------------------------------
     @GetMapping("/{id}")
