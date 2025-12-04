@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import withAuth from '../../components/withAuth';
 import styles from '../../styles/Pedido.module.css';
 import api from '../../services/api';
 import {
@@ -20,9 +21,7 @@ import {
   FiTag
 } from 'react-icons/fi';
 
-// ============================================================================
-// Helpers
-// ============================================================================
+
 const formatCurrency = (value) => {
   const n = Number(value) || 0;
   return n.toFixed(2).replace('.', ',');
@@ -113,9 +112,7 @@ const EditPedidoModal = ({ pedido = {}, onSave, onCancel, loading }) => {
   );
 };
 
-// ============================================================================
-// 2. COMPONENTE DROPDOWN CUSTOMIZADO (Produtos)
-// ============================================================================
+
 const CustomProductDropdown = ({ options = [], value = '', onChange, placeholder = 'Selecione', className = '', required = false, disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -187,7 +184,7 @@ const CustomProductDropdown = ({ options = [], value = '', onChange, placeholder
 // ============================================================================
 const BuscaPedidos = ({ allFornecedores = [], allProdutos = [] }) => {
   const [searchId, setSearchId] = useState('');
-  // Agora searchSupplierInput é usado para busca textual (Nome ou ID)
+
   const [searchSupplierInput, setSearchSupplierInput] = useState('');
 
   const [pedidos, setPedidos] = useState([]);
@@ -240,7 +237,7 @@ const BuscaPedidos = ({ allFornecedores = [], allProdutos = [] }) => {
       const response = await api.get('/api/pedidos');
       let dados = Array.isArray(response.data) ? response.data : [];
 
-      // Filtro 1: ID do Pedido (Parcial)
+
       if (searchId.trim() !== '') {
         const searchIdLower = searchId.trim().toLowerCase();
         dados = dados.filter((p) =>
@@ -248,24 +245,23 @@ const BuscaPedidos = ({ allFornecedores = [], allProdutos = [] }) => {
         );
       }
 
-      // Filtro 2: Fornecedor (Nome ou ID - via Input Texto)
+
       if (searchSupplierInput.trim() !== '') {
         const term = searchSupplierInput.trim().toLowerCase();
 
-        // Encontra IDs dos fornecedores cujo nome bate com o termo pesquisado
+
         const matchingSupplierIds = allFornecedores
             .filter(f => f.supplier_name.toLowerCase().includes(term))
             .map(f => normalizeId(f._id));
 
         dados = dados.filter(p => {
             const pedidoSupplierId = normalizeId(p.supplier_id);
-            // Verifica se o ID do pedido está na lista de nomes encontrados
-            // OU se o próprio ID do fornecedor no pedido contém o termo (busca por ID manual)
+
             return matchingSupplierIds.includes(pedidoSupplierId) || pedidoSupplierId.toLowerCase().includes(term);
         });
       }
 
-      // Normalização dos dados
+
       dados = dados.map((p) => ({
         ...p,
         supplier_id: normalizeId(p.supplier_id),
@@ -404,7 +400,7 @@ const BuscaPedidos = ({ allFornecedores = [], allProdutos = [] }) => {
         </div>
       )}
 
-      {/* --- ÁREA DE BUSCA ATUALIZADA (INPUTS IGUAIS AOS OUTROS) --- */}
+
       <div className={styles['search-inputs']}>
         <div className={styles['search-group']}>
           <label>ID Pedido</label>
@@ -415,7 +411,7 @@ const BuscaPedidos = ({ allFornecedores = [], allProdutos = [] }) => {
           />
         </div>
 
-        {/* ⭐️ ALTERADO: De <select> para <input> texto */}
+
         <div className={styles['search-group']}>
           <label>Fornecedor (Nome)</label>
           <input
@@ -521,7 +517,7 @@ const BuscaPedidos = ({ allFornecedores = [], allProdutos = [] }) => {
 // ============================================================================
 // 4. COMPONENTE PRINCIPAL: CadastroPedido
 // ============================================================================
-const CadastroPedido = () => {
+function CadastroPedido (){
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [message, setMessage] = useState(null);
@@ -539,7 +535,7 @@ const CadastroPedido = () => {
 
   const [itensPedido, setItensPedido] = useState([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
 
-  // [CARREGAMENTO INICIAL]
+
   const loadInitialData = async () => {
     setLoadingData(true);
     setMessage(null);
@@ -573,7 +569,7 @@ const CadastroPedido = () => {
 
   useEffect(() => { loadInitialData(); }, []);
 
-  // [FILTRAGEM DE PRODUTOS NO FORMULÁRIO]
+
   useEffect(() => {
     const selectedSupplierId = String(formData.fornecedorId).trim();
 
@@ -724,7 +720,7 @@ const CadastroPedido = () => {
 
     try {
       const response = await api.post('/api/pedidos', pedidoParaBackend);
-      setMessage({ type: 'success', text: `✅ Pedido #${String(response.data._id || '').substring(0, 8)} criado com sucesso! Total: R$ ${formatCurrency(totalCalculado)}` });
+      setMessage({ type: 'success', text: ` Pedido #${String(response.data._id || '').substring(0, 8)} criado com sucesso! Total: R$ ${formatCurrency(totalCalculado)}` });
 
       setFormData({ fornecedorId: '', dataPedido: new Date().toISOString().substring(0, 10), status: 'Pendente', observacoes: '' });
       setItensPedido([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
@@ -732,7 +728,7 @@ const CadastroPedido = () => {
     } catch (error) {
       console.error('Erro ao cadastrar Pedido:', error);
       const errorMessage = error.response?.data?.error || 'Erro ao criar pedido.';
-      setMessage({ type: 'error', text: `❌ Erro: ${errorMessage}` });
+      setMessage({ type: 'error', text: ` Erro: ${errorMessage}` });
     } finally {
       setLoading(false);
     }
@@ -760,12 +756,12 @@ const CadastroPedido = () => {
       <nav className={styles.sidebar}>
         <ul>
           <li><Link href="/admin/Dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
-          <li><Link href="/admin/CadastroFornecedor" className={styles.linkReset}><div className={styles.menuItem}><FiUsers size={20} /><span>Cadastrar Fornecedores</span></div></Link></li>
-          <li><Link href="/admin/CadastroLogista" className={styles.linkReset}><div className={styles.menuItem}><FiBox size={20} /><span>Cadastrar Lojistas</span></div></Link></li>
-          <li><Link href="/admin/CadastroProduto" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Cadastrar Produtos</span></div></Link></li>
+          <li><Link href="/admin/CadastroFornecedor" className={styles.linkReset}><div className={styles.menuItem}><FiUsers size={20} /><span>Fornecedores</span></div></Link></li>
+          <li><Link href="/admin/CadastroLogista" className={styles.linkReset}><div className={styles.menuItem}><FiBox size={20} /><span>Lojistas</span></div></Link></li>
+          <li><Link href="/admin/CadastroProduto" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Produtos</span></div></Link></li>
           <li className={styles.active}><Link href="/admin/CadastroPedidos" className={styles.linkReset}><div className={styles.menuItem}><FiShoppingBag size={20} /><span>Pedidos</span></div></Link></li>
           <li><Link href="/admin/CadastroCampanha" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Campanhas</span></div></Link></li>
-          <li><Link href="/admin/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li>
+       {/*   <li><Link href="/admin/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li> */}
           <li><Link href="/Login" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
         </ul>
       </nav>
@@ -819,7 +815,7 @@ const CadastroPedido = () => {
 
           {itensPedido.map((item, index) => (
             <div key={index} className={styles.itemGridRow}>
-              {/* COLUNA 1: PRODUTO */}
+
               <div className={styles.colProductInput}>
                 <CustomProductDropdown
                   options={filteredProdutos}
@@ -837,7 +833,7 @@ const CadastroPedido = () => {
                 )}
               </div>
 
-              {/* COLUNA 2: QUANTIDADE */}
+
               <div className={styles.colTinyInput}>
                 <input
                   type="number"
@@ -852,7 +848,7 @@ const CadastroPedido = () => {
                 />
               </div>
 
-              {/* COLUNA 3: VALOR UNITÁRIO (TRAVADO) */}
+
               <div className={styles.colTinyInput}>
                 <input
                   type="text"
@@ -864,12 +860,12 @@ const CadastroPedido = () => {
                 />
               </div>
 
-              {/* COLUNA 4: TOTAL DO ITEM */}
+
               <div className={styles.colTotalDisplay}>
                 <p className={styles.totalItem}>R$ {formatCurrency((Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0))}</p>
               </div>
 
-              {/* COLUNA 5: REMOVER */}
+
               <button type="button" className={styles.removeItemButton} onClick={() => handleRemoveItem(index)} disabled={itensPedido.length === 1 || isProductSelectionDisabled} title={itensPedido.length === 1 ? 'O pedido deve ter pelo menos um item' : 'Remover item'}>
                 <FiTrash2 size={16} />
               </button>
@@ -906,4 +902,4 @@ const CadastroPedido = () => {
   );
 };
 
-export default CadastroPedido;
+export default withAuth (CadastroPedido);

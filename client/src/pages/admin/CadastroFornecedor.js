@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import withAuth from '../../components/withAuth';
 import api from '../../services/api';
-import styles from '../../styles/Loja.module.css';
+import styles from '../../styles/Geral.module.css';
 import {
   FiGrid, FiUsers, FiPackage, FiUser, FiLogOut, FiBox,
   FiSearch, FiTrash2, FiChevronLeft, FiChevronRight,
   FiChevronRight as FiArrowRight, FiEdit, FiShoppingBag, FiTag
 } from 'react-icons/fi';
 
-// --- NOVO COMPONENTE: MODAL DE EDIÇÃO ---
+
 
 const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
     const [formData, setFormData] = useState(fornecedor);
 
-    // Garante que o estado interno do formulário é resetado se o 'fornecedor' mudar
+
     useEffect(() => {
         setFormData(fornecedor);
     }, [fornecedor]);
@@ -25,69 +26,63 @@ const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // A função onSave será responsável por chamar a API PUT
         onSave(formData);
     };
 
     return (
         <div className={styles.modalBackdrop}>
-            {/* O tamanho do modal é melhor controlado via CSS. Se precisar de 600px, defina no Loja.module.css para .modalContent */}
+
             <div className={styles.modalContent}>
                 <h3 className={styles.modalTitle}>Editar Fornecedor: {fornecedor.supplier_name}</h3>
 
                 <form onSubmit={handleSubmit}>
 
-                    {/* Linha 1: Nome e Categoria */}
+
                     <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>Nome da Loja</label>
-                            {/* AJUSTE 2: Aplicação da classe inputModal */}
+
                             <input type="text" name="supplier_name" value={formData.supplier_name} onChange={handleChange} required className={styles.inputModal} />
                         </div>
                         <div className={styles.fieldGroup}>
                             <label>Categoria</label>
-                            {/* AJUSTE 2: Aplicação da classe inputModal */}
+
                             <input type="text" name="supplier_category" value={formData.supplier_category || ''} onChange={handleChange} className={styles.inputModal} />
                         </div>
                     </div>
 
-                    {/* Linha 2: Responsável e Email (Email não deve ser alterado) */}
+
                     <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>Responsável</label>
-                            {/* AJUSTE 2: Aplicação da classe inputModal */}
+
                             <input type="text" name="responsavel" value={formData.responsavel || ''} onChange={handleChange} className={styles.inputModal} />
                         </div>
                         <div className={styles.fieldGroup}>
                             <label>Email (Login)</label>
-                            {/* AJUSTE 2: Aplicação da classe inputModal */}
+
                             <input type="email" name="contact_email" value={formData.contact_email} disabled className={styles.inputModal} />
                         </div>
                     </div>
 
-                    {/* Linha 3: Telefone */}
+
                     <div className={styles.row}>
                          <div className={styles.fieldGroup}>
                             <label>Telefone</label>
-                            {/* AJUSTE 2: Aplicação da classe inputModal */}
+
                             <input type="text" name="phone_number" value={formData.phone_number || ''} onChange={handleChange} className={styles.inputModal} />
                         </div>
                     </div>
 
-                    {/* Linha 4: Endereço - AQUI ESTAVA O PROBLEMA DE VAZAMENTO */}
+
                     <h4 className={styles.sectionTitle} style={{ marginTop: '15px' }}>Endereço</h4>
-                    {/* AQUI ESTÁ A CORREÇÃO: Usamos classes auxiliares (.fieldGroupThird) para garantir que
-                        os 3 campos de endereço se dividam em 3 colunas iguais, o que resolve o vazamento.
-                        Você precisará definir essa nova classe no seu CSS (veja as instruções acima). */}
                     <div className={styles.row}>
                         <div className={`${styles.fieldGroup} ${styles.fieldGroupThird}`}>
                             <label>Rua/Avenida</label>
-                            {/* AJUSTE 2: Aplicação da classe inputModal */}
                             <input type="text" name="rua" value={formData.rua || ''} onChange={handleChange} className={styles.inputModal} />
                         </div>
                         <div className={`${styles.fieldGroup} ${styles.fieldGroupThird}`}>
                             <label>Cidade</label>
-                            {/* AJUSTE 2: Aplicação da classe inputModal */}
                             <input type="text" name="cidade" value={formData.cidade || ''} onChange={handleChange} className={styles.inputModal} />
                         </div>
                         <div className={`${styles.fieldGroup} ${styles.fieldGroupThird}`}>
@@ -102,7 +97,6 @@ const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
                      <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                              <label>Status</label>
-                             {/* AJUSTE 2: Aplicação da classe inputModal ao select para consistência */}
                              <select name="status" value={formData.status || 'on'} onChange={handleChange} className={styles.inputModal}>
                                  <option value="on">Ativo</option>
                                  <option value="off">Inativo</option>
@@ -135,7 +129,6 @@ const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
 };
 
 
-// --- COMPONENTE PRINCIPAL: BUSCA E DELETE/UPDATE ---
 
 const BuscaFornecedores = () => {
   const [searchId, setSearchId] = useState('');
@@ -146,14 +139,13 @@ const BuscaFornecedores = () => {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  // ⭐️ NOVOS ESTADOS PARA EDIÇÃO
-  const [editingFornecedor, setEditingFornecedor] = useState(null); // Armazena o objeto do fornecedor a ser editado
+  const [editingFornecedor, setEditingFornecedor] = useState(null);
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [message, setMessage] = useState(null);
-  const [currentAction, setCurrentAction] = useState('deactivate'); // Ação: 'deactivate', 'delete'
+  const [currentAction, setCurrentAction] = useState('deactivate');
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const itemsPerPage = 5;
@@ -168,10 +160,9 @@ const BuscaFornecedores = () => {
     setMessage(null);
     setCurrentIndex(0);
     setExpandedId(null);
-    setEditingFornecedor(null); // Fecha o modal de edição ao buscar
-
+    setEditingFornecedor(null);
     try {
-      // Usando a rota raiz para listagem
+
       const response = await api.get('/api/fornecedores');
       let dados = response.data;
 
@@ -189,37 +180,36 @@ const BuscaFornecedores = () => {
     }
   };
 
-  // ⭐️ Iniciar a Edição
+
   const startEdit = (fornecedor) => {
     setMessage(null);
     setEditingFornecedor(fornecedor);
   };
 
-  // ⭐️ Cancelar a Edição
+
   const cancelEdit = () => {
     setEditingFornecedor(null);
   };
 
-  // ⭐️ Submissão da Atualização (PUT)
+
   const handleUpdateSubmit = async (updatedData) => {
     setLoading(true);
     setMessage(null);
     const id = updatedData._id;
 
-    // Remove campos que não devem ser enviados ou que não serão usados no PUT do fornecedor, como o id e email
-    // NOTE: O backend está configurado para lidar com a mudança de email de contato, então estamos enviando todos os dados.
-    const { _id, ...dataToSend } = updatedData; // Agora enviamos todos os campos, exceto o _id.
+
+    const { _id, ...dataToSend } = updatedData;
 
     try {
-        // Envia apenas os dados atualizáveis. A rota PUT ainda usa o subcaminho
+
         await api.put(`/api/fornecedores/id/${id}`, dataToSend);
 
-        // Atualiza o estado da lista no frontend com os novos dados
+
         setFornecedores(oldList => oldList.map(item =>
             item._id === id ? { ...item, ...dataToSend } : item
         ));
 
-        setEditingFornecedor(null); // Fecha o modal
+        setEditingFornecedor(null);
         setMessage({ type: 'success', text: "Fornecedor atualizado com sucesso!" });
 
     } catch (error) {
@@ -232,7 +222,7 @@ const BuscaFornecedores = () => {
   };
 
 
-  // Função para iniciar a ação (Deactivate ou Delete)
+
   const startAction = (id, action) => {
     setDeleteId(id);
     setCurrentAction(action);
@@ -245,7 +235,7 @@ const BuscaFornecedores = () => {
     setCurrentAction('deactivate'); // Reset
   };
 
-  // Lida tanto com Desativação (PUT) quanto com Exclusão (DELETE)
+
   const handleConfirmAction = async () => {
     if (!deleteId) return;
     setShowConfirm(false);
@@ -253,10 +243,9 @@ const BuscaFornecedores = () => {
     setMessage(null);
 
     try {
-      // Ações PUT e DELETE ainda usam o subcaminho para manter a compatibilidade
+
       if (currentAction === 'deactivate') {
-        // --- DESATIVAÇÃO (SOFT DELETE) ---
-        // Aqui estamos usando o PUT para atualizar o status para 'off'
+
         await api.put(`/api/fornecedores/id/${deleteId}`, { status: 'off' });
 
         setFornecedores(oldList => oldList.map(item =>
@@ -266,10 +255,10 @@ const BuscaFornecedores = () => {
         setMessage({ type: 'success', text: "Fornecedor desativado com sucesso!" });
 
       } else if (currentAction === 'delete') {
-        // --- EXCLUSÃO PERMANENTE (HARD DELETE) ---
+
         await api.delete(`/api/fornecedores/id/${deleteId}`);
 
-        // Filtra a lista para remover o item do frontend
+
         setFornecedores(oldList => oldList.filter(item => item._id !== deleteId));
 
         setMessage({ type: 'success', text: "Fornecedor e usuário associado deletados permanentemente!" });
@@ -285,7 +274,7 @@ const BuscaFornecedores = () => {
     } finally {
       setLoading(false);
       setDeleteId(null);
-      setCurrentAction('deactivate'); // Reset
+      setCurrentAction('deactivate');
     }
   };
 
@@ -307,7 +296,7 @@ const BuscaFornecedores = () => {
   const totalPages = Math.ceil(fornecedores.length / itemsPerPage);
   const currentPage = Math.floor(currentIndex / itemsPerPage) + 1;
 
-  // --- Modal de Confirmação (Sem alterações) ---
+
   const ConfirmationModal = () => {
     const isDeleting = currentAction === 'delete';
 
@@ -341,7 +330,7 @@ const BuscaFornecedores = () => {
     );
   };
 
-  // --- Linha Expandida (Sem alterações) ---
+
   const ExpandedDetailsRow = ({ fornecedor }) => (
     <div className={styles['expanded-details-row']}>
       <div className={styles['detail-full-span']}>
@@ -444,10 +433,10 @@ const BuscaFornecedores = () => {
                         <div className={styles['detail-cell']}>
                             <p>{fornecedor.responsavel || '-'}</p>
                         </div>
-                        {/* AJUSTE 1: REORGANIZAÇÃO DOS BOTÕES PARA (Expandir -> Editar -> Excluir) */}
+
                         <div className={styles['item-actions']}>
 
-                          {/* 1. Botão de Expandir/Detalhes */}
+
                           <button
                               className={`${styles['btn-detail']} ${isExpanded ? styles['btn-rotated'] : ''}`}
                               title={isExpanded ? "Esconder Detalhes" : "Ver Detalhes"}
@@ -459,7 +448,7 @@ const BuscaFornecedores = () => {
                               <FiArrowRight size={20} />
                           </button>
 
-                          {/* 2. Botão de Editar */}
+
                           <button
                             className={styles['btn-edit']}
                             onClick={(e) => {
@@ -472,15 +461,15 @@ const BuscaFornecedores = () => {
                             <FiEdit size={18} />
                           </button>
 
-                          {/* 3. Botão de Excluir/Desativar */}
+
                           <button
                             className={styles['btn-delete']}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if (isDeactivated) {
-                                  startAction(fornecedor._id, 'delete'); // Exclusão definitiva (Hard Delete)
+                                  startAction(fornecedor._id, 'delete');
                                 } else {
-                                  startAction(fornecedor._id, 'deactivate'); // Desativação (Soft Delete)
+                                  startAction(fornecedor._id, 'deactivate');
                                 }
                             }}
                             title={isDeactivated ? "Excluir Permanentemente" : "Desativar Fornecedor"}
@@ -515,7 +504,7 @@ const BuscaFornecedores = () => {
       </div>
 
       {showConfirm && <ConfirmationModal />}
-      {/* ⭐️ Renderiza o Modal de Edição se houver um fornecedor selecionado */}
+
       {editingFornecedor && (
           <EditFornecedorModal
               fornecedor={editingFornecedor}
@@ -528,9 +517,9 @@ const BuscaFornecedores = () => {
   );
 };
 
-// --- COMPONENTE CADASTROFORNECEDOR (Sem alterações significativas, exceto na importação) ---
 
-export default function CadastroFornecedor() {
+
+function CadastroFornecedor() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
@@ -557,7 +546,7 @@ export default function CadastroFornecedor() {
     };
 
     try {
-      // POST já está correto na rota raiz
+
       const response = await api.post('/api/fornecedores', dadosParaBackend);
       const successText = `✅ Sucesso!\n\nFornecedor: ${response.data.fornecedor.supplier_name}\nLogin: ${response.data.usuarioGerado.user}\nSenha: ${response.data.usuarioGerado.pwd}`;
       setMessage({ type: 'success', text: successText });
@@ -568,7 +557,7 @@ export default function CadastroFornecedor() {
       });
     } catch (error) {
         const errorText = error.response?.data?.error || "Erro ao conectar com o servidor.";
-        setMessage({ type: 'error', text: `❌ Erro: ${errorText}` });
+        setMessage({ type: 'error', text: ` Erro: ${errorText}` });
     } finally {
       setLoading(false);
     }
@@ -674,3 +663,6 @@ export default function CadastroFornecedor() {
     </div>
   );
 }
+
+
+export default withAuth(CadastroFornecedor);

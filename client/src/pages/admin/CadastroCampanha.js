@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-// Importa o CSS fornecido (Loja.module.css)
-import styles from '../../styles/Loja.module.css';
+import withAuth from '../../components/withAuth';
+import styles from '../../styles/Geral.module.css';
 import api from '../../services/api';
 
 // Importação dos ícones
@@ -17,14 +17,11 @@ import {
   FiSearch,
   FiChevronLeft,
   FiChevronRight,
-  FiArrowRight, // Para o botão de expandir
+  FiArrowRight,
   FiShoppingBag,
   FiTag
 } from 'react-icons/fi';
 
-// =========================================================================
-// ⭐️ COMPONENTE AUXILIAR 1: Modal de Edição de Campanha
-// =========================================================================
 const EditCampanhaModal = ({ campanha, onSave, onCancel, loading }) => {
     const initialFormData = {
         name: campanha.name || '',
@@ -111,16 +108,14 @@ const EditCampanhaModal = ({ campanha, onSave, onCancel, loading }) => {
     );
 };
 
-// =========================================================================
-// ⭐️ COMPONENTE AUXILIAR 2: BuscaCampanhas (Busca e Listagem)
-// =========================================================================
+
 const BuscaCampanhas = () => {
-    // Estados da Busca
+
     const [searchId, setSearchId] = useState('');
     const [searchName, setSearchName] = useState('');
     const [searchSupplier, setSearchSupplier] = useState('');
 
-    // Estados da Lista e Ações
+
     const [campanhas, setCampanhas] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
@@ -132,11 +127,11 @@ const BuscaCampanhas = () => {
     const [expandedId, setExpandedId] = useState(null);
     const [currentAction, setCurrentAction] = useState('deactivate');
 
-    // Paginação
+
     const [currentIndex, setCurrentIndex] = useState(0);
     const itemsPerPage = 5;
 
-    // --- Funções de Busca ---
+
     const handleSearch = async () => {
         setLoading(true);
         setSearched(true);
@@ -152,7 +147,7 @@ const BuscaCampanhas = () => {
                 status: item.status || 'on'
             }));
 
-            // Filtros no frontend
+
             if (searchId) dados = dados.filter(c => c._id.includes(searchId));
             if (searchName) dados = dados.filter(c => c.name?.toLowerCase().includes(searchName.toLowerCase()));
             if (searchSupplier) dados = dados.filter(c => c.supplier_id?.toLowerCase().includes(searchSupplier.toLowerCase()));
@@ -166,7 +161,7 @@ const BuscaCampanhas = () => {
         }
     };
 
-    // --- Ações (Editar, Deletar, Expandir) ---
+
     const startEdit = (campanha) => {
         setMessage(null);
         setEditingCampanha(campanha);
@@ -261,7 +256,7 @@ const BuscaCampanhas = () => {
     const totalPages = Math.ceil(campanhas.length / itemsPerPage);
     const currentPage = Math.floor(currentIndex / itemsPerPage) + 1;
 
-    // --- JSX Auxiliares ---
+
     const ConfirmationModal = () => {
         const isDelete = currentAction === 'delete';
         return (
@@ -307,7 +302,7 @@ const BuscaCampanhas = () => {
                     </div>
                 )}
 
-                {/* --- ÁREA DE BUSCA (INPUTS) --- */}
+
                 <div className={styles['search-inputs']}>
                     <div className={styles['search-group']}>
                         <label>ID</label>
@@ -327,7 +322,7 @@ const BuscaCampanhas = () => {
                     </button>
                 </div>
 
-                {/* --- LISTA DE RESULTADOS --- */}
+
                 {campanhas.length > 0 ? (
                     <>
                         <div className={styles['provider-list-container']}>
@@ -383,10 +378,8 @@ const BuscaCampanhas = () => {
     );
 };
 
-// =========================================================================
-// ⭐️ COMPONENTE PRINCIPAL: CadastroCampanha (Formulário + Busca)
-// =========================================================================
-export default function CadastroCampanha() {
+
+function CadastroCampanha() {
     const [form, setForm] = useState({ name: '', supplier_id: '', start_date: '', end_date: '', discount_percentage: '' });
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
@@ -470,9 +463,11 @@ export default function CadastroCampanha() {
 
                 <hr className={styles.divider} />
 
-                {/* Componente de Busca */}
+
                 <BuscaCampanhas />
             </main>
         </div>
     );
 }
+
+export default withAuth(CadastroCampanha);
