@@ -43,7 +43,7 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry registry) {
                 registry.addMapping("/**") // Aplica a todas as rotas
-                        .allowedOrigins("http://localhost:3000") // Permite apenas o frontend Next.js
+                        .allowedOrigins("http://localhost:3000", "https://central-de-compras-provectus.onrender.com") // Permite apenas o frontend Next.js
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD", "TRACE", "CONNECT"); // Métodos permitidos
             }
         };
