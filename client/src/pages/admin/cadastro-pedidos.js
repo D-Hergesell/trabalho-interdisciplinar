@@ -316,11 +316,10 @@ const BuscaPedidos = ({ allFornecedores = [] }) => {
         }
     };
 
-    // --- CORREÇÃO DA PAGINAÇÃO AQUI ---
     const nextSlide = () => {
         if (currentIndex + itemsPerPage < pedidos.length) {
             setCurrentIndex(currentIndex + itemsPerPage);
-            setExpandedPedidoId(null); // Fecha detalhes ao trocar página
+            setExpandedPedidoId(null);
         }
     };
 
@@ -330,7 +329,6 @@ const BuscaPedidos = ({ allFornecedores = [] }) => {
             setExpandedPedidoId(null);
         }
     };
-    // ------------------------------------
 
     const visibleItems = pedidos.slice(currentIndex, currentIndex + itemsPerPage);
     const totalPages = Math.max(1, Math.ceil(pedidos.length / itemsPerPage));
@@ -505,6 +503,10 @@ function CadastroPedido (){
     const [produtos, setProdutos] = useState([]);
     const [filteredProdutos, setFilteredProdutos] = useState([]);
 
+    // === NOVOS ESTADOS ===
+    const [lojaSelecionadaEstado, setLojaSelecionadaEstado] = useState(null);
+    const [ajusteUnitario, setAjusteUnitario] = useState(0);
+
     const [formData, setFormData] = useState({
         fornecedorId: '',
         lojaId: '',
@@ -541,7 +543,59 @@ function CadastroPedido (){
 
     useEffect(() => { loadInitialData(); }, []);
 
+    // 1. Efeito para capturar o Estado da Loja quando o Admin seleciona uma loja
+    useEffect(() => {
+        if (formData.lojaId) {
+            // 'lojas' já é carregado no loadInitialData
+            const lojaEncontrada = lojas.find(l => String(l.id) === String(formData.lojaId));
+            if (lojaEncontrada) {
+                setLojaSelecionadaEstado(lojaEncontrada.estado);
+            }
+        } else {
+            setLojaSelecionadaEstado(null);
+        }
+    }, [formData.lojaId, lojas]);
 
+    // 2. Efeito para buscar/calcular o Ajuste quando Loja ou Fornecedor mudam
+    useEffect(() => {
+        async function calcularAjuste() {
+            if (!formData.fornecedorId || !lojaSelecionadaEstado) {
+                setAjusteUnitario(0);
+                return;
+            }
+
+            try {
+                // Busca condições ativas
+                const res = await api.get('/api/v1/condicoes-estado/ativos');
+                const condicoes = res.data || [];
+
+                // Encontra regra compatível
+                const regra = condicoes.find(c =>
+                    String(c.fornecedorId) === String(formData.fornecedorId) &&
+                    c.estado === lojaSelecionadaEstado
+                );
+
+                if (regra && regra.ajusteUnitarioAplicado) {
+                    const valor = Number(regra.ajusteUnitarioAplicado);
+                    setAjusteUnitario(valor);
+
+                    // Opcional: Avisar o admin visualmente (console ou log)
+                    if(valor !== 0) {
+                        console.log(`Aplicando ajuste de R$ ${valor} devido ao estado ${lojaSelecionadaEstado}`);
+                    }
+                } else {
+                    setAjusteUnitario(0);
+                }
+            } catch (error) {
+                console.error("Erro ao buscar condições:", error);
+                setAjusteUnitario(0);
+            }
+        }
+
+        calcularAjuste();
+    }, [formData.fornecedorId, lojaSelecionadaEstado]);
+
+    // Efeito para filtrar produtos (Mantido lógica original, mas limpa produtos ao trocar fornecedor)
     useEffect(() => {
         const selectedSupplierId = String(formData.fornecedorId).trim();
 
@@ -569,6 +623,7 @@ function CadastroPedido (){
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    // 3. handleItemChange Atualizado para usar o ajuste
     const handleItemChange = useCallback((index, e, productsList = filteredProdutos) => {
         const { name, value } = e.target;
 
@@ -597,7 +652,16 @@ function CadastroPedido (){
                 novosItens[index][name] = cleanedValue;
                 const produtoSelecionado = productsList.find(p => String(p.id).trim() === cleanedValue);
 
-                novosItens[index].valorUnitario = Number(produtoSelecionado?.precoBase) || 0.00;
+                // === CORREÇÃO AQUI: Soma o preço base com o ajuste ===
+                if (produtoSelecionado) {
+                    const base = Number(produtoSelecionado.precoBase);
+                    let final = base + ajusteUnitario;
+                    if (final < 0) final = 0;
+                    novosItens[index].valorUnitario = final;
+                } else {
+                    novosItens[index].valorUnitario = 0.00;
+                }
+                // =====================================================
 
                 if (produtoSelecionado && produtoSelecionado.quantidadeEstoque <= 0) {
                     alert("Este produto está sem estoque.");
@@ -609,7 +673,7 @@ function CadastroPedido (){
 
             return novosItens;
         });
-    }, [filteredProdutos]);
+    }, [filteredProdutos, ajusteUnitario]); // Importante: adicionar ajusteUnitario na dependência
 
     const handleAddItem = () => {
         if (!formData.fornecedorId) {
@@ -657,7 +721,9 @@ function CadastroPedido (){
             .filter(item => item.produtoId && item.quantidade > 0)
             .map(item => ({
                 produtoId: item.produtoId,
-                quantidade: Number(item.quantidade)
+                quantidade: Number(item.quantidade),
+                // O backend provavelmente vai recalcular o valor, mas enviamos o valor visualizado
+                valorUnitarioMomento: item.valorUnitario
             }));
 
         if (itensValidos.length === 0) {
@@ -689,6 +755,7 @@ function CadastroPedido (){
 
             setFormData({ fornecedorId: '', lojaId: '', dataPedido: new Date().toISOString().substring(0, 10), status: 'Pendente', observacoes: '' });
             setItensPedido([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
+            setAjusteUnitario(0); // Resetar ajuste
 
             await loadInitialData();
 
@@ -706,7 +773,7 @@ function CadastroPedido (){
             <div className={styles['dashboard-container']}>
                 <nav className={styles.sidebar}>
                     <ul>
-                        <li><Link href="/admin/Dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
+                        <li><Link href="/admin/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
                     </ul>
                 </nav>
                 <main className={styles['main-content']}>
@@ -747,6 +814,11 @@ function CadastroPedido (){
                                 <option value="" disabled>Selecione uma loja</option>
                                 {lojas.map(l => <option key={l.id} value={l.id}>{l.nomeFantasia}</option>)}
                             </select>
+                            {lojaSelecionadaEstado && (
+                                <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>
+                                    Estado da Loja: <strong>{lojaSelecionadaEstado}</strong>
+                                </small>
+                            )}
                         </div>
 
                         <div className={styles.fieldGroup}>
@@ -846,6 +918,11 @@ function CadastroPedido (){
                     <div className={styles.totalPedidoContainer}>
                         <p className={styles.totalLabel}>Total Estimado:</p>
                         <p className={styles.totalValue}>R$ {formatCurrency(calcularTotal())}</p>
+                        {ajusteUnitario !== 0 && (
+                            <p style={{fontSize: '0.8rem', color: '#e67e22', textAlign:'right', marginTop: 5}}>
+                                * Incluindo ajuste de R$ {formatCurrency(ajusteUnitario)} por item (Regra Estadual)
+                            </p>
+                        )}
                     </div>
 
                     <hr className={styles.divider} />
@@ -866,6 +943,6 @@ function CadastroPedido (){
             </main>
         </div>
     );
-};
+}
 
 export default withAuth (CadastroPedido);
