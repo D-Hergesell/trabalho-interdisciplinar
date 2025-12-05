@@ -83,6 +83,10 @@ public class FornecedorService {
         fornecedor.setCidade(dto.cidade());
         fornecedor.setEstado(dto.estado());
 
+        if (dto.ativo() != null) {
+            fornecedor.setAtivo(dto.ativo());
+        }
+
         Fornecedor atualizado = fornecedorRepository.save(fornecedor);
         return fornecedorMapper.toResponseDTO(atualizado);
     }

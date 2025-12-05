@@ -103,6 +103,10 @@ public class LojaService {
         loja.setEstado(dto.estado());
         loja.setCidade(dto.cidade());
 
+        if (dto.ativo() != null) {
+            loja.setAtivo(dto.ativo());
+        }
+
         Loja atualizada = lojaRepository.save(loja);
         return lojaMapper.toResponseDTO(atualizada);
     }
