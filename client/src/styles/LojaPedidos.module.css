@@ -1,0 +1,240 @@
+/* =======================================================
+   BARRA LATERAL E LAYOUT (Idêntico ao Admin/Geral)
+   ======================================================= */
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  background-color: #f4f7fa;
+}
+
+/* --- Sidebar --- */
+.sidebar {
+  width: 240px;
+  background-color: #0c2b4e;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding-top: 20px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar ul li {
+  padding: 18px 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 500;
+  border-right: 4px solid transparent;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+}
+
+.sidebar ul li:hover:not(.active) {
+  background-color: #1a4a7d;
+}
+
+/* Item Ativo: Fundo Branco, Texto Azul */
+.sidebar ul li.active {
+  background-color: #ffffff;
+  color: #0c2b4e;
+  font-weight: bold;
+  border-radius: 8px 0 0 8px;
+  margin-right: -1px;
+  position: relative;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.linkReset {
+  text-decoration: none;
+  color: inherit;
+  width: 100%;
+  display: block;
+}
+
+/* --- Conteúdo Principal --- */
+.main-content {
+  flex: 1;
+  padding: 30px 40px;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  font-size: 32px;
+  color: #333;
+  margin: 0;
+  font-weight: 700;
+}
+
+/* =======================================================
+   ESTILOS DE BUSCA E AÇÕES
+   ======================================================= */
+.actionsSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0 15px 0;
+}
+
+.searchWrapper {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 6px 16px;
+  min-width: 300px;
+}
+
+.searchIconCircle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  margin-right: 10px;
+}
+
+.searchInput {
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: #444;
+  flex: 1;
+}
+
+.newOrderButton {
+  background-color: #275fdc;
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 26px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.2s;
+}
+
+.newOrderButton:hover {
+  background-color: #1f4fb5;
+}
+
+/* =======================================================
+   TABELA DE PEDIDOS
+   ======================================================= */
+.tableSection {
+  margin-top: 10px;
+}
+
+.tableWrapper {
+  background-color: #ffffff;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: none;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dataTable th,
+.dataTable td {
+  text-align: left;
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.dataTable th {
+  background-color: #f9f9f9;
+  color: #888;
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 600;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.dataTable td {
+  font-size: 14px;
+  color: #555;
+}
+
+.dataTable tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* Status Badges */
+.statusBadge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.statusPendente {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.statusAprovado {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.statusEnviado {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.statusCancelado {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px;
+  color: #888;
+  font-size: 14px;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #0c2b4e;
+  font-size: 18px;
+  transition: color 0.2s;
+  padding: 5px;
+}
+
+.actionButton:hover {
+  color: #275fdc;
+}

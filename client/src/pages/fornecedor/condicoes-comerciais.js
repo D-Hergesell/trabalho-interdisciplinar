@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import styles from '../../styles/fornecedorGeral.module.css';
+// IMPORTANTE: Confirme se o arquivo CSS foi criado com EXATAMENTE este nome
+import styles from '../../styles/Condicao.module.css';
 import api from '@/services/api';
 
 import {
@@ -20,13 +21,11 @@ const CondicoesComerciais = () => {
     useEffect(() => {
         async function fetchData() {
             try {
-                // ajusta o endpoint se o teu backend usar outro caminho
                 const res = await api.get('/api/condicoes-comerciais');
                 setCondicoes(res.data || []);
             } catch (error) {
                 console.error('Erro ao carregar condições comerciais:', error);
-
-                // MOCK só pra tela funcionar enquanto a API não existe
+                // Mock de dados para teste visual
                 setCondicoes([
                     { estado: 'SC', cashback: 10, prazo: 45, desconto: '-' },
                     { estado: 'PR', cashback: 5, prazo: 30, desconto: '3%' },
@@ -34,81 +33,45 @@ const CondicoesComerciais = () => {
                 ]);
             }
         }
-
         fetchData();
     }, []);
 
-    // Cálculo dos totais (Estados / Cashback médio / Prazo médio)
+    // Cálculo dos totais
     const { totalEstados, cashbackMedio, prazoMedio } = useMemo(() => {
-        if (!condicoes.length) {
-            return {
-                totalEstados: 0,
-                cashbackMedio: 0,
-                prazoMedio: 0
-            };
-        }
+        if (!condicoes.length) return { totalEstados: 0, cashbackMedio: 0, prazoMedio: 0 };
 
-        const estadosSet = new Set(
-            condicoes.map(c => (c.estado || c.state || '').toString().trim()).filter(Boolean)
-        );
+        const estadosSet = new Set(condicoes.map(c => (c.estado || c.state || '').toString().trim()).filter(Boolean));
 
-        const apenasNumericos = condicoes.filter(
-            c => typeof c.cashback === 'number' && !Number.isNaN(c.cashback)
-        );
-        const somaCashback = apenasNumericos.reduce(
-            (acc, c) => acc + (c.cashback || 0),
-            0
-        );
-        const cashbackMedio =
-            apenasNumericos.length > 0 ? somaCashback / apenasNumericos.length : 0;
+        const apenasNumericos = condicoes.filter(c => typeof c.cashback === 'number' && !Number.isNaN(c.cashback));
+        const somaCashback = apenasNumericos.reduce((acc, c) => acc + (c.cashback || 0), 0);
+        const cashbackMedio = apenasNumericos.length > 0 ? somaCashback / apenasNumericos.length : 0;
 
-        const comPrazo = condicoes.filter(
-            c => typeof c.prazo === 'number' && !Number.isNaN(c.prazo)
-        );
+        const comPrazo = condicoes.filter(c => typeof c.prazo === 'number' && !Number.isNaN(c.prazo));
         const somaPrazo = comPrazo.reduce((acc, c) => acc + (c.prazo || 0), 0);
-        const prazoMedio =
-            comPrazo.length > 0 ? somaPrazo / comPrazo.length : 0;
+        const prazoMedio = comPrazo.length > 0 ? somaPrazo / comPrazo.length : 0;
 
-        return {
-            totalEstados: estadosSet.size,
-            cashbackMedio,
-            prazoMedio
-        };
+        return { totalEstados: estadosSet.size, cashbackMedio, prazoMedio };
     }, [condicoes]);
 
-    // Filtro de busca (Estado ou condição)
+    // Filtro
     const condicoesFiltradas = useMemo(() => {
         if (!filtroBusca.trim()) return condicoes;
-
         const termo = filtroBusca.toLowerCase();
-
         return condicoes.filter(c =>
-            [
-                c.estado,
-                c.state,
-                c.condicao,
-                c.desconto,
-                `${c.cashback ?? ''}`,
-                `${c.prazo ?? ''}`
-            ]
+            [c.estado, c.state, c.condicao, c.desconto, `${c.cashback ?? ''}`, `${c.prazo ?? ''}`]
                 .filter(Boolean)
                 .some(valor => valor.toString().toLowerCase().includes(termo))
         );
     }, [condicoes, filtroBusca]);
 
-    const formatarCashback = valor =>
-        `${Number(valor || 0).toLocaleString('pt-BR', {
-            maximumFractionDigits: 2
-        })}%`;
-
-    const formatarPrazo = valor =>
-        `${Number(valor || 0).toLocaleString('pt-BR', {
-            maximumFractionDigits: 0
-        })} Dias`;
+    const formatarCashback = valor => `${Number(valor || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`;
+    const formatarPrazo = valor => `${Number(valor || 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} Dias`;
 
     return (
+        /* Usa colchetes pois a classe tem hífen no CSS */
         <div className={styles['dashboard-container']}>
-            {/* Sidebar reaproveitando o layout da Loja */}
+
+            {/* Sidebar estruturada igual ao Admin */}
             <nav className={styles.sidebar}>
                 <ul>
                     <li>
@@ -119,7 +82,6 @@ const CondicoesComerciais = () => {
                             </div>
                         </Link>
                     </li>
-
                     <li>
                         <Link href="/fornecedor/pedidos-recebidos" className={styles.linkReset}>
                             <div className={styles.menuItem}>
@@ -128,7 +90,6 @@ const CondicoesComerciais = () => {
                             </div>
                         </Link>
                     </li>
-
                     <li>
                         <Link href="/fornecedor/meus-produtos" className={styles.linkReset}>
                             <div className={styles.menuItem}>
@@ -137,7 +98,6 @@ const CondicoesComerciais = () => {
                             </div>
                         </Link>
                     </li>
-
                     <li>
                         <Link href="/fornecedor/campanhas" className={styles.linkReset}>
                             <div className={styles.menuItem}>
@@ -147,6 +107,7 @@ const CondicoesComerciais = () => {
                         </Link>
                     </li>
 
+                    {/* ITEM ATIVO: deve ficar branco com texto azul */}
                     <li className={styles.active}>
                         <Link href="/fornecedor/condicoes-comerciais" className={styles.linkReset}>
                             <div className={styles.menuItem}>
@@ -164,7 +125,6 @@ const CondicoesComerciais = () => {
                             </div>
                         </Link>
                     </li>
-
                     <li>
                         <Link href="/" className={styles.linkReset}>
                             <div className={styles.menuItem}>
@@ -176,14 +136,12 @@ const CondicoesComerciais = () => {
                 </ul>
             </nav>
 
-            {/* Conteúdo principal */}
+            {/* Conteúdo Principal */}
             <main className={styles['main-content']}>
-                {/* Título principal */}
                 <header className={styles.header}>
                     <h1>Condições Comerciais</h1>
                 </header>
 
-                {/* Barra de busca + botão “+ Nova Condição” (reuso de actionsSection) */}
                 <section className={styles.actionsSection}>
                     <div className={styles.searchWrapper}>
                         <div className={styles.searchIconCircle}>🔍</div>
@@ -195,19 +153,15 @@ const CondicoesComerciais = () => {
                             onChange={e => setFiltroBusca(e.target.value)}
                         />
                     </div>
-
                     <button
                         type="button"
                         className={styles.newCampaignButton}
-                        onClick={() =>
-                            alert('Aqui entra o fluxo de cadastrar uma nova condição comercial')
-                        }
+                        onClick={() => alert('Nova condição')}
                     >
                         + Nova Condição
                     </button>
                 </section>
 
-                {/* Card com métricas (Estados / Cashback médio / Prazo médio) */}
                 <section className={styles.summarySection}>
                     <div className={styles.summaryBox}>
                         <div className={styles.summaryColumn}>
@@ -216,23 +170,17 @@ const CondicoesComerciais = () => {
                         </div>
                         <div className={styles.summaryColumn}>
                             <span className={styles.summaryLabel}>Cashback médio</span>
-                            <span className={styles.summaryValue}>
-                {formatarCashback(cashbackMedio)}
-              </span>
+                            <span className={styles.summaryValue}>{formatarCashback(cashbackMedio)}</span>
                         </div>
                         <div className={styles.summaryColumn}>
                             <span className={styles.summaryLabel}>Prazo Médio</span>
-                            <span className={styles.summaryValue}>
-                {formatarPrazo(prazoMedio)}
-              </span>
+                            <span className={styles.summaryValue}>{formatarPrazo(prazoMedio)}</span>
                         </div>
                     </div>
                 </section>
 
-                {/* Tabela estilo planilha (igual a do Fornecedor) */}
                 <section className={styles.tableSection}>
                     <div className={styles.tableWrapper}>
-                        {/* Linha A/B/C/D */}
                         <div className={styles.spreadsheetHeader}>
                             <div className={styles.colIndex}></div>
                             <div className={styles.col}>A</div>
@@ -257,15 +205,10 @@ const CondicoesComerciais = () => {
                                     <td className={styles.rowNum}>{index + 2}</td>
                                     <td>{c.estado || c.state || '—'}</td>
                                     <td>{c.cashback != null ? formatarCashback(c.cashback) : '—'}</td>
-                                    <td>
-                                        {c.prazo != null
-                                            ? `${c.prazo}`
-                                            : '—'}
-                                    </td>
+                                    <td>{c.prazo != null ? `${c.prazo}` : '—'}</td>
                                     <td>{c.desconto ?? '-'}</td>
                                 </tr>
                             ))}
-
                             {condicoesFiltradas.length === 0 && (
                                 <tr>
                                     <td colSpan={5} className={styles.emptyState}>

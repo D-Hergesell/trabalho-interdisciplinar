@@ -3,7 +3,6 @@ import Link from 'next/link';
 // Altere para o caminho correto do seu CSS Geral
 import styles from '../../styles/Geral.module.css';
 import api from '../../services/api';
-import withAuth from '../../components/withAuth'; // Recomendado usar withAuth
 
 import {
   FiGrid, FiUsers, FiPackage, FiUser, FiLogOut
@@ -35,13 +34,10 @@ const PerfilLoja = () => {
           const usuario = JSON.parse(usuarioStored);
 
           // Tenta pegar o ID da loja. Se não tiver 'lojaId' explícito no usuário,
-          // avisa no console, pois 'usuario.id' é o ID do login, não da Loja.
-          // Nota: O backend precisa enviar o ID da loja no login para isso funcionar perfeitamente.
+          // usa o ID do usuário (caso a lógica do seu backend seja 1 pra 1).
           const idParaBuscar = usuario.lojaId || usuario.id;
 
           if (idParaBuscar) {
-            // Ajuste na rota caso seu backend use '/lojas' ao invés de '/v1/lojas'
-            // Verifique se a rota no backend é: @RequestMapping("/api/v1/lojas")
             const response = await api.get(`/api/v1/lojas/${idParaBuscar}`);
             const loja = response.data;
 
@@ -61,7 +57,6 @@ const PerfilLoja = () => {
         }
       } catch (error) {
         console.error("Erro ao carregar perfil:", error);
-        // Se der 404 aqui, é porque o ID do usuário não bate com o ID da loja no banco
         if (error.response && error.response.status === 404) {
              setMessage({ type: 'error', text: 'Loja não encontrada. Verifique se o seu usuário está vinculado a uma loja.' });
         }
@@ -99,7 +94,6 @@ const PerfilLoja = () => {
   };
 
   return (
-    // Usa 'dashboard-container' que existe no Geral.module.css
     <div className={styles['dashboard-container']}>
 
       <nav className={styles.sidebar}>
@@ -142,7 +136,6 @@ const PerfilLoja = () => {
         </ul>
       </nav>
 
-      {/* Usa 'main-content' que existe no Geral.module.css */}
       <main className={styles['main-content']}>
 
         <header className={styles.header}>
@@ -156,14 +149,12 @@ const PerfilLoja = () => {
         )}
 
         <div className={styles.formCard}>
-          {/* Usa 'sectionTitle' que existe no Geral.module.css */}
           <h2 className={styles.sectionTitle}>Dados da Loja</h2>
 
           <form onSubmit={handleSubmit}>
             <div className={styles.row}>
               <div className={styles.fieldGroup}>
                 <label>Nome da Loja</label>
-                {/* Usa 'inputLong' do Geral.module.css */}
                 <input
                   type="text"
                   name="nomeFantasia"
@@ -272,7 +263,6 @@ const PerfilLoja = () => {
             </div>
 
             <div className={styles.footer}>
-                {/* Usa 'submitButton' do Geral.module.css */}
                 <button type="submit" className={styles.submitButton} disabled={loading}>
                 {loading ? 'Salvando...' : 'Salvar Alterações'}
                 </button>
@@ -284,4 +274,4 @@ const PerfilLoja = () => {
   );
 };
 
-export default withAuth(PerfilLoja);
+export default PerfilLoja;
