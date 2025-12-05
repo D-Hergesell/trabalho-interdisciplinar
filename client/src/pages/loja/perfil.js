@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import styles from '@/styles/perfil.module.css';
+import styles from '@/styles/Geral.module.css';
 import api from '@/services/api';
 
 // Ícones
