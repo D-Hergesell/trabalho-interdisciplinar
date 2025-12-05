@@ -155,7 +155,7 @@ const BuscaProdutos = ({ mainMessageSetter }) => {
         setEditingProduto(null);
 
         try {
-            const response = await api.get('/api/produtos');
+            const response = await api.get('/api/v1/produtos');
             let dados = response.data;
             if (searchId) dados = dados.filter(p => p._id.includes(searchId));
             if (searchName) dados = dados.filter(p => p.name?.toLowerCase().includes(searchName.toLowerCase()));
@@ -187,7 +187,7 @@ const BuscaProdutos = ({ mainMessageSetter }) => {
         const { _id, ...dataToSend } = updatedData;
 
         try {
-            await api.put(`/api/produtos/${id}`, dataToSend);
+            await api.put(`/api/v1/produtos/${id}`, dataToSend);
             setProdutos(oldList => oldList.map(item =>
                 item._id === id ? { ...item, ...dataToSend } : item
             ));
@@ -216,13 +216,13 @@ const BuscaProdutos = ({ mainMessageSetter }) => {
 
         try {
             if (actionType === 'deactivate') {
-                await api.put(`/api/produtos/${deleteId}`, { status: 'off' });
+                await api.put(`/api/v1/produtos/${deleteId}`, { status: 'off' });
                 setProdutos(list => list.map(item =>
                     item._id === deleteId ? { ...item, status: 'off' } : item
                 ));
                 mainMessageSetter({ type: 'success', text: `Produto desativado com sucesso! (ID: ${deleteId.substring(0, 10)}...)` });
             } else if (actionType === 'delete') {
-                await api.delete(`/api/produtos/${deleteId}`);
+                await api.delete(`/api/v1/produtos/${deleteId}`);
                 setProdutos(list => list.filter(item => item._id !== deleteId));
                 mainMessageSetter({ type: 'success', text: `Produto excluído permanentemente! (ID: ${deleteId.substring(0, 10)}...)` });
             }
@@ -465,7 +465,7 @@ const BuscaProdutos = ({ mainMessageSetter }) => {
     }
 
     try {
-      const response = await api.post('/api/produtos', dadosParaAPI);
+      const response = await api.post('/api/v1/produtos', dadosParaAPI);
       setMessage({ type: 'success', text: `Produto ${response.data.name} cadastrado com sucesso!` });
       setFormData({ nome: '', descricao: '', preco: '', estoque: '', fornecedor: '', categoria: '' });
     } catch (error) {

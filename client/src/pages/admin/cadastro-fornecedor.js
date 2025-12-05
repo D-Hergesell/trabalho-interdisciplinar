@@ -163,7 +163,7 @@ const BuscaFornecedores = () => {
     setEditingFornecedor(null);
     try {
 
-      const response = await api.get('/api/fornecedores');
+      const response = await api.get('/api/v1/fornecedores');
       let dados = response.data;
 
       if (searchId) dados = dados.filter(f => f._id.includes(searchId));
@@ -202,7 +202,7 @@ const BuscaFornecedores = () => {
 
     try {
 
-        await api.put(`/api/fornecedores/id/${id}`, dataToSend);
+        await api.put(`/api/v1/fornecedores/${id}`, dataToSend);
 
 
         setFornecedores(oldList => oldList.map(item =>
@@ -246,7 +246,7 @@ const BuscaFornecedores = () => {
 
       if (currentAction === 'deactivate') {
 
-        await api.put(`/api/fornecedores/id/${deleteId}`, { status: 'off' });
+        await api.put(`/api/v1/fornecedores/${deleteId}`, { status: 'off' });
 
         setFornecedores(oldList => oldList.map(item =>
           item._id === deleteId ? { ...item, status: 'off' } : item
@@ -256,7 +256,7 @@ const BuscaFornecedores = () => {
 
       } else if (currentAction === 'delete') {
 
-        await api.delete(`/api/fornecedores/id/${deleteId}`);
+        await api.delete(`/api/v1/fornecedores/${deleteId}`);
 
 
         setFornecedores(oldList => oldList.filter(item => item._id !== deleteId));
@@ -547,7 +547,7 @@ function CadastroFornecedor() {
 
     try {
 
-      const response = await api.post('/api/fornecedores', dadosParaBackend);
+      const response = await api.post('/api/v1/fornecedores', dadosParaBackend);
       const successText = `✅ Sucesso!\n\nFornecedor: ${response.data.fornecedor.supplier_name}\nLogin: ${response.data.usuarioGerado.user}\nSenha: ${response.data.usuarioGerado.pwd}`;
       setMessage({ type: 'success', text: successText });
       setFormData({

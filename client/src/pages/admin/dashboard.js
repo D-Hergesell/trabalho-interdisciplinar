@@ -105,7 +105,7 @@ const EditUsuarioModal = ({ usuario, onSave, onCancel, loading }) => {
                             <label>Nível de Acesso</label>
                             <select name="level" value={formData.level} onChange={handleChange} className={styles.inputModal}>
                                 <option value="admin">Admin</option>
-                                <option value="logista">Lojista</option>
+                                <option value="lojista">Lojista</option>
                                 <option value="fornecedor">Fornecedor</option>
                             </select>
                         </div>
@@ -156,7 +156,7 @@ const BuscaUsuarios = () => {
 
         try {
 
-            const response = await api.get('/api/cadastroUsuario?status=all');
+            const response = await api.get('/api/v1/usuarios');
 
 
             let dados = response.data || [];
@@ -169,7 +169,7 @@ const BuscaUsuarios = () => {
             setUsuarios(dados);
         } catch (error) {
             console.error("Erro ao buscar usuários:", error);
-            setMessage({ type: 'error', text: "Erro ao buscar usuários. Verifique se a rota /api/cadastroUsuario existe." });
+            setMessage({ type: 'error', text: "Erro ao buscar usuários. Verifique se a rota /api/v1/usuarios existe." });
         } finally {
             setLoading(false);
         }
@@ -187,7 +187,7 @@ const BuscaUsuarios = () => {
 
         try {
 
-            await api.put(`/api/cadastroUsuario/${_id}`, dataToSend);
+            await api.put(`/api/v1/usuarios/${_id}`, dataToSend);
 
             setUsuarios(old => old.map(u => u._id === _id ? { ...u, ...dataToSend } : u));
             setEditingUsuario(null);
@@ -214,12 +214,12 @@ const BuscaUsuarios = () => {
         try {
             if (currentAction === 'delete') {
 
-                await api.delete(`/api/cadastroUsuario/${deleteId}`);
+                await api.delete(`/api/v1/usuarios/${deleteId}`);
                 setUsuarios(old => old.filter(u => u._id !== deleteId));
                 setMessage({ type: 'success', text: "Usuário excluído permanentemente!" });
             } else {
 
-                await api.put(`/api/cadastroUsuario/${deleteId}`, { status: 'off' });
+                await api.put(`/api/v1/usuarios/${deleteId}`, { status: 'off' });
                 setUsuarios(old => old.map(u => u._id === deleteId ? { ...u, status: 'off' } : u));
                 setMessage({ type: 'success', text: "Usuário desativado com sucesso!" });
             }
@@ -364,10 +364,10 @@ function Dashboard() {
         async function loadAllData() {
             setLoading(true);
 
-            const lojasData = await fetchDataSafe('/api/lojas?status=all');
-            const fornecedoresData = await fetchDataSafe('/api/fornecedores?status=all');
-            const pedidosData = await fetchDataSafe('/api/pedidos');
-            const campanhasData = await fetchDataSafe('/api/campanhas');
+            const lojasData = await fetchDataSafe('/api/v1/lojas');
+            const fornecedoresData = await fetchDataSafe('/api/v1/fornecedores');
+            const pedidosData = await fetchDataSafe('/api/v1/pedidos');
+            const campanhasData = await fetchDataSafe('/api/v1/campanhas');
 
             const recentsLojas = [...lojasData].reverse().slice(0, 5);
             const recentsFornecedores = [...fornecedoresData].reverse().slice(0, 5);

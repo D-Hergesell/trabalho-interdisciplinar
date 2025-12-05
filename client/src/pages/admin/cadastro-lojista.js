@@ -9,18 +9,18 @@ import {
 } from 'react-icons/fi';
 
 
-const EditLogistaModal = ({ logista, onSave, onCancel, loading }) => {
+const EditLojistaModal = ({ lojista, onSave, onCancel, loading }) => {
 
     const initialFormData = {
-        store_name: logista.store_name || '',
-        cnpj: logista.cnpj || '',
-        responsavel: logista.responsavel || '',
-        contact_email: logista.contact_email || '',
-        address: logista.address || '',
-        cidade: logista.cidade || '',
-        estado: logista.estado || '',
-        phone_number: logista.phone_number || '',
-        status: logista.status || 'on'
+        store_name: lojista.store_name || '',
+        cnpj: lojista.cnpj || '',
+        responsavel: lojista.responsavel || '',
+        contact_email: lojista.contact_email || '',
+        address: lojista.address || '',
+        cidade: lojista.cidade || '',
+        estado: lojista.estado || '',
+        phone_number: lojista.phone_number || '',
+        status: lojista.status || 'on'
     };
 
     const [formData, setFormData] = useState(initialFormData);
@@ -28,7 +28,7 @@ const EditLogistaModal = ({ logista, onSave, onCancel, loading }) => {
 
     useEffect(() => {
         setFormData(initialFormData);
-    }, [logista]);
+    }, [lojista]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -37,13 +37,13 @@ const EditLogistaModal = ({ logista, onSave, onCancel, loading }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave({ ...formData, _id: logista._id });
+        onSave({ ...formData, _id: lojista._id });
     };
 
     return (
         <div className={styles.modalBackdrop}>
             <div className={styles.modalContent} style={{ maxWidth: '600px' }}>
-                <h3 className={styles.modalTitle}>Editar Loja: {logista.store_name}</h3>
+                <h3 className={styles.modalTitle}>Editar Loja: {lojista.nomeFantasia}</h3>
 
                 <form onSubmit={handleSubmit}>
 
@@ -135,14 +135,14 @@ const EditLogistaModal = ({ logista, onSave, onCancel, loading }) => {
 
 
 // ============================================================================
-// COMPONENTE: BuscaLogistas (Com lógica de Edição e Ações Refatorada)
+// COMPONENTE: BuscaLojistas (Com lógica de Edição e Ações Refatorada)
 // ============================================================================
-const BuscaLogistas = () => {
+const BuscaLojistas = () => {
   const [searchId, setSearchId] = useState('');
   const [searchName, setSearchName] = useState('');
   const [searchEmail, setSearchEmail] = useState('');
 
-  const [logistas, setLogistas] = useState([]);
+  const [lojistas, setLojistas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
@@ -154,7 +154,7 @@ const BuscaLogistas = () => {
   const [currentAction, setCurrentAction] = useState('deactivate');
 
 
-  const [editingLogista, setEditingLogista] = useState(null);
+  const [editingLojista, setEditingLojista] = useState(null);
 
   // Paginação
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -172,34 +172,34 @@ const BuscaLogistas = () => {
     setMessage(null);
     setCurrentIndex(0);
     setExpandedId(null);
-    setEditingLogista(null);
+    setEditingLojista(null);
 
     try {
 
-      const response = await api.get('/api/lojas?status=all');
+      const response = await api.get('/api/v1/lojas');
       let dados = response.data;
 
       if (searchId) dados = dados.filter(l => l._id.includes(searchId));
       if (searchName) dados = dados.filter(l => l.store_name?.toLowerCase().includes(searchName.toLowerCase()));
       if (searchEmail) dados = dados.filter(l => l.contact_email?.toLowerCase().includes(searchEmail.toLowerCase()));
 
-      setLogistas(dados);
+      setLojistas(dados);
     } catch (error) {
       console.error("Erro ao buscar:", error);
-      setMessage({ type: 'error', text: "Erro ao buscar logistas." });
+      setMessage({ type: 'error', text: "Erro ao buscar lojistas." });
     } finally {
       setLoading(false);
     }
   };
 
-  const startEdit = (logista) => {
+  const startEdit = (lojista) => {
     setMessage(null);
-    setEditingLogista(logista);
+    setEditingLojista(lojista);
   };
 
 
   const cancelEdit = () => {
-    setEditingLogista(null);
+    setEditingLojista(null);
   };
 
 
@@ -213,20 +213,20 @@ const BuscaLogistas = () => {
 
     try {
 
-        await api.put(`/api/lojas/${id}`, dataToSend);
+        await api.put(`/api/v1/lojas/${id}`, dataToSend);
 
 
-        setLogistas(oldList => oldList.map(item =>
+        setLojistas(oldList => oldList.map(item =>
             item._id === id ? { ...item, ...dataToSend } : item
         ));
 
-        setEditingLogista(null);
-        setMessage({ type: 'success', text: "Logista atualizado com sucesso!" });
+        setEditingLojista(null);
+        setMessage({ type: 'success', text: "Lojista atualizado com sucesso!" });
 
     } catch (error) {
         console.error("Erro ao atualizar:", error);
         const errorMessage = error.response?.data?.error || "Erro desconhecido.";
-        setMessage({ type: 'error', text: `Erro ao atualizar logista: ${errorMessage}` });
+        setMessage({ type: 'error', text: `Erro ao atualizar lojista: ${errorMessage}` });
     } finally {
         setLoading(false);
     }
@@ -250,17 +250,17 @@ const BuscaLogistas = () => {
     try {
       if (currentAction === 'delete') {
 
-        await api.delete(`/api/lojas/${deleteId}`);
-        setLogistas(oldList => oldList.filter(item => item._id !== deleteId));
-        setMessage({ type: 'success', text: "Logista excluído permanentemente com sucesso!" });
+        await api.delete(`/api/v1/lojas/${deleteId}`);
+        setLojistas(oldList => oldList.filter(item => item._id !== deleteId));
+        setMessage({ type: 'success', text: "Lojista excluído permanentemente com sucesso!" });
 
       } else {
-        await api.put(`/api/lojas/${deleteId}`, { status: 'off' });
+        await api.put(`/api/v1/lojas/${deleteId}`, { status: 'off' });
 
-        setLogistas(oldList => oldList.map(item =>
+        setLojistas(oldList => oldList.map(item =>
           item._id === deleteId ? { ...item, status: 'off' } : item
         ));
-        setMessage({ type: 'success', text: "Logista desativado com sucesso!" });
+        setMessage({ type: 'success', text: "Lojista desativado com sucesso!" });
       }
 
       if (expandedId === deleteId) setExpandedId(null);
@@ -284,7 +284,7 @@ const BuscaLogistas = () => {
   };
 
   const nextSlide = () => {
-    if (currentIndex + itemsPerPage < logistas.length) {
+    if (currentIndex + itemsPerPage < lojistas.length) {
       setCurrentIndex(currentIndex + itemsPerPage);
       setExpandedId(null);
     }
@@ -297,8 +297,8 @@ const BuscaLogistas = () => {
     }
   };
 
-  const visibleItems = logistas.slice(currentIndex, currentIndex + itemsPerPage);
-  const totalPages = Math.ceil(logistas.length / itemsPerPage);
+  const visibleItems = lojistas.slice(currentIndex, currentIndex + itemsPerPage);
+  const totalPages = Math.ceil(lojistas.length / itemsPerPage);
   const currentPage = Math.floor(currentIndex / itemsPerPage) + 1;
 
 
@@ -397,7 +397,7 @@ const BuscaLogistas = () => {
           </button>
         </div>
 
-        {logistas.length > 0 && (
+        {lojistas.length > 0 && (
           <>
             <div className={styles['provider-list-container']}>
               <div className={`${styles['provider-list-item']} ${styles['provider-list-header']}`}>
@@ -493,14 +493,14 @@ const BuscaLogistas = () => {
                 <FiChevronLeft size={24} />
               </button>
               <span className={styles.pageInfo}>Página {currentPage} de {totalPages}</span>
-              <button className={styles['nav-btn']} onClick={nextSlide} disabled={currentIndex + itemsPerPage >= logistas.length || loading}>
+              <button className={styles['nav-btn']} onClick={nextSlide} disabled={currentIndex + itemsPerPage >= lojistas.length || loading}>
                 <FiChevronRight size={24} />
               </button>
             </div>
           </>
         )}
 
-        {!loading && searched && logistas.length === 0 && (
+        {!loading && searched && lojistas.length === 0 && (
           <p className={styles['no-data']}>Nenhuma loja encontrada com os filtros especificados.</p>
         )}
       </div>
@@ -508,9 +508,9 @@ const BuscaLogistas = () => {
       {showConfirm && <ConfirmationModal />}
 
 
-      {editingLogista && (
-          <EditLogistaModal
-              logista={editingLogista}
+      {editingLojista && (
+          <EditLojistaModal
+              lojista={editingLojista}
               onSave={handleUpdateSubmit}
               onCancel={cancelEdit}
               loading={loading}
@@ -557,7 +557,7 @@ function CadastroLojista() {
     };
 
     try {
-      const response = await api.post('/api/lojas/cadastroLoja', dadosFinaisParaBackend);
+      const response = await api.post('/api/v1/lojas', dadosFinaisParaBackend);
 
       const successText = `Sucesso! Loja cadastrada.\n\nLogin: ${response.data.usuarioGerado.user}\nSenha: ${response.data.senhaUsada}`;
       setMessage({ type: 'success', text: successText });
@@ -568,7 +568,7 @@ function CadastroLojista() {
         gerarAutomaticamente: false, senhaManual: ''
       });
     } catch (error) {
-      console.error("Erro ao cadastrar Logista:", error);
+      console.error("Erro ao cadastrar Lojista:", error);
       const errorMessage = error.response?.data?.erro || (error.response?.data?.erros && error.response.data.erros.join('\n')) || "Erro interno.";
       setMessage({ type: 'error', text: ` Erro: ${errorMessage}` });
     } finally {
@@ -677,7 +677,7 @@ function CadastroLojista() {
 
 
         <hr className={styles.divider} />
-        <BuscaLogistas />
+        <BuscaLojistas />
 
       </main>
     </div>
