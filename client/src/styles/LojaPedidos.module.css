@@ -27,17 +27,16 @@
   margin: 0;
 }
 
-.sidebar li {
+.sidebar ul li {
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-/* Estilo unificado no menuItem (igual aos outros) */
 .menuItem {
   display: flex;
   align-items: center;
   gap: 15px;
-  padding: 18px 30px; /* Padding movido para cá */
+  padding: 18px 30px;
   font-size: 16px;
   font-weight: 500;
   color: #b0c4de;
@@ -53,8 +52,8 @@
   background-color: #ffffff;
   color: #0c2b4e;
   font-weight: 700;
-  border-left: 5px solid #1890ff; /* Indicador azul */
-  border-radius: 8px 0 0 8px; /* Arredondado apenas na esquerda */
+  border-left: 5px solid #1890ff;
+  border-radius: 8px 0 0 8px;
   margin-right: -1px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
@@ -219,18 +218,29 @@
   font-size: 14px;
 }
 
-.actionButton {
+/* BOTÃO CANCELAR */
+.btnCancelIcon {
   background: none;
   border: none;
   cursor: pointer;
-  color: #0c2b4e;
-  font-size: 18px;
+  color: #dc3545; /* Vermelho normal */
+  font-size: 20px;
   transition: color 0.2s;
   padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.actionButton:hover {
-  color: #275fdc;
+.btnCancelIcon:hover {
+  color: #a71d2a;
+}
+
+/* Estilo visual de desativado (Cinza), mas mantendo pointer para clique */
+.btnDisabled {
+  color: #ccc !important;
+  cursor: pointer !important;
+  background-color: transparent !important;
 }
 
 /* =======================================================
@@ -239,9 +249,7 @@
 @media (max-width: 768px) {
 
   /* 1. Layout Coluna */
-  .dashboard-container {
-    flex-direction: column;
-  }
+  .dashboard-container { flex-direction: column; }
 
   /* 2. Sidebar vira Menu Superior Fixo */
   .sidebar {
@@ -284,7 +292,7 @@
     justify-content: center;
   }
 
-  /* Lista de Menu (Escondida) */
+  /* Lista de Menu */
   .sidebar ul {
     display: none;
     flex-direction: column;
@@ -316,9 +324,9 @@
   }
 
   .menuItem {
-    width: 100%;
-    padding: 15px 20px;
-    justify-content: flex-start;
+      width: 100%;
+      padding: 15px 20px;
+      justify-content: flex-start;
   }
 
   @keyframes slideDown {
@@ -406,5 +414,12 @@
   /* Exceção para o botão de ação */
   .dataTable td[data-label="Ações"]::before {
     display: none;
+  }
+
+  /* --- AUMENTA APENAS O BOTÃO NO MOBILE --- */
+  .btnCancelIcon {
+    font-size: 32px; /* Aumenta o ícone consideravelmente */
+    padding: 15px;   /* Aumenta a área de clique */
+    /* Sem cores ou bordas, como solicitado */
   }
 }

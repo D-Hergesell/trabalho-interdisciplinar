@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-// Importando o CSS atualizado
 import styles from '../../styles/LojaPedidos.module.css';
 import api from '@/services/api';
 
@@ -23,7 +22,6 @@ const MeusPedidosLoja = () => {
     const [filtroBusca, setFiltroBusca] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Estado do Menu Mobile
     const [menuOpen, setMenuOpen] = useState(false);
 
     const fetchPedidos = useCallback(async () => {
@@ -59,13 +57,16 @@ const MeusPedidosLoja = () => {
     }, [fetchPedidos]);
 
     const handleCancelar = async (pedidoId, statusAtual) => {
+        // 1. Mensagem Original Restaurada
         if (['ENVIADO', 'ENTREGUE', 'CANCELADO'].includes(statusAtual)) {
-            alert('Não é possível cancelar este pedido.');
+            alert('O pedido já foi enviado, entregue ou cancelado e não é mais possível cancelar. Entre em contato com o suporte ou fornecedor.');
             return;
         }
+
         if (!window.confirm('Tem certeza que deseja cancelar este pedido?')) {
             return;
         }
+
         try {
             const usuarioLogado = JSON.parse(localStorage.getItem('usuario'));
             await api.patch(`/api/v1/pedidos/${pedidoId}/status`, null, {
@@ -108,8 +109,6 @@ const MeusPedidosLoja = () => {
 
     return (
         <div className={styles['dashboard-container']}>
-
-            {/* SIDEBAR */}
             <nav className={styles.sidebar}>
                 <div className={styles.mobileHeader}>
                     <span className={styles.mobileLogo}>Menu Loja</span>
@@ -122,41 +121,11 @@ const MeusPedidosLoja = () => {
                 </div>
 
                 <ul className={menuOpen ? styles.open : ''}>
-                    <li>
-                        <Link href="/loja/dashboard" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiGrid size={20} /><span>Dashboard</span>
-                            </div>
-                        </Link>
-                    </li>
-                    <li>
-                        <Link href="/loja/fornecedoresdisponiveis" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiUsers size={20} /><span>Fornecedores</span>
-                            </div>
-                        </Link>
-                    </li>
-                    <li className={styles.active}>
-                        <Link href="/loja/pedidos" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiPackage size={20} /><span>Meus Pedidos</span>
-                            </div>
-                        </Link>
-                    </li>
-                    <li>
-                        <Link href="/loja/perfil" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiUser size={20} /><span>Perfil</span>
-                            </div>
-                        </Link>
-                    </li>
-                    <li>
-                        <Link href="/" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiLogOut size={20} /><span>Sair</span>
-                            </div>
-                        </Link>
-                    </li>
+                    <li><Link href="/loja/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20}/><span>Dashboard</span></div></Link></li>
+                    <li><Link href="/loja/fornecedoresdisponiveis" className={styles.linkReset}><div className={styles.menuItem}><FiUsers size={20}/><span>Fornecedores</span></div></Link></li>
+                    <li className={styles.active}><Link href="/loja/pedidos" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20}/><span>Meus Pedidos</span></div></Link></li>
+                    <li><Link href="/loja/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20}/><span>Perfil</span></div></Link></li>
+                    <li><Link href="/" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20}/><span>Sair</span></div></Link></li>
                 </ul>
             </nav>
 
@@ -167,22 +136,11 @@ const MeusPedidosLoja = () => {
 
                 <section className={styles.actionsSection}>
                     <div className={styles.searchWrapper}>
-                        <div className={styles.searchIconCircle}>
-                            <FiSearch />
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Buscar por ID, Status ou Fornecedor"
-                            className={styles.searchInput}
-                            value={filtroBusca}
-                            onChange={e => setFiltroBusca(e.target.value)}
-                        />
+                        <div className={styles.searchIconCircle}><FiSearch /></div>
+                        <input type="text" placeholder="Buscar por ID, Status ou Fornecedor" className={styles.searchInput} value={filtroBusca} onChange={e => setFiltroBusca(e.target.value)} />
                     </div>
-
                     <Link href="/loja/novo-pedido" style={{ textDecoration: 'none' }}>
-                        <button className={styles.newOrderButton}>
-                            + Novo Pedido
-                        </button>
+                        <button className={styles.newOrderButton}>+ Novo Pedido</button>
                     </Link>
                 </section>
 
@@ -201,38 +159,23 @@ const MeusPedidosLoja = () => {
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr>
-                                        <td colSpan="6" className={styles.emptyState}>Carregando pedidos...</td>
-                                    </tr>
+                                    <tr><td colSpan="6" className={styles.emptyState}>Carregando pedidos...</td></tr>
                                 ) : pedidosFiltrados.length > 0 ? (
                                     pedidosFiltrados.map((pedido) => {
                                         const isCancelable = pedido.status === 'PENDENTE' || pedido.status === 'EM_SEPARACAO';
-
                                         return (
                                             <tr key={pedido.id}>
                                                 <td data-label="ID">#{pedido.id.toString().substring(0, 8)}...</td>
                                                 <td data-label="Data">{formatarData(pedido.dataPedido)}</td>
                                                 <td data-label="Fornecedor">{pedido.fornecedorNome || '-'}</td>
                                                 <td data-label="Valor">{formatarMoeda(pedido.valorTotal)}</td>
-                                                <td data-label="Status">
-                                                    <span className={`${styles.statusBadge} ${getStatusClass(pedido.status)}`}>
-                                                        {pedido.status}
-                                                    </span>
-                                                </td>
+                                                <td data-label="Status"><span className={`${styles.statusBadge} ${getStatusClass(pedido.status)}`}>{pedido.status}</span></td>
                                                 <td data-label="Ações" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                                     <button
                                                         onClick={() => handleCancelar(pedido.id, pedido.status)}
-                                                        style={{
-                                                            background: 'none',
-                                                            border: 'none',
-                                                            cursor: isCancelable ? 'pointer' : 'not-allowed',
-                                                            color: isCancelable ? '#dc3545' : '#ccc',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            fontSize: '18px',
-                                                            transition: 'color 0.2s'
-                                                        }}
-                                                        title={isCancelable ? "Cancelar Pedido" : "Não é possível cancelar"}
+                                                        // 2. Aplica classe 'btnDisabled' se não for cancelável, mas REMOVE o atributo 'disabled' para permitir o clique
+                                                        className={`${styles.btnCancelIcon} ${!isCancelable ? styles.btnDisabled : ''}`}
+                                                        title={isCancelable ? "Cancelar Pedido" : "Ver detalhes do cancelamento"}
                                                     >
                                                         <FiXCircle />
                                                     </button>
@@ -241,11 +184,7 @@ const MeusPedidosLoja = () => {
                                         );
                                     })
                                 ) : (
-                                    <tr>
-                                        <td colSpan="6" className={styles.emptyState}>
-                                            Nenhum pedido encontrado.
-                                        </td>
-                                    </tr>
+                                    <tr><td colSpan="6" className={styles.emptyState}>Nenhum pedido encontrado.</td></tr>
                                 )}
                             </tbody>
                         </table>
