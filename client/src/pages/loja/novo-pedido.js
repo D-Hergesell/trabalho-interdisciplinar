@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import styles from '../../styles/Pedido.module.css'; // Usando o mesmo estilo do Admin para consistência
 import api from '../../services/api';
 import {
     FiGrid, FiUsers, FiPackage, FiUser, FiLogOut,
-    FiChevronLeft, FiPlus, FiTrash2, FiChevronDown, FiShoppingBag
+    FiChevronLeft, FiPlus, FiTrash2, FiChevronDown
 } from 'react-icons/fi';
 
-// Componente de Dropdown Personalizado (Igual ao do Admin)
+// Componente de Dropdown Personalizado
 const CustomProductDropdown = ({ options = [], value = '', onChange, placeholder = 'Selecione', disabled = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
@@ -60,13 +60,18 @@ const CustomProductDropdown = ({ options = [], value = '', onChange, placeholder
 
 const NovoPedidoLoja = () => {
     const router = useRouter();
-    const { fornecedorId: queryFornecedorId } = router.query; // Pega ID da URL se vier de "Ver Catálogo"
+    const { fornecedorId: queryFornecedorId } = router.query;
 
     const [fornecedores, setFornecedores] = useState([]);
     const [produtos, setProdutos] = useState([]);
     const [filteredProdutos, setFilteredProdutos] = useState([]);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
+
+    // Novos estados para lógica de preço
+    const [lojaEstado, setLojaEstado] = useState(null); // Estado da loja (UF)
+    const [condicoesEstados, setCondicoesEstados] = useState([]); // Todas as regras
+    const [ajusteUnitario, setAjusteUnitario] = useState(0); // Ajuste calculado (R$)
 
     // Estado do Formulário
     const [formData, setFormData] = useState({
@@ -80,30 +85,39 @@ const NovoPedidoLoja = () => {
     useEffect(() => {
         async function loadData() {
             try {
-                // Pega usuário logado para definir a Loja
+                // Pega usuário logado
                 const usuarioStorage = localStorage.getItem('usuario');
                 if (!usuarioStorage) {
                     router.push('/');
                     return;
                 }
                 const usuario = JSON.parse(usuarioStorage);
-                // Se o backend não mandar lojaId no login, tente usar o id do usuario como fallback se for 1-pra-1
                 const myLojaId = usuario.lojaId || usuario.id;
+
+                // Define ID da loja no form
+                setFormData(prev => ({
+                    ...prev,
+                    lojaId: myLojaId,
+                    fornecedorId: queryFornecedorId || ''
+                }));
+
+                // Busca dados da Loja para saber o Estado (UF)
+                if (myLojaId) {
+                    const resLoja = await api.get(`/api/v1/lojas/${myLojaId}`);
+                    setLojaEstado(resLoja.data.estado);
+                }
 
                 // Busca Fornecedores Ativos
                 const resForn = await api.get('/api/v1/fornecedores/ativos');
                 setFornecedores(resForn.data || []);
 
-                // Busca Produtos (Pode otimizar depois para buscar só do fornecedor selecionado)
+                // Busca Produtos
                 const resProd = await api.get('/api/v1/produtos');
                 setProdutos(resProd.data || []);
 
-                // Define estado inicial
-                setFormData(prev => ({
-                    ...prev,
-                    lojaId: myLojaId,
-                    fornecedorId: queryFornecedorId || '' // Se veio da outra tela, já preenche
-                }));
+                // Busca Condições de Estado Ativas (Regras de Negócio)
+                const resCond = await api.get('/api/v1/condicoes-estado/ativos');
+                setCondicoesEstados(resCond.data || []);
 
             } catch (error) {
                 console.error("Erro ao carregar dados:", error);
@@ -113,21 +127,59 @@ const NovoPedidoLoja = () => {
         loadData();
     }, [queryFornecedorId, router]);
 
-    // 2. Filtrar produtos quando muda o Fornecedor
+    // 2. Calcular Ajuste Unitário (Sempre que mudar fornecedor ou tivermos os dados de estado)
+    useEffect(() => {
+        if (formData.fornecedorId && lojaEstado && condicoesEstados.length > 0) {
+            // Procura uma regra que combine ID do Fornecedor + Estado da Loja
+            const regra = condicoesEstados.find(c =>
+                String(c.fornecedorId) === String(formData.fornecedorId) &&
+                c.estado === lojaEstado
+            );
+
+            if (regra && regra.ajusteUnitarioAplicado) {
+                const valor = Number(regra.ajusteUnitarioAplicado);
+                setAjusteUnitario(valor);
+            } else {
+                setAjusteUnitario(0);
+            }
+        } else {
+            setAjusteUnitario(0);
+        }
+    }, [formData.fornecedorId, lojaEstado, condicoesEstados]);
+
+    // 3. Filtrar produtos e Resetar itens ao mudar fornecedor
     useEffect(() => {
         if (formData.fornecedorId) {
             const prods = produtos.filter(p =>
                 String(p.fornecedorId) === String(formData.fornecedorId) && p.ativo
             );
             setFilteredProdutos(prods);
-            // Reseta itens se trocar de fornecedor, para não misturar
-            if (itensPedido.some(i => i.produtoId && !prods.find(p => p.id === i.produtoId))) {
-               setItensPedido([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
+
+            // Se mudou o fornecedor, reseta o carrinho para evitar produtos misturados
+            // (Verifica se há itens de outro fornecedor)
+            const temItemInvalido = itensPedido.some(i => i.produtoId && !prods.find(p => p.id === i.produtoId));
+            if (temItemInvalido) {
+                setItensPedido([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
             }
         } else {
             setFilteredProdutos([]);
         }
     }, [formData.fornecedorId, produtos]);
+
+    // 4. Atualizar preços do carrinho se o Ajuste mudar (ex: carregou a regra depois)
+    useEffect(() => {
+        setItensPedido(currentItens => currentItens.map(item => {
+            if (!item.produtoId) return item;
+
+            const prod = filteredProdutos.find(p => String(p.id) === String(item.produtoId));
+            if (prod) {
+                // Preço Base + Ajuste Regional (Mínimo 0)
+                const novoPreco = Math.max(0, Number(prod.precoBase) + ajusteUnitario);
+                return { ...item, valorUnitario: novoPreco };
+            }
+            return item;
+        }));
+    }, [ajusteUnitario, filteredProdutos]);
 
     // Handlers
     const handleChange = (e) => {
@@ -142,9 +194,22 @@ const NovoPedidoLoja = () => {
         if (name === 'produtoId') {
             const prod = filteredProdutos.find(p => String(p.id) === String(value));
             novosItens[index].produtoId = value;
-            novosItens[index].valorUnitario = prod ? Number(prod.precoBase) : 0;
-            // Reset qtd se estoque for baixo
-            if (prod && prod.quantidadeEstoque < 1) novosItens[index].quantidade = 0;
+
+            // Aplica o preço base + ajuste
+            if (prod) {
+                const precoFinal = Math.max(0, Number(prod.precoBase) + ajusteUnitario);
+                novosItens[index].valorUnitario = precoFinal;
+
+                // Validação de estoque
+                if (prod.quantidadeEstoque < 1) {
+                    novosItens[index].quantidade = 0;
+                } else {
+                    novosItens[index].quantidade = 1;
+                }
+            } else {
+                novosItens[index].valorUnitario = 0;
+            }
+
         } else if (name === 'quantidade') {
             novosItens[index].quantidade = Number(value);
         }
@@ -170,7 +235,6 @@ const NovoPedidoLoja = () => {
         setLoading(true);
         setMessage(null);
 
-        // Validação básica
         const itensValidos = itensPedido.filter(i => i.produtoId && i.quantidade > 0);
         if (!formData.lojaId) {
             setMessage({ type: 'error', text: 'Erro: Loja não identificada. Faça login novamente.' });
@@ -183,8 +247,6 @@ const NovoPedidoLoja = () => {
             return;
         }
 
-        // Monta Payload
-        // Nota: O backend espera "criadoPorUsuarioId". Pegamos do localStorage.
         const usuarioLogado = JSON.parse(localStorage.getItem('usuario'));
 
         const payload = {
@@ -200,7 +262,7 @@ const NovoPedidoLoja = () => {
         try {
             await api.post('/api/v1/pedidos', payload);
             alert('Pedido realizado com sucesso!');
-            router.push('/loja/pedidos'); // Volta para a lista
+            router.push('/loja/pedidos');
         } catch (error) {
             console.error("Erro ao enviar pedido:", error);
             const msg = error.response?.data?.erro || "Erro ao processar pedido.";
@@ -210,10 +272,12 @@ const NovoPedidoLoja = () => {
         }
     };
 
+    const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
     return (
         <div className={styles['dashboard-container']}>
 
-            {/* Sidebar (Mesma estrutura das outras páginas) */}
+            {/* Sidebar */}
             <nav className={styles.sidebar}>
                 <ul>
                     <li><Link href="/loja/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20}/><span>Dashboard</span></div></Link></li>
@@ -256,6 +320,11 @@ const NovoPedidoLoja = () => {
                                     <option key={f.id} value={f.id}>{f.nomeFantasia}</option>
                                 ))}
                             </select>
+                            {lojaEstado && (
+                                <small style={{ color: '#666', marginTop: '5px', display: 'block' }}>
+                                    Estado da Loja: <strong>{lojaEstado}</strong>
+                                </small>
+                            )}
                         </div>
                     </div>
 
@@ -280,10 +349,20 @@ const NovoPedidoLoja = () => {
                                             onChange={(e) => handleItemChange(index, e)}
                                             placeholder="Busque o produto..."
                                         />
-                                        {/* Mostra estoque se produto selecionado */}
+                                        {/* Mostra estoque */}
                                         {item.produtoId && (() => {
                                             const p = filteredProdutos.find(x => String(x.id) === String(item.produtoId));
-                                            return p ? <div className={styles.stockInfo}>Estoque: {p.quantidadeEstoque}</div> : null;
+                                            return p ? (
+                                                <div className={styles.stockInfo}>
+                                                    Estoque: {p.quantidadeEstoque}
+                                                    {/* Mostra preço base original se houver ajuste */}
+                                                    {ajusteUnitario !== 0 && (
+                                                        <span style={{marginLeft: '10px', color: '#e67e22'}}>
+                                                            (Base: {formatCurrency(p.precoBase)})
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : null;
                                         })()}
                                     </div>
 
@@ -302,7 +381,7 @@ const NovoPedidoLoja = () => {
                                     <div className={styles.colTinyInput}>
                                         <input
                                             type="text"
-                                            value={`R$ ${item.valorUnitario.toFixed(2)}`}
+                                            value={formatCurrency(item.valorUnitario)}
                                             readOnly
                                             className={`${styles.inputItem} ${styles.inputReadOnly}`}
                                             style={{textAlign: 'right'}}
@@ -310,7 +389,7 @@ const NovoPedidoLoja = () => {
                                     </div>
 
                                     <div className={styles.colTotalDisplay} style={{textAlign: 'right'}}>
-                                        R$ {(item.quantidade * item.valorUnitario).toFixed(2)}
+                                        {formatCurrency(item.quantidade * item.valorUnitario)}
                                     </div>
 
                                     <div style={{display:'flex', justifyContent:'center'}}>
@@ -333,10 +412,20 @@ const NovoPedidoLoja = () => {
                             </div>
 
                             <div className={styles.totalPedidoContainer}>
-                                <span className={styles.totalLabel}>Total do Pedido:</span>
-                                <span className={styles.totalValue}>
-                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calcularTotal())}
-                                </span>
+                                <div style={{textAlign: 'right'}}>
+                                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-end'}}>
+                                        <span className={styles.totalLabel}>Total do Pedido:</span>
+                                        <span className={styles.totalValue}>
+                                            {formatCurrency(calcularTotal())}
+                                        </span>
+                                    </div>
+
+                                    {ajusteUnitario !== 0 && (
+                                        <p style={{fontSize: '0.85rem', color: '#e67e22', marginTop: '5px'}}>
+                                            * Incluindo ajuste regional de {formatCurrency(ajusteUnitario)} por item.
+                                        </p>
+                                    )}
+                                </div>
                             </div>
 
                             <div className={styles.footer}>
