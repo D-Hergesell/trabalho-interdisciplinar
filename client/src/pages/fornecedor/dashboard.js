@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import styles from '../../styles/lojas.module.css'; // Ajuste o caminho se necessário (ex: ../styles/Loja.module.css)
+import styles from '../../styles/fornecedorGeral.module.css'; // Ajuste o caminho se necessário (ex: ../styles/Loja.module.css)
 import api from '../../services/api';
 
 // Substituindo lucide-react por react-icons/fi (que já está instalado)
