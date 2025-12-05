@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import withAuth from '../../components/withAuth';
 import {
@@ -10,7 +10,7 @@ import api from '../../services/api';
 import styles from '../../styles/Geral.module.css';
 
 
-const ListaUltimos = ({ title, dados, tipo }) => {
+const ListaUltimos = ({ title, dados }) => {
     const gridTemplate = '2fr 1fr 1fr';
 
     return (
@@ -28,16 +28,17 @@ const ListaUltimos = ({ title, dados, tipo }) => {
                     <p style={{ padding: '20px', color: '#666', textAlign: 'center' }}>Nenhum registro encontrado.</p>
                 ) : (
                     dados.map((item) => {
-                        const status = item.status || 'on';
-                        const isOnline = String(status).toLowerCase() === 'on';
+                        // Backend retorna boolean 'ativo'
+                        const isOnline = item.ativo === true;
 
                         return (
-                            <div key={item._id} className={styles['provider-list-item']} style={{ gridTemplateColumns: gridTemplate }}>
+                            <div key={item.id} className={styles['provider-list-item']} style={{ gridTemplateColumns: gridTemplate }}>
                                 <div className={styles['detail-cell-name']}>
-                                    <p>{tipo === 'loja' ? item.store_name : item.supplier_name}</p>
+                                    {/* Backend usa nomeFantasia para Lojas e Fornecedores */}
+                                    <p>{item.nomeFantasia}</p>
                                 </div>
                                 <div className={styles['detail-cell']}>
-                                    {item.cidade || (item._id ? item._id.substring(0, 8) + '...' : '-')}
+                                    {item.cidade || (item.id ? item.id.substring(0, 8) + '...' : '-')}
                                 </div>
                                 <div className={styles['detail-cell']}>
                                     <span style={{
@@ -60,19 +61,21 @@ const ListaUltimos = ({ title, dados, tipo }) => {
 
 const EditUsuarioModal = ({ usuario, onSave, onCancel, loading }) => {
     const [formData, setFormData] = useState({
-        name: usuario.name || '',
-        email: usuario.contact_email || usuario.email || '',
-        level: usuario.level || 'admin',
-        status: usuario.status || 'on'
+        nome: '',
+        email: '',
+        tipoUsuario: 'LOJA',
+        senha: '' // Necessário pois o DTO do backend exige @NotBlank na senha
     });
 
     useEffect(() => {
-        setFormData({
-            name: usuario.name || '',
-            email: usuario.contact_email || usuario.email || '',
-            level: usuario.level || 'admin',
-            status: usuario.status || 'on'
-        });
+        if (usuario) {
+            setFormData({
+                nome: usuario.nome || '',
+                email: usuario.email || '',
+                tipoUsuario: usuario.tipoUsuario || 'LOJA',
+                senha: '' // Senha não vem do backend por segurança, user deve redefinir se editar
+            });
+        }
     }, [usuario]);
 
     const handleChange = (e) => {
@@ -82,18 +85,21 @@ const EditUsuarioModal = ({ usuario, onSave, onCancel, loading }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave({ ...formData, _id: usuario._id });
+        onSave({ ...formData, id: usuario.id });
     };
 
     return (
         <div className={styles.modalBackdrop}>
             <div className={styles.modalContent} style={{ maxWidth: '600px' }}>
-                <h3 className={styles.modalTitle}>Editar Usuário: {usuario.name}</h3>
+                <h3 className={styles.modalTitle}>Editar Usuário: {usuario.nome}</h3>
+                <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '15px' }}>
+                    Nota: Para atualizar os dados, é necessário confirmar ou definir uma nova senha.
+                </p>
                 <form onSubmit={handleSubmit}>
                     <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>Nome</label>
-                            <input type="text" name="name" value={formData.name} onChange={handleChange} required className={styles.inputModal} />
+                            <input type="text" name="nome" value={formData.nome} onChange={handleChange} required className={styles.inputModal} />
                         </div>
                         <div className={styles.fieldGroup}>
                             <label>Email</label>
@@ -103,20 +109,18 @@ const EditUsuarioModal = ({ usuario, onSave, onCancel, loading }) => {
                     <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>Nível de Acesso</label>
-                            <select name="level" value={formData.level} onChange={handleChange} className={styles.inputModal}>
-                                <option value="admin">Admin</option>
-                                <option value="lojista">Lojista</option>
-                                <option value="fornecedor">Fornecedor</option>
+                            <select name="tipoUsuario" value={formData.tipoUsuario} onChange={handleChange} className={styles.inputModal}>
+                                <option value="ADMIN">Administrador</option>
+                                <option value="LOJA">Lojista</option>
+                                <option value="FORNECEDOR">Fornecedor</option>
                             </select>
                         </div>
                         <div className={styles.fieldGroup}>
-                            <label>Status</label>
-                            <select name="status" value={formData.status} onChange={handleChange} className={styles.inputModal}>
-                                <option value="on">Ativo</option>
-                                <option value="off">Inativo</option>
-                            </select>
+                            <label>Nova Senha *</label>
+                            <input type="password" name="senha" value={formData.senha} onChange={handleChange} required className={styles.inputModal} placeholder="Mínimo 8 caracteres" minLength={8} />
                         </div>
                     </div>
+
                     <div className={styles.modalActions}>
                         <button className={`${styles.submitButton} ${styles.btnCancel}`} type="button" onClick={onCancel} disabled={loading}>Cancelar</button>
                         <button className={styles.submitButton} type="submit" disabled={loading}>{loading ? 'Salvando...' : 'Salvar'}</button>
@@ -140,13 +144,10 @@ const BuscaUsuarios = () => {
     const [editingUsuario, setEditingUsuario] = useState(null);
     const [deleteId, setDeleteId] = useState(null);
     const [showConfirm, setShowConfirm] = useState(false);
-    const [currentAction, setCurrentAction] = useState('deactivate');
     const [expandedId, setExpandedId] = useState(null);
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const itemsPerPage = 5;
-
-
 
     const handleSearch = async () => {
         setLoading(true);
@@ -155,21 +156,19 @@ const BuscaUsuarios = () => {
         setEditingUsuario(null);
 
         try {
-
+            // Rota atualizada: GET /api/v1/usuarios
             const response = await api.get('/api/v1/usuarios');
-
-
             let dados = response.data || [];
 
-
-            if (searchId) dados = dados.filter(u => u._id.includes(searchId));
-            if (searchName) dados = dados.filter(u => (u.name || '').toLowerCase().includes(searchName.toLowerCase()));
-            if (searchEmail) dados = dados.filter(u => (u.contact_email || u.email || '').toLowerCase().includes(searchEmail.toLowerCase()));
+            // Filtragem no Front (ID é UUID)
+            if (searchId) dados = dados.filter(u => u.id && u.id.includes(searchId));
+            if (searchName) dados = dados.filter(u => u.nome && u.nome.toLowerCase().includes(searchName.toLowerCase()));
+            if (searchEmail) dados = dados.filter(u => u.email && u.email.toLowerCase().includes(searchEmail.toLowerCase()));
 
             setUsuarios(dados);
         } catch (error) {
             console.error("Erro ao buscar usuários:", error);
-            setMessage({ type: 'error', text: "Erro ao buscar usuários. Verifique se a rota /api/v1/usuarios existe." });
+            setMessage({ type: 'error', text: "Erro ao buscar usuários." });
         } finally {
             setLoading(false);
         }
@@ -183,49 +182,49 @@ const BuscaUsuarios = () => {
     const handleUpdateSubmit = async (updatedData) => {
         setLoading(true);
         setMessage(null);
-        const { _id, ...dataToSend } = updatedData;
+        const { id, ...dataToSend } = updatedData;
 
         try {
+            // PUT /api/v1/usuarios/{id}
+            await api.put(`/api/v1/usuarios/${id}`, dataToSend);
 
-            await api.put(`/api/v1/usuarios/${_id}`, dataToSend);
+            setUsuarios(old => old.map(u => {
+                if (u.id === id) {
+                    // Atualiza localmente com os dados enviados (exceto senha)
+                    return { ...u, nome: dataToSend.nome, email: dataToSend.email, tipoUsuario: dataToSend.tipoUsuario };
+                }
+                return u;
+            }));
 
-            setUsuarios(old => old.map(u => u._id === _id ? { ...u, ...dataToSend } : u));
             setEditingUsuario(null);
             setMessage({ type: 'success', text: "Usuário atualizado com sucesso!" });
         } catch (error) {
             console.error("Erro ao atualizar:", error);
-            setMessage({ type: 'error', text: "Erro ao atualizar usuário." });
+            const msg = error.response?.data?.erro || "Erro ao atualizar usuário.";
+            setMessage({ type: 'error', text: msg });
         } finally {
             setLoading(false);
         }
     };
 
-    const startAction = (id, type) => {
+    const startDelete = (id) => {
         setDeleteId(id);
-        setCurrentAction(type);
         setShowConfirm(true);
     };
 
-    const handleConfirmAction = async () => {
+    const handleConfirmDelete = async () => {
         if (!deleteId) return;
         setShowConfirm(false);
         setLoading(true);
 
         try {
-            if (currentAction === 'delete') {
-
-                await api.delete(`/api/v1/usuarios/${deleteId}`);
-                setUsuarios(old => old.filter(u => u._id !== deleteId));
-                setMessage({ type: 'success', text: "Usuário excluído permanentemente!" });
-            } else {
-
-                await api.put(`/api/v1/usuarios/${deleteId}`, { status: 'off' });
-                setUsuarios(old => old.map(u => u._id === deleteId ? { ...u, status: 'off' } : u));
-                setMessage({ type: 'success', text: "Usuário desativado com sucesso!" });
-            }
+            // DELETE /api/v1/usuarios/{id}
+            await api.delete(`/api/v1/usuarios/${deleteId}`);
+            setUsuarios(old => old.filter(u => u.id !== deleteId));
+            setMessage({ type: 'success', text: "Usuário excluído permanentemente!" });
         } catch (error) {
-            console.error(`Erro ao ${currentAction}:`, error);
-            setMessage({ type: 'error', text: "Erro ao executar ação." });
+            console.error("Erro ao deletar:", error);
+            setMessage({ type: 'error', text: "Erro ao excluir usuário." });
         } finally {
             setLoading(false);
             setDeleteId(null);
@@ -276,24 +275,28 @@ const BuscaUsuarios = () => {
                         </div>
 
                         {visibleItems.map(item => {
-                            const isExpanded = expandedId === item._id;
-                            const isOff = item.status === 'off';
+                            const isExpanded = expandedId === item.id;
+                            const isOff = !item.ativo;
                             return (
-                                <React.Fragment key={item._id}>
+                                <React.Fragment key={item.id}>
                                     <div className={`${styles['provider-list-item']} ${isExpanded ? styles['item-expanded'] : ''} ${isOff ? styles['item-status-off'] : ''}`}
-                                         onClick={() => handleToggleExpand(item._id)}>
-                                        <div className={styles['detail-cell-name']}><p>{item.name}</p></div>
-                                        <div className={styles['detail-cell']}><p>{item.contact_email || item.email}</p></div>
-                                        <div className={styles['detail-cell']}><p>{item.level}</p></div>
-                                        <div className={styles['detail-cell']}><p>{item.status || 'on'}</p></div>
+                                         onClick={() => handleToggleExpand(item.id)}>
+                                        <div className={styles['detail-cell-name']}><p>{item.nome}</p></div>
+                                        <div className={styles['detail-cell']}><p>{item.email}</p></div>
+                                        <div className={styles['detail-cell']}><p>{item.tipoUsuario}</p></div>
+                                        <div className={styles['detail-cell']}>
+                                            <span style={{ color: item.ativo ? '#28a745' : '#dc3545', fontWeight: 'bold' }}>
+                                                {item.ativo ? 'Ativo' : 'Inativo'}
+                                            </span>
+                                        </div>
                                         <div className={styles['item-actions']}>
-                                            <button className={`${styles['btn-detail']} ${isExpanded ? styles['btn-rotated'] : ''}`} onClick={(e) => { e.stopPropagation(); handleToggleExpand(item._id); }}>
+                                            <button className={`${styles['btn-detail']} ${isExpanded ? styles['btn-rotated'] : ''}`} onClick={(e) => { e.stopPropagation(); handleToggleExpand(item.id); }}>
                                                 <FiArrowRight size={20} />
                                             </button>
                                             <button className={styles['btn-edit']} onClick={(e) => { e.stopPropagation(); startEdit(item); }}>
                                                 <FiEdit size={18} />
                                             </button>
-                                            <button className={styles['btn-delete']} onClick={(e) => { e.stopPropagation(); isOff ? startAction(item._id, 'delete') : startAction(item._id, 'deactivate'); }}>
+                                            <button className={styles['btn-delete']} onClick={(e) => { e.stopPropagation(); startDelete(item.id); }}>
                                                 <FiTrash2 size={18} />
                                             </button>
                                         </div>
@@ -301,7 +304,7 @@ const BuscaUsuarios = () => {
                                     {isExpanded && (
                                         <div className={styles['expanded-details-row']}>
                                             <div className={styles['detail-full-span']}>
-                                                <p className={styles['detail-text-p']}><strong>ID:</strong> {item._id}</p>
+                                                <p className={styles['detail-text-p']}><strong>ID Completo:</strong> {item.id}</p>
                                             </div>
                                         </div>
                                     )}
@@ -320,11 +323,11 @@ const BuscaUsuarios = () => {
             {showConfirm && (
                 <div className={styles.modalBackdrop}>
                     <div className={styles.modalContent}>
-                        <h3 className={styles.modalTitle}>{currentAction === 'delete' ? 'Excluir Usuário?' : 'Desativar Usuário?'}</h3>
-                        <p className={styles.modalText}>Tem certeza que deseja continuar? Essa ação afeta o acesso do usuário.</p>
+                        <h3 className={styles.modalTitle}>Excluir Usuário?</h3>
+                        <p className={styles.modalText}>Tem certeza que deseja excluir permanentemente este usuário?</p>
                         <div className={styles.modalActions}>
                             <button className={`${styles.submitButton} ${styles.btnCancel}`} onClick={() => setShowConfirm(false)}>Cancelar</button>
-                            <button className={`${styles.submitButton} ${styles.btnDanger}`} onClick={handleConfirmAction} disabled={loading}>Confirmar</button>
+                            <button className={`${styles.submitButton} ${styles.btnDanger}`} onClick={handleConfirmDelete} disabled={loading}>Confirmar</button>
                         </div>
                     </div>
                 </div>
@@ -364,6 +367,7 @@ function Dashboard() {
         async function loadAllData() {
             setLoading(true);
 
+            // Chamadas para as novas rotas da API V1
             const lojasData = await fetchDataSafe('/api/v1/lojas');
             const fornecedoresData = await fetchDataSafe('/api/v1/fornecedores');
             const pedidosData = await fetchDataSafe('/api/v1/pedidos');
@@ -372,7 +376,7 @@ function Dashboard() {
             const recentsLojas = [...lojasData].reverse().slice(0, 5);
             const recentsFornecedores = [...fornecedoresData].reverse().slice(0, 5);
 
-            const totalCampanhasAtivas = campanhasData.filter(c => String(c.status).toLowerCase() === 'on').length;
+            const totalCampanhasAtivas = campanhasData.filter(c => c.ativo === true).length;
 
             setUltimasLojas(recentsLojas);
             setUltimosFornecedores(recentsFornecedores);
@@ -414,7 +418,7 @@ function Dashboard() {
                     <li><Link href="/admin/cadastro-produto" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Produtos</span></div></Link></li>
                     <li><Link href="/admin/cadastro-pedidos" className={styles.linkReset}><div className={styles.menuItem}><FiShoppingBag size={20} /><span>Pedidos</span></div></Link></li>
                     <li><Link href="/admin/cadastro-campanha" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Campanhas</span></div></Link></li>
-                {/*   <li><Link href="/admin/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li> */}
+                    {/* <li><Link href="/admin/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li> */}
                     <li><Link href="/admin/login" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
                 </ul>
             </nav>
@@ -439,8 +443,8 @@ function Dashboard() {
 
                 <hr className={styles.divider} />
 
-                <ListaUltimos title="Últimos Lojistas Cadastrados" dados={ultimasLojas} tipo="loja" />
-                <ListaUltimos title="Últimos Fornecedores Cadastrados" dados={ultimosFornecedores} tipo="fornecedor" />
+                <ListaUltimos title="Últimos Lojistas Cadastrados" dados={ultimasLojas} />
+                <ListaUltimos title="Últimos Fornecedores Cadastrados" dados={ultimosFornecedores} />
 
                 <hr className={styles.divider} />
 

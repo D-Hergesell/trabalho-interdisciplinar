@@ -4,902 +4,857 @@ import withAuth from '../../components/withAuth';
 import styles from '../../styles/Pedido.module.css';
 import api from '../../services/api';
 import {
-  FiGrid,
-  FiUsers,
-  FiPackage,
-  FiUser,
-  FiLogOut,
-  FiBox,
-  FiPlus,
-  FiTrash2,
-  FiChevronDown,
-  FiSearch,
-  FiEdit,
-  FiChevronLeft,
-  FiChevronRight,
-  FiShoppingBag,
-  FiTag
+    FiGrid,
+    FiUsers,
+    FiPackage,
+    FiUser,
+    FiLogOut,
+    FiBox,
+    FiPlus,
+    FiTrash2,
+    FiChevronDown,
+    FiSearch,
+    FiEdit,
+    FiChevronLeft,
+    FiChevronRight,
+    FiShoppingBag,
+    FiTag
 } from 'react-icons/fi';
 
 
 const formatCurrency = (value) => {
-  const n = Number(value) || 0;
-  return n.toFixed(2).replace('.', ',');
-};
-
-const parseCurrencyInput = (raw) => {
-  if (raw === undefined || raw === null) return 0;
-  const s = String(raw).replace(/\./g, '').replace(/,/g, '.');
-  const num = parseFloat(s);
-  return Number.isFinite(num) ? num : 0;
+    const n = Number(value) || 0;
+    return n.toFixed(2).replace('.', ',');
 };
 
 // ============================================================================
-// 1. COMPONENTE MODAL DE EDIÇÃO DE PEDIDO (UPDATE)
+// 1. COMPONENTE MODAL DE EDIÇÃO DE PEDIDO (STATUS)
 // ============================================================================
 const EditPedidoModal = ({ pedido = {}, onSave, onCancel, loading }) => {
-  const safeDate = pedido.order_date ? String(pedido.order_date).substring(0, 10) : new Date().toISOString().substring(0, 10);
+    // Backend usa OffsetDateTime, então pegamos só a data YYYY-MM-DD
+    const safeDate = pedido.dataPedido ? String(pedido.dataPedido).substring(0, 10) : new Date().toISOString().substring(0, 10);
 
-  const [formData, setFormData] = useState({
-    ...pedido,
-    order_date: safeDate,
-  });
+    const [formData, setFormData] = useState({
+        status: pedido.status || 'PENDENTE',
+        dataPedido: safeDate
+    });
 
-  useEffect(() => {
-    const newSafeDate = pedido.order_date ? String(pedido.order_date).substring(0, 10) : new Date().toISOString().substring(0, 10);
-    setFormData({ ...pedido, order_date: newSafeDate });
-  }, [pedido]);
+    useEffect(() => {
+        const newSafeDate = pedido.dataPedido ? String(pedido.dataPedido).substring(0, 10) : new Date().toISOString().substring(0, 10);
+        setFormData({
+            status: pedido.status || 'PENDENTE',
+            dataPedido: newSafeDate
+        });
+    }, [pedido]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const payload = {
-      ...formData,
-      order_date: formData.order_date
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
-    onSave(payload);
-  };
 
-  return (
-    <div className={styles.modalBackdrop}>
-      <div className={styles.modalContent}>
-        <h3 className={styles.modalTitle}>Editar Pedido: #{String(formData._id || '').substring(0, 8)}</h3>
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        // A edição completa não é suportada pelo backend atual (apenas status via PATCH),
+        // mas enviaremos o objeto para manter a interface genérica
+        onSave({
+            id: pedido.id,
+            status: formData.status
+        });
+    };
 
-        <form onSubmit={handleSubmit}>
-          <div className={styles.row}>
-            <div className={styles.fieldGroup}>
-              <label>Status do Pedido</label>
-              <select name="status" value={formData.status || 'Pendente'} onChange={handleChange} required className={styles.inputModal}>
-                <option value="Pendente">Pendente</option>
-                <option value="Enviado">Enviado</option>
-                <option value="Entregue">Entregue</option>
-                <option value="Cancelado">Cancelado</option>
-              </select>
+    return (
+        <div className={styles.modalBackdrop}>
+            <div className={styles.modalContent}>
+                <h3 className={styles.modalTitle}>Editar Status Pedido: #{String(pedido.id || '').substring(0, 8)}</h3>
+
+                <form onSubmit={handleSubmit}>
+                    <div className={styles.row}>
+                        <div className={styles.fieldGroup}>
+                            <label>Status do Pedido</label>
+                            <select name="status" value={formData.status} onChange={handleChange} required className={styles.inputModal}>
+                                <option value="PENDENTE">Pendente</option>
+                                <option value="EM_SEPARACAO">Em Separação</option>
+                                <option value="ENVIADO">Enviado</option>
+                                <option value="ENTREGUE">Entregue</option>
+                                <option value="CANCELADO">Cancelado</option>
+                            </select>
+                        </div>
+
+                        <div className={styles.fieldGroup}>
+                            <label>Data (Visualização)</label>
+                            <input type="date" name="dataPedido" value={formData.dataPedido} disabled className={styles.inputModal} />
+                        </div>
+                    </div>
+
+                    <div className={styles.modalActions}>
+                        <button
+                            className={`${styles.submitButton} ${styles.btnCancel}`}
+                            type="button"
+                            onClick={onCancel}
+                            disabled={loading}
+                        >
+                            Cancelar
+                        </button>
+
+                        <button className={styles.submitButton} type="submit" disabled={loading}>
+                            {loading ? 'Salvando...' : 'Salvar Alterações'}
+                        </button>
+                    </div>
+                </form>
             </div>
-
-            <div className={styles.fieldGroup}>
-              <label>Data do Pedido</label>
-              <input type="date" name="order_date" value={formData.order_date || ''} onChange={handleChange} required className={styles.inputModal} />
-            </div>
-          </div>
-
-          <div className={styles.fieldGroup}>
-            <label>Observações</label>
-            <textarea name="notes" value={formData.notes || ''} onChange={handleChange} className={styles.textareaLong} rows="3" />
-          </div>
-
-          <div className={styles.modalActions}>
-            <button
-              className={`${styles.submitButton} ${styles.btnCancel}`}
-              type="button"
-              onClick={onCancel}
-              disabled={loading}
-            >
-              Cancelar
-            </button>
-
-            <button className={styles.submitButton} type="submit" disabled={loading}>
-              {loading ? 'Salvando...' : 'Salvar Alterações'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+        </div>
+    );
 };
 
 
 const CustomProductDropdown = ({ options = [], value = '', onChange, placeholder = 'Selecione', className = '', required = false, disabled = false }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
-  const selectedOption = options.find(option => String(option._id).trim() === String(value).trim());
-  const displayValue = selectedOption ? (selectedOption.name || selectedOption.nome) : placeholder;
+    const selectedOption = options.find(option => String(option.id).trim() === String(value).trim());
+    const displayValue = selectedOption ? (selectedOption.nome) : placeholder;
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isOpen && dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isOpen && dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isOpen]);
+
+    const handleSelect = (optionId) => {
+        if (onChange) onChange({ target: { name: 'produtoId', value: String(optionId) } });
         setIsOpen(false);
-      }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
+    const handleClick = (e) => {
+        e.stopPropagation();
+        if (!disabled) setIsOpen(prev => !prev);
+    };
 
-  const handleSelect = (optionId) => {
-    if (onChange) onChange({ target: { name: 'produtoId', value: String(optionId) } });
-    setIsOpen(false);
-  };
-
-  const handleClick = (e) => {
-    e.stopPropagation();
-    if (!disabled) setIsOpen(prev => !prev);
-  };
-
-  return (
-    <div ref={dropdownRef} className={`${styles.customDropdownContainer} ${className}`}>
-      <div
-        className={`${styles.dropdownInput} ${isOpen ? styles.active : ''}`}
-        onClick={handleClick}
-        tabIndex={0}
-        role="button"
-        style={{ cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.9 : 1 }}
-      >
-        <span>{displayValue}</span>
-        <FiChevronDown size={16} className={`${styles.arrowIcon} ${isOpen ? styles.up : ''}`} />
-      </div>
-
-      {isOpen && !disabled && (
-        <div className={styles.dropdownMenu}>
-          {options.length > 0 ? (
-            options.map(option => (
-              <div
-                key={String(option._id)}
-                className={`${styles.dropdownItem} ${String(option._id).trim() === String(value).trim() ? styles.selected : ''}`}
-                onClick={() => handleSelect(option._id)}
-              >
-                {option.name || option.nome}
-              </div>
-            ))
-          ) : (
-            <div className={styles.dropdownItem} style={{ fontStyle: 'italic', cursor: 'default', color: '#999' }}>
-              Nenhum produto encontrado para este fornecedor.
+    return (
+        <div ref={dropdownRef} className={`${styles.customDropdownContainer} ${className}`}>
+            <div
+                className={`${styles.dropdownInput} ${isOpen ? styles.active : ''}`}
+                onClick={handleClick}
+                tabIndex={0}
+                role="button"
+                style={{ cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.9 : 1 }}
+            >
+                <span>{displayValue}</span>
+                <FiChevronDown size={16} className={`${styles.arrowIcon} ${isOpen ? styles.up : ''}`} />
             </div>
-          )}
-        </div>
-      )}
 
-      <input type="hidden" name="produtoId" value={value} required={required && !disabled} />
-    </div>
-  );
+            {isOpen && !disabled && (
+                <div className={styles.dropdownMenu}>
+                    {options.length > 0 ? (
+                        options.map(option => (
+                            <div
+                                key={String(option.id)}
+                                className={`${styles.dropdownItem} ${String(option.id).trim() === String(value).trim() ? styles.selected : ''}`}
+                                onClick={() => handleSelect(option.id)}
+                            >
+                                {option.nome}
+                            </div>
+                        ))
+                    ) : (
+                        <div className={styles.dropdownItem} style={{ fontStyle: 'italic', cursor: 'default', color: '#999' }}>
+                            Nenhum produto encontrado para este fornecedor.
+                        </div>
+                    )}
+                </div>
+            )}
+
+            <input type="hidden" name="produtoId" value={value} required={required && !disabled} />
+        </div>
+    );
 };
 
 // ============================================================================
 // 3. COMPONENTE DE BUSCA E GERENCIAMENTO DE PEDIDOS
 // ============================================================================
-const BuscaPedidos = ({ allFornecedores = [], allProdutos = [] }) => {
-  const [searchId, setSearchId] = useState('');
+const BuscaPedidos = ({ allFornecedores = [] }) => {
+    const [searchId, setSearchId] = useState('');
+    const [searchSupplierInput, setSearchSupplierInput] = useState('');
 
-  const [searchSupplierInput, setSearchSupplierInput] = useState('');
+    const [pedidos, setPedidos] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [searched, setSearched] = useState(false);
 
-  const [pedidos, setPedidos] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
+    const [expandedPedidoId, setExpandedPedidoId] = useState(null);
+    const [editingPedido, setEditingPedido] = useState(null);
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [deleteId, setDeleteId] = useState(null);
+    const [message, setMessage] = useState(null);
 
-  const [expandedPedidoId, setExpandedPedidoId] = useState(null);
-  const [editingPedido, setEditingPedido] = useState(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [deleteId, setDeleteId] = useState(null);
-  const [message, setMessage] = useState(null);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const itemsPerPage = 5;
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const itemsPerPage = 5;
+    const getSupplierName = (fornecedorId) => {
+        if (!fornecedorId) return 'N/A';
+        const supplier = allFornecedores.find(f => f.id === fornecedorId);
+        return supplier ? supplier.nomeFantasia : 'N/A';
+    };
 
-  const normalizeId = (id) => {
-    if (!id) return '';
-    if (typeof id === 'string') return id.trim();
-    if (typeof id === 'object' && id.$oid) return String(id.$oid).trim();
-    return String(id).trim();
-  };
+    const toggleDetails = (pedidoId) => {
+        setExpandedPedidoId((prev) => (prev === pedidoId ? null : pedidoId));
+    };
 
-  const getSupplierName = (supplierId) => {
-    const idPedido = normalizeId(supplierId);
-    const supplier = allFornecedores.find(
-      (f) => normalizeId(f._id) === idPedido
-    );
-    return supplier ? supplier.supplier_name : 'N/A';
-  };
+    const handleSearch = async () => {
+        setLoading(true);
+        setSearched(true);
+        setMessage(null);
+        setCurrentIndex(0);
+        setEditingPedido(null);
+        setExpandedPedidoId(null);
 
-  const getProductStatus = (productId) => {
-    const pid = normalizeId(productId);
-    const produto = allProdutos.find((p) => normalizeId(p._id) === pid);
-    return String(produto?.status).toLowerCase() === 'on' ? 'on' : 'off';
-  };
+        try {
+            const response = await api.get('/api/v1/pedidos');
+            let dados = Array.isArray(response.data) ? response.data : [];
 
-  const toggleDetails = (pedidoId) => {
-    setExpandedPedidoId((prev) => (prev === pedidoId ? null : pedidoId));
-  };
+            if (searchId.trim() !== '') {
+                const searchIdLower = searchId.trim().toLowerCase();
+                dados = dados.filter((p) =>
+                    String(p.id).toLowerCase().includes(searchIdLower)
+                );
+            }
 
-  const handleSearch = async () => {
-    setLoading(true);
-    setSearched(true);
-    setMessage(null);
-    setCurrentIndex(0);
-    setEditingPedido(null);
-    setExpandedPedidoId(null);
+            if (searchSupplierInput.trim() !== '') {
+                const term = searchSupplierInput.trim().toLowerCase();
+                dados = dados.filter(p => {
+                    const nomeForn = p.fornecedorNome ? p.fornecedorNome.toLowerCase() : '';
+                    return nomeForn.includes(term);
+                });
+            }
 
-    try {
-      const response = await api.get('/api/v1/pedidos');
-      let dados = Array.isArray(response.data) ? response.data : [];
+            setPedidos(dados);
+        } catch (error) {
+            console.error('Erro ao buscar pedidos:', error);
+            const msg = error.response
+                ? `Status ${error.response.status}: ${error.response.data?.error}`
+                : 'Erro de conexão';
+            setMessage({ type: 'error', text: `Erro ao buscar pedidos: ${msg}` });
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    const startEdit = (pedido) => {
+        setMessage(null);
+        setEditingPedido(pedido);
+    };
 
-      if (searchId.trim() !== '') {
-        const searchIdLower = searchId.trim().toLowerCase();
-        dados = dados.filter((p) =>
-          normalizeId(p._id).toLowerCase().includes(searchIdLower)
+    const cancelEdit = () => setEditingPedido(null);
+
+    // No backend atual, a edição é feita via PATCH de status.
+    // Vamos simular a atualização chamando o endpoint de status.
+    const handleUpdateSubmit = async (updatedData) => {
+        setLoading(true);
+        setMessage(null);
+        const id = updatedData.id;
+
+        try {
+            // Recupera usuário logado para validação
+            const usuarioLogado = JSON.parse(localStorage.getItem('usuario'));
+            if(!usuarioLogado || !usuarioLogado.id) throw new Error("Usuário não logado");
+
+            await api.patch(`/api/v1/pedidos/${id}/status`, null, {
+                params: {
+                    status: updatedData.status,
+                    usuarioId: usuarioLogado.id
+                }
+            });
+
+            setPedidos((oldList) =>
+                oldList.map((item) =>
+                    item.id === id ? { ...item, status: updatedData.status } : item
+                )
+            );
+            setEditingPedido(null);
+            setMessage({
+                type: 'success',
+                text: `Status do pedido #${String(id).substring(0, 8)} atualizado!`,
+            });
+        } catch (error) {
+            console.error('Erro ao atualizar pedido:', error);
+            const msg = error.response?.data?.error || error.message || 'Erro desconhecido';
+            setMessage({ type: 'error', text: `Erro ao atualizar: ${msg}` });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const startDelete = (id) => {
+        setDeleteId(id);
+        setShowConfirm(true);
+    };
+
+    const cancelAction = () => {
+        setDeleteId(null);
+        setShowConfirm(false);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteId) return;
+        setShowConfirm(false);
+        setLoading(true);
+        setMessage(null);
+
+        try {
+            await api.delete(`/api/v1/pedidos/${deleteId}`);
+            setPedidos((oldList) =>
+                oldList.filter((item) => item.id !== deleteId)
+            );
+            setMessage({
+                type: 'success',
+                text: 'Pedido deletado permanentemente!',
+            });
+        } catch (error) {
+            console.error('Erro ao deletar:', error);
+            const msg = error.response?.data?.error || 'Erro desconhecido.';
+            setMessage({ type: 'error', text: `Erro ao deletar: ${msg}` });
+        } finally {
+            setLoading(false);
+            setDeleteId(null);
+        }
+    };
+
+    const nextSlide = () => {
+        setCurrentIndex((prev) =>
+            Math.min(prev + itemsPerPage, Math.max(0, pedidos.length - itemsPerPage))
         );
-      }
+    };
 
+    const prevSlide = () => {
+        setCurrentIndex((prev) => Math.max(prev - itemsPerPage, 0));
+    };
 
-      if (searchSupplierInput.trim() !== '') {
-        const term = searchSupplierInput.trim().toLowerCase();
+    const visibleItems = pedidos.slice(currentIndex, currentIndex + itemsPerPage);
+    const totalPages = Math.max(1, Math.ceil(pedidos.length / itemsPerPage));
+    const currentPage = Math.floor(currentIndex / itemsPerPage) + 1;
 
-
-        const matchingSupplierIds = allFornecedores
-            .filter(f => f.supplier_name.toLowerCase().includes(term))
-            .map(f => normalizeId(f._id));
-
-        dados = dados.filter(p => {
-            const pedidoSupplierId = normalizeId(p.supplier_id);
-
-            return matchingSupplierIds.includes(pedidoSupplierId) || pedidoSupplierId.toLowerCase().includes(term);
-        });
-      }
-
-
-      dados = dados.map((p) => ({
-        ...p,
-        supplier_id: normalizeId(p.supplier_id),
-        _id: normalizeId(p._id),
-        total_amount: Number(p.total_amount) || 0,
-        status: p.status || 'Pendente',
-      }));
-
-      setPedidos(dados);
-    } catch (error) {
-      console.error('Erro ao buscar pedidos:', error);
-      const msg = error.response
-        ? `Status ${error.response.status}: ${error.response.data?.error}`
-        : 'Erro de conexão';
-      setMessage({ type: 'error', text: `Erro ao buscar pedidos: ${msg}` });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const startEdit = (pedido) => {
-    setMessage(null);
-    setEditingPedido(pedido);
-  };
-
-  const cancelEdit = () => setEditingPedido(null);
-
-  const handleUpdateSubmit = async (updatedData) => {
-    setLoading(true);
-    setMessage(null);
-    const id = normalizeId(updatedData._id);
-    const { _id, ...dataToSend } = updatedData;
-
-    try {
-      await api.put(`/api/v1/pedidos/${id}`, dataToSend);
-      setPedidos((oldList) =>
-        oldList.map((item) =>
-          normalizeId(item._id) === id ? { ...item, ...dataToSend } : item
-        )
-      );
-      setEditingPedido(null);
-      setMessage({
-        type: 'success',
-        text: `Pedido #${String(id).substring(0, 8)} atualizado com sucesso!`,
-      });
-    } catch (error) {
-      console.error('Erro ao atualizar pedido:', error);
-      const msg = error.response?.data?.error || error.message || 'Erro desconhecido';
-      setMessage({ type: 'error', text: `Erro ao atualizar: ${msg}` });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const startDelete = (id) => {
-    setDeleteId(normalizeId(id));
-    setShowConfirm(true);
-  };
-
-  const cancelAction = () => {
-    setDeleteId(null);
-    setShowConfirm(false);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deleteId) return;
-    setShowConfirm(false);
-    setLoading(true);
-    setMessage(null);
-
-    try {
-      await api.delete(`/api/v1/pedidos/${deleteId}`);
-      setPedidos((oldList) =>
-        oldList.filter((item) => normalizeId(item._id) !== deleteId)
-      );
-      setMessage({
-        type: 'success',
-        text: 'Pedido deletado permanentemente!',
-      });
-    } catch (error) {
-      console.error('Erro ao deletar:', error);
-      const msg = error.response?.data?.error || 'Erro desconhecido.';
-      setMessage({ type: 'error', text: `Erro ao deletar: ${msg}` });
-    } finally {
-      setLoading(false);
-      setDeleteId(null);
-    }
-  };
-
-  const nextSlide = () => {
-    setCurrentIndex((prev) =>
-      Math.min(prev + itemsPerPage, Math.max(0, pedidos.length - itemsPerPage))
+    const ConfirmationModal = () => (
+        <div className={styles.modalBackdrop}>
+            <div className={styles.modalContent} style={{ maxWidth: 400 }}>
+                <h3 className={styles.modalTitle}>Confirmação de Exclusão</h3>
+                <p className={styles.modalText}>
+                    Tem certeza que deseja excluir permanentemente este pedido?
+                </p>
+                <div className={styles.modalActions}>
+                    <button className={`${styles.submitButton} ${styles.btnCancel}`} onClick={cancelAction}>
+                        Cancelar
+                    </button>
+                    <button
+                        className={`${styles.submitButton} ${styles.btnDanger}`}
+                        onClick={handleConfirmDelete}
+                        disabled={loading}
+                    >
+                        {loading ? 'Processando...' : 'Confirmar Exclusão'}
+                    </button>
+                </div>
+            </div>
+        </div>
     );
-  };
 
-  const prevSlide = () => {
-    setCurrentIndex((prev) => Math.max(prev - itemsPerPage, 0));
-  };
+    return (
+        <div className={styles['search-section']}>
+            <h2 className={styles['search-header']}>Consultar / Gerenciar Pedidos</h2>
 
-  const visibleItems = pedidos.slice(currentIndex, currentIndex + itemsPerPage);
-  const totalPages = Math.max(1, Math.ceil(pedidos.length / itemsPerPage));
-  const currentPage = Math.floor(currentIndex / itemsPerPage) + 1;
-
-  const ConfirmationModal = () => (
-    <div className={styles.modalBackdrop}>
-      <div className={styles.modalContent} style={{ maxWidth: 400 }}>
-        <h3 className={styles.modalTitle}>Confirmação de Exclusão</h3>
-        <p className={styles.modalText}>
-          Tem certeza que deseja excluir permanentemente este pedido?
-        </p>
-        <div className={styles.modalActions}>
-          <button className={`${styles.submitButton} ${styles.btnCancel}`} onClick={cancelAction}>
-            Cancelar
-          </button>
-          <button
-            className={`${styles.submitButton} ${styles.btnDanger}`}
-            onClick={handleConfirmDelete}
-            disabled={loading}
-          >
-            {loading ? 'Processando...' : 'Confirmar Exclusão'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className={styles['search-section']}>
-      <h2 className={styles['search-header']}>Consultar / Gerenciar Pedidos</h2>
-
-      {message && (
-        <div className={`${styles.alertMessage} ${styles[message.type]}`}>
-          {String(message.text).split('\n').map((line, idx) => (
-              <p key={idx} className={styles.messageLine}>{line}</p>
-          ))}
-        </div>
-      )}
+            {message && (
+                <div className={`${styles.alertMessage} ${styles[message.type]}`}>
+                    {String(message.text).split('\n').map((line, idx) => (
+                        <p key={idx} className={styles.messageLine}>{line}</p>
+                    ))}
+                </div>
+            )}
 
 
-      <div className={styles['search-inputs']}>
-        <div className={styles['search-group']}>
-          <label>ID Pedido</label>
-          <input
-            placeholder="Ex: 64b..."
-            value={searchId}
-            onChange={(e) => setSearchId(e.target.value)}
-          />
-        </div>
+            <div className={styles['search-inputs']}>
+                <div className={styles['search-group']}>
+                    <label>ID Pedido</label>
+                    <input
+                        placeholder="Ex: 64b..."
+                        value={searchId}
+                        onChange={(e) => setSearchId(e.target.value)}
+                    />
+                </div>
 
 
-        <div className={styles['search-group']}>
-          <label>Fornecedor (Nome)</label>
-          <input
-            type="text"
-            placeholder="Ex: Fornecedor X..."
-            value={searchSupplierInput}
-            onChange={(e) => setSearchSupplierInput(e.target.value)}
-          />
-        </div>
+                <div className={styles['search-group']}>
+                    <label>Fornecedor (Nome)</label>
+                    <input
+                        type="text"
+                        placeholder="Ex: Fornecedor X..."
+                        value={searchSupplierInput}
+                        onChange={(e) => setSearchSupplierInput(e.target.value)}
+                    />
+                </div>
 
-        <button
-          className={styles['btn-search']}
-          onClick={handleSearch}
-          disabled={loading}
-        >
-          <FiSearch size={16} /> {loading ? 'Buscando...' : 'Buscar'}
-        </button>
-      </div>
-
-      {pedidos.length > 0 && (
-        <>
-          <div className={styles['provider-list-container']}>
-            <div className={`${styles['provider-list-item']} ${styles['provider-list-header']}`}>
-              <div className={styles['header-cell']}>ID Pedido</div>
-              <div className={styles['header-cell']}>Fornecedor</div>
-              <div className={styles['header-cell']}>Total (R$)</div>
-              <div className={styles['header-cell']}>Status</div>
-              <div className={styles['header-cell-actions']}>Ações</div>
+                <button
+                    className={styles['btn-search']}
+                    onClick={handleSearch}
+                    disabled={loading}
+                >
+                    <FiSearch size={16} /> {loading ? 'Buscando...' : 'Buscar'}
+                </button>
             </div>
 
-            {visibleItems.map((pedido) => {
-              const isExpanded = expandedPedidoId === pedido._id;
-              const isCanceled = pedido.status === 'Cancelado';
-              const itemClasses = [
-                styles['provider-list-item'],
-                isCanceled && styles['item-status-off'],
-                isExpanded && styles['item-expanded'],
-              ].filter(Boolean).join(' ');
+            {pedidos.length > 0 && (
+                <>
+                    <div className={styles['provider-list-container']}>
+                        <div className={`${styles['provider-list-item']} ${styles['provider-list-header']}`}>
+                            <div className={styles['header-cell']}>ID Pedido</div>
+                            <div className={styles['header-cell']}>Loja</div>
+                            <div className={styles['header-cell']}>Fornecedor</div>
+                            <div className={styles['header-cell']}>Total (R$)</div>
+                            <div className={styles['header-cell']}>Status</div>
+                            <div className={styles['header-cell-actions']}>Ações</div>
+                        </div>
 
-              return (
-                <React.Fragment key={pedido._id}>
-                  <div className={itemClasses} onClick={() => toggleDetails(pedido._id)}>
-                    <div className={styles['detail-cell-name']}>#{pedido._id.substring(0, 8)}</div>
-                    <div className={styles['detail-cell']}>{getSupplierName(pedido.supplier_id)}</div>
-                    <div className={styles['detail-cell']}>R$ {formatCurrency(pedido.total_amount)}</div>
-                    <div className={styles['detail-cell']}>
-                      <span className={styles[`status-${pedido.status.toLowerCase()}`]}>{pedido.status}</span>
+                        {visibleItems.map((pedido) => {
+                            const isExpanded = expandedPedidoId === pedido.id;
+                            const isCanceled = pedido.status === 'CANCELADO';
+                            const itemClasses = [
+                                styles['provider-list-item'],
+                                isCanceled && styles['item-status-off'],
+                                isExpanded && styles['item-expanded'],
+                            ].filter(Boolean).join(' ');
+
+                            return (
+                                <React.Fragment key={pedido.id}>
+                                    <div className={itemClasses} onClick={() => toggleDetails(pedido.id)}>
+                                        <div className={styles['detail-cell-name']}>#{String(pedido.id).substring(0, 8)}</div>
+                                        <div className={styles['detail-cell']}>{pedido.lojaNome}</div>
+                                        <div className={styles['detail-cell']}>{pedido.fornecedorNome}</div>
+                                        <div className={styles['detail-cell']}>R$ {formatCurrency(pedido.valorTotal)}</div>
+                                        <div className={styles['detail-cell']}>
+                                            <span className={styles[`status-${String(pedido.status).toLowerCase()}`]}>{pedido.status}</span>
+                                        </div>
+                                        <div className={styles['item-actions']}>
+                                            <button className={styles['btn-detail']} onClick={(e) => { e.stopPropagation(); toggleDetails(pedido.id); }}>
+                                                <FiChevronDown size={20} className={isExpanded ? styles['btn-rotated'] : ''} />
+                                            </button>
+                                            <button className={styles['btn-edit']} onClick={(e) => { e.stopPropagation(); startEdit(pedido); }}>
+                                                <FiEdit size={16} />
+                                            </button>
+                                            <button className={styles['btn-delete']} onClick={(e) => { e.stopPropagation(); startDelete(pedido.id); }}>
+                                                <FiTrash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {isExpanded && (
+                                        <div className={styles['expanded-details-row']}>
+                                            <p><strong>ID Completo:</strong> {pedido.id}</p>
+                                            <p><strong>Criado por:</strong> {pedido.criadoPorUsuarioNome}</p>
+                                            <p><strong>Data:</strong> {pedido.dataPedido ? new Date(pedido.dataPedido).toLocaleDateString() : 'N/A'}</p>
+                                            <p><strong>Itens:</strong></p>
+                                            <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                                                {pedido.itens && pedido.itens.map((it, idx) => (
+                                                    <li key={idx}>
+                                                        {it.quantidade}x {it.produtoNome} - (R$ {formatCurrency(it.precoUnitarioMomento)})
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </React.Fragment>
+                            );
+                        })}
                     </div>
-                    <div className={styles['item-actions']}>
-                      <button className={styles['btn-detail']} onClick={(e) => { e.stopPropagation(); toggleDetails(pedido._id); }}>
-                        <FiChevronDown size={20} className={isExpanded ? styles['btn-rotated'] : ''} />
-                      </button>
-                      <button className={styles['btn-edit']} onClick={(e) => { e.stopPropagation(); startEdit(pedido); }}>
-                        <FiEdit size={16} />
-                      </button>
-                      <button className={styles['btn-delete']} onClick={(e) => { e.stopPropagation(); startDelete(pedido._id); }}>
-                        <FiTrash2 size={16} />
-                      </button>
+
+                    <div className={styles.paginationControls}>
+                        <button className={styles['nav-btn']} onClick={prevSlide} disabled={currentIndex === 0}>
+                            <FiChevronLeft size={20} />
+                        </button>
+                        <span className={styles.pageInfo}>Página {currentPage} de {totalPages}</span>
+                        <button className={styles['nav-btn']} onClick={nextSlide} disabled={currentIndex + itemsPerPage >= pedidos.length}>
+                            <FiChevronRight size={20} />
+                        </button>
                     </div>
-                  </div>
+                </>
+            )}
 
-                  {isExpanded && (
-                    <div className={styles['expanded-details-row']}>
-                      <p><strong>ID Completo:</strong> {pedido._id}</p>
-                      <p><strong>Data:</strong> {pedido.order_date ? new Date(pedido.order_date).toLocaleDateString() : 'N/A'}</p>
-                      {pedido.items?.length > 0 && (
-                        <p><strong>Status Produto:</strong> {getProductStatus(pedido.items[0].product_id) === 'on' ? 'Ativo' : 'Inativo'}</p>
-                      )}
-                      <p><strong>Observações:</strong> {pedido.notes || 'Nenhuma'}</p>
-                    </div>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
+            {!loading && searched && pedidos.length === 0 && (
+                <p className={styles['no-data']}>Nenhum pedido encontrado. Verifique os filtros.</p>
+            )}
 
-          <div className={styles.paginationControls}>
-            <button className={styles['nav-btn']} onClick={prevSlide} disabled={currentIndex === 0}>
-              <FiChevronLeft size={20} />
-            </button>
-            <span className={styles.pageInfo}>Página {currentPage} de {totalPages}</span>
-            <button className={styles['nav-btn']} onClick={nextSlide} disabled={currentIndex + itemsPerPage >= pedidos.length}>
-              <FiChevronRight size={20} />
-            </button>
-          </div>
-        </>
-      )}
+            {!loading && !searched && pedidos.length === 0 && (
+                <p className={styles['no-data']}>Busque algo ou recarregue a página.</p>
+            )}
 
-      {!loading && searched && pedidos.length === 0 && (
-        <p className={styles['no-data']}>Nenhum pedido encontrado. Verifique os filtros.</p>
-      )}
-
-      {!loading && !searched && pedidos.length === 0 && (
-        <p className={styles['no-data']}>Busque algo ou recarregue a página.</p>
-      )}
-
-      {showConfirm && <ConfirmationModal />}
-      {editingPedido && <EditPedidoModal pedido={editingPedido} onSave={handleUpdateSubmit} onCancel={cancelEdit} loading={loading} />}
-    </div>
-  );
+            {showConfirm && <ConfirmationModal />}
+            {editingPedido && <EditPedidoModal pedido={editingPedido} onSave={handleUpdateSubmit} onCancel={cancelEdit} loading={loading} />}
+        </div>
+    );
 };
 
 // ============================================================================
 // 4. COMPONENTE PRINCIPAL: CadastroPedido
 // ============================================================================
 function CadastroPedido (){
-  const [loading, setLoading] = useState(false);
-  const [loadingData, setLoadingData] = useState(true);
-  const [message, setMessage] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [loadingData, setLoadingData] = useState(true);
+    const [message, setMessage] = useState(null);
 
-  const [fornecedores, setFornecedores] = useState([]);
-  const [produtos, setProdutos] = useState([]);
-  const [filteredProdutos, setFilteredProdutos] = useState([]);
+    const [fornecedores, setFornecedores] = useState([]);
+    const [lojas, setLojas] = useState([]); // Nova lista de lojas
+    const [produtos, setProdutos] = useState([]);
+    const [filteredProdutos, setFilteredProdutos] = useState([]);
 
-  const [formData, setFormData] = useState({
-    fornecedorId: '',
-    dataPedido: new Date().toISOString().substring(0, 10),
-    status: 'Pendente',
-    observacoes: ''
-  });
-
-  const [itensPedido, setItensPedido] = useState([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
-
-
-  const loadInitialData = async () => {
-    setLoadingData(true);
-    setMessage(null);
-
-    try {
-      const respFornecedores = await api.get('/api/v1/fornecedores');
-      const normalizedFornecedores = Array.isArray(respFornecedores.data)
-        ? respFornecedores.data.map(f => ({ ...f, _id: String(f._id).trim() }))
-        : [];
-      setFornecedores(normalizedFornecedores);
-
-      const respProdutos = await api.get('/api/v1/produtos');
-      const normalizedProdutos = Array.isArray(respProdutos.data) ? respProdutos.data.map(p => ({
-        ...p,
-        supplier_id: String(p.supplier_id || '').trim(),
-        _id: String(p._id).trim(),
-        price: Number(p.price) || 0,
-        stock_quantity: Number(p.stock_quantity) || 0,
-        status: String(p.status || 'off').toLowerCase()
-      })) : [];
-      setProdutos(normalizedProdutos);
-
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      const errorMsg = error.response ? error.response.data?.error || error.message : error.message;
-      setMessage({ type: 'error', text: `Erro ao carregar dados: ${errorMsg}` });
-    } finally {
-      setLoadingData(false);
-    }
-  };
-
-  useEffect(() => { loadInitialData(); }, []);
-
-
-  useEffect(() => {
-    const selectedSupplierId = String(formData.fornecedorId).trim();
-
-    if (selectedSupplierId) {
-      const produtosDoFornecedor = produtos.filter(p =>
-        String(p.supplier_id).trim() === selectedSupplierId && String(p.status).toLowerCase() === 'on'
-      );
-      setFilteredProdutos(produtosDoFornecedor);
-
-      setItensPedido(currentItens => currentItens.map(item => {
-        const produtoValido = produtosDoFornecedor.some(p => String(p._id).trim() === String(item.produtoId).trim());
-        if (item.produtoId && !produtoValido) {
-          return { produtoId: '', quantidade: 1, valorUnitario: 0.00 };
-        }
-        return item;
-      }));
-    } else {
-      setFilteredProdutos([]);
-      setItensPedido([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
-    }
-  }, [formData.fornecedorId, produtos]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    const cleanedValue = name === 'fornecedorId' ? String(value).trim() : value;
-    setFormData(prev => ({ ...prev, [name]: cleanedValue }));
-  };
-
-  const handleItemChange = useCallback((index, e, productsList = filteredProdutos) => {
-    const { name, value } = e.target;
-
-    setItensPedido(prevItens => {
-      const novosItens = [...prevItens];
-      const itemAtual = novosItens[index];
-
-      if (name === 'valorUnitario') {
-        return prevItens;
-      }
-
-      else if (name === 'quantidade') {
-        let novaQtd = parseInt(value, 10);
-        if (isNaN(novaQtd) || novaQtd < 1) novaQtd = 1;
-
-        if (itemAtual.produtoId) {
-          const produtoRef = productsList.find(p => String(p._id).trim() === String(itemAtual.produtoId).trim());
-          if (produtoRef) {
-            if (novaQtd > produtoRef.stock_quantity) {
-              alert(`Quantidade indisponível! Estoque atual: ${produtoRef.stock_quantity}`);
-              novaQtd = produtoRef.stock_quantity > 0 ? produtoRef.stock_quantity : 1;
-            }
-          }
-        }
-        novosItens[index][name] = novaQtd;
-      }
-
-      else if (name === 'produtoId') {
-        const cleanedValue = String(value).trim();
-        novosItens[index][name] = cleanedValue;
-        const produtoSelecionado = productsList.find(p => String(p._id).trim() === cleanedValue);
-
-        novosItens[index].valorUnitario = Number(produtoSelecionado?.price) || 0.00;
-
-        if (produtoSelecionado && produtoSelecionado.stock_quantity <= 0) {
-          alert("Este produto está sem estoque.");
-          novosItens[index].quantidade = 0;
-        } else {
-          novosItens[index].quantidade = 1;
-        }
-      }
-
-      else {
-        novosItens[index][name] = value;
-      }
-
-      return novosItens;
+    const [formData, setFormData] = useState({
+        fornecedorId: '',
+        lojaId: '', // Campo obrigatório
+        // status é PENDENTE por padrão no backend
     });
-  }, [filteredProdutos]);
 
-  const handleAddItem = () => {
-    if (!formData.fornecedorId) {
-      setMessage({ type: 'warning', text: 'Selecione um Fornecedor antes de adicionar itens.' });
-      return;
-    }
-    setItensPedido(prev => [...prev, { produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
-  };
+    const [itensPedido, setItensPedido] = useState([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
 
-  const handleRemoveItem = (index) => {
-    const novosItens = itensPedido.filter((_, i) => i !== index);
-    setItensPedido(novosItens.length ? novosItens : [{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
-  };
 
-  const calcularTotal = () => {
-    return itensPedido.reduce((total, item) => total + ((Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0)), 0);
-  };
+    const loadInitialData = async () => {
+        setLoadingData(true);
+        setMessage(null);
 
-  const getProductStock = (prodId) => {
-    const p = filteredProdutos.find(x => String(x._id) === String(prodId));
-    return p ? p.stock_quantity : 0;
-  };
+        try {
+            const respFornecedores = await api.get('/api/v1/fornecedores');
+            setFornecedores(respFornecedores.data || []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
+            const respLojas = await api.get('/api/v1/lojas');
+            setLojas(respLojas.data || []);
 
-    for (const item of itensPedido) {
-      const prod = filteredProdutos.find(p => String(p._id) === String(item.produtoId));
-      if (prod && item.quantidade > prod.stock_quantity) {
-        setMessage({ type: 'error', text: `Erro: O produto "${prod.name}" tem apenas ${prod.stock_quantity} em estoque.` });
-        setLoading(false);
-        return;
-      }
-    }
+            const respProdutos = await api.get('/api/v1/produtos');
+            setProdutos(respProdutos.data || []);
 
-    if (!formData.fornecedorId) {
-      setMessage({ type: 'error', text: 'Selecione um Fornecedor.' });
-      setLoading(false);
-      return;
-    }
-
-    const itensValidos = itensPedido.map(i => ({
-      ...i,
-      quantidade: Number(i.quantidade) || 0,
-      unit_price: Number(i.valorUnitario) || 0
-    }))
-    .filter(item => item.produtoId && item.quantidade > 0);
-
-    if (itensValidos.length === 0) {
-      setMessage({ type: 'error', text: 'Adicione pelo menos um produto válido ao pedido.' });
-      setLoading(false);
-      return;
-    }
-
-    const totalCalculado = calcularTotal();
-
-    const pedidoParaBackend = {
-      supplier_id: formData.fornecedorId,
-      order_date: formData.dataPedido,
-      status: formData.status,
-      notes: formData.observacoes,
-      items: itensValidos.map(item => ({
-        product_id: item.produtoId,
-        quantity: item.quantidade,
-        unit_price: item.unit_price
-      })),
-      total_amount: totalCalculado
+        } catch (error) {
+            console.error('Erro ao carregar dados:', error);
+            const errorMsg = error.response ? error.response.data?.error || error.message : error.message;
+            setMessage({ type: 'error', text: `Erro ao carregar dados: ${errorMsg}` });
+        } finally {
+            setLoadingData(false);
+        }
     };
 
-    try {
-      const response = await api.post('/api/v1/pedidos', pedidoParaBackend);
-      setMessage({ type: 'success', text: ` Pedido #${String(response.data._id || '').substring(0, 8)} criado com sucesso! Total: R$ ${formatCurrency(totalCalculado)}` });
+    useEffect(() => { loadInitialData(); }, []);
 
-      setFormData({ fornecedorId: '', dataPedido: new Date().toISOString().substring(0, 10), status: 'Pendente', observacoes: '' });
-      setItensPedido([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
 
-    } catch (error) {
-      console.error('Erro ao cadastrar Pedido:', error);
-      const errorMessage = error.response?.data?.error || 'Erro ao criar pedido.';
-      setMessage({ type: 'error', text: ` Erro: ${errorMessage}` });
-    } finally {
-      setLoading(false);
+    useEffect(() => {
+        const selectedSupplierId = String(formData.fornecedorId).trim();
+
+        if (selectedSupplierId) {
+            // Filtrar produtos ativos do fornecedor selecionado
+            const produtosDoFornecedor = produtos.filter(p =>
+                String(p.fornecedorId).trim() === selectedSupplierId && p.ativo === true
+            );
+            setFilteredProdutos(produtosDoFornecedor);
+
+            setItensPedido(currentItens => currentItens.map(item => {
+                const produtoValido = produtosDoFornecedor.some(p => String(p.id).trim() === String(item.produtoId).trim());
+                if (item.produtoId && !produtoValido) {
+                    return { produtoId: '', quantidade: 1, valorUnitario: 0.00 };
+                }
+                return item;
+            }));
+        } else {
+            setFilteredProdutos([]);
+            setItensPedido([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
+        }
+    }, [formData.fornecedorId, produtos]);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleItemChange = useCallback((index, e, productsList = filteredProdutos) => {
+        const { name, value } = e.target;
+
+        setItensPedido(prevItens => {
+            const novosItens = [...prevItens];
+            const itemAtual = novosItens[index];
+
+            if (name === 'quantidade') {
+                let novaQtd = parseInt(value, 10);
+                if (isNaN(novaQtd) || novaQtd < 1) novaQtd = 1;
+
+                if (itemAtual.produtoId) {
+                    const produtoRef = productsList.find(p => String(p.id).trim() === String(itemAtual.produtoId).trim());
+                    if (produtoRef) {
+                        if (novaQtd > produtoRef.quantidadeEstoque) {
+                            alert(`Quantidade indisponível! Estoque atual: ${produtoRef.quantidadeEstoque}`);
+                            novaQtd = produtoRef.quantidadeEstoque > 0 ? produtoRef.quantidadeEstoque : 1;
+                        }
+                    }
+                }
+                novosItens[index][name] = novaQtd;
+            }
+
+            else if (name === 'produtoId') {
+                const cleanedValue = String(value).trim();
+                novosItens[index][name] = cleanedValue;
+                const produtoSelecionado = productsList.find(p => String(p.id).trim() === cleanedValue);
+
+                // Preço base vindo do produto (o backend aplicará descontos regionais depois)
+                novosItens[index].valorUnitario = Number(produtoSelecionado?.precoBase) || 0.00;
+
+                if (produtoSelecionado && produtoSelecionado.quantidadeEstoque <= 0) {
+                    alert("Este produto está sem estoque.");
+                    novosItens[index].quantidade = 0;
+                } else {
+                    novosItens[index].quantidade = 1;
+                }
+            }
+
+            return novosItens;
+        });
+    }, [filteredProdutos]);
+
+    const handleAddItem = () => {
+        if (!formData.fornecedorId) {
+            setMessage({ type: 'warning', text: 'Selecione um Fornecedor antes de adicionar itens.' });
+            return;
+        }
+        setItensPedido(prev => [...prev, { produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
+    };
+
+    const handleRemoveItem = (index) => {
+        const novosItens = itensPedido.filter((_, i) => i !== index);
+        setItensPedido(novosItens.length ? novosItens : [{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
+    };
+
+    const calcularTotal = () => {
+        return itensPedido.reduce((total, item) => total + ((Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0)), 0);
+    };
+
+    const getProductStock = (prodId) => {
+        const p = filteredProdutos.find(x => String(x.id) === String(prodId));
+        return p ? p.quantidadeEstoque : 0;
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setMessage(null);
+
+        // Validação de Estoque no Front
+        for (const item of itensPedido) {
+            const prod = filteredProdutos.find(p => String(p.id) === String(item.produtoId));
+            if (prod && item.quantidade > prod.quantidadeEstoque) {
+                setMessage({ type: 'error', text: `Erro: O produto "${prod.nome}" tem apenas ${prod.quantidadeEstoque} em estoque.` });
+                setLoading(false);
+                return;
+            }
+        }
+
+        if (!formData.fornecedorId || !formData.lojaId) {
+            setMessage({ type: 'error', text: 'Selecione a Loja e o Fornecedor.' });
+            setLoading(false);
+            return;
+        }
+
+        const itensValidos = itensPedido
+            .filter(item => item.produtoId && item.quantidade > 0)
+            .map(item => ({
+                produtoId: item.produtoId,
+                quantidade: Number(item.quantidade)
+            }));
+
+        if (itensValidos.length === 0) {
+            setMessage({ type: 'error', text: 'Adicione pelo menos um produto válido ao pedido.' });
+            setLoading(false);
+            return;
+        }
+
+        // Recupera ID do usuário logado
+        const usuarioLogado = JSON.parse(localStorage.getItem('usuario'));
+        if (!usuarioLogado || !usuarioLogado.id) {
+            setMessage({ type: 'error', text: 'Erro de autenticação. Usuário não identificado.' });
+            setLoading(false);
+            return;
+        }
+
+        const pedidoParaBackend = {
+            lojaId: formData.lojaId,
+            fornecedorId: formData.fornecedorId,
+            criadoPorUsuarioId: usuarioLogado.id,
+            condicaoPagamentoId: null, // Pode ser implementado depois
+            itens: itensValidos
+        };
+
+        try {
+            const response = await api.post('/api/v1/pedidos', pedidoParaBackend);
+            const novoPedido = response.data;
+
+            setMessage({ type: 'success', text: ` Pedido #${String(novoPedido.id || '').substring(0, 8)} criado com sucesso! Total: R$ ${formatCurrency(novoPedido.valorTotal)}` });
+
+            setFormData({ fornecedorId: '', lojaId: '' });
+            setItensPedido([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
+
+        } catch (error) {
+            console.error('Erro ao cadastrar Pedido:', error);
+            const errorMessage = error.response?.data?.error || error.response?.data?.erro || 'Erro ao criar pedido.';
+            setMessage({ type: 'error', text: ` Erro: ${errorMessage}` });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loadingData) {
+        return (
+            <div className={styles['dashboard-container']}>
+                <nav className={styles.sidebar}>
+                    <ul>
+                        <li><Link href="/admin/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
+                    </ul>
+                </nav>
+                <main className={styles['main-content']}>
+                    <p>Carregando...</p>
+                </main>
+            </div>
+        );
     }
-  };
 
-  if (loadingData) {
+    const isProductSelectionDisabled = !formData.fornecedorId;
+
     return (
-      <div className={styles['dashboard-container']}>
-        <nav className={styles.sidebar}>
-          <ul>
-            <li><Link href="/admin/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
-          </ul>
-        </nav>
-        <main className={styles['main-content']}>
-          <p>Carregando...</p>
-        </main>
-      </div>
-    );
-  }
+        <div className={styles['dashboard-container']}>
+            <nav className={styles.sidebar}>
+                <ul>
+                    <li><Link href="/admin/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
+                    <li><Link href="/admin/cadastro-fornecedor" className={styles.linkReset}><div className={styles.menuItem}><FiUsers size={20} /><span>Fornecedores</span></div></Link></li>
+                    <li><Link href="/admin/cadastro-lojista" className={styles.linkReset}><div className={styles.menuItem}><FiBox size={20} /><span>Lojistas</span></div></Link></li>
+                    <li><Link href="/admin/cadastro-produto" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Produtos</span></div></Link></li>
+                    <li className={styles.active}><Link href="/admin/cadastro-pedidos" className={styles.linkReset}><div className={styles.menuItem}><FiShoppingBag size={20} /><span>Pedidos</span></div></Link></li>
+                    <li><Link href="/admin/cadastro-campanha" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Campanhas</span></div></Link></li>
+                    {/* <li><Link href="/admin/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li> */}
+                    <li><Link href="/admin/login" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
+                </ul>
+            </nav>
 
-  const isProductSelectionDisabled = !formData.fornecedorId;
+            <main className={styles['main-content']}>
+                <header className={styles.header}><h1>Cadastrar Novo Pedido</h1></header>
 
-  return (
-    <div className={styles['dashboard-container']}>
-      <nav className={styles.sidebar}>
-        <ul>
-          <li><Link href="/admin/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
-          <li><Link href="/admin/cadastro-fornecedor" className={styles.linkReset}><div className={styles.menuItem}><FiUsers size={20} /><span>Fornecedores</span></div></Link></li>
-          <li><Link href="/admin/cadastro-lojista" className={styles.linkReset}><div className={styles.menuItem}><FiBox size={20} /><span>Lojistas</span></div></Link></li>
-          <li><Link href="/admin/cadastro-produto" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Produtos</span></div></Link></li>
-          <li className={styles.active}><Link href="/admin/cadastro-pedidos" className={styles.linkReset}><div className={styles.menuItem}><FiShoppingBag size={20} /><span>Pedidos</span></div></Link></li>
-          <li><Link href="/admin/cadastro-campanha" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Campanhas</span></div></Link></li>
-       {/*   <li><Link href="/admin/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li> */}
-          <li><Link href="/admin/login" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
-        </ul>
-      </nav>
+                {message && (<div className={`${styles.alertMessage} ${styles[message.type]}`}>{message.text}</div>)}
 
-      <main className={styles['main-content']}>
-        <header className={styles.header}><h1>Cadastrar Novo Pedido</h1></header>
+                <form className={styles.formCard} onSubmit={handleSubmit}>
+                    <h2 className={styles.sectionTitle}>Dados do Pedido</h2>
 
-        {message && (<div className={`${styles.alertMessage} ${styles[message.type]}`}>{message.text}</div>)}
+                    <div className={styles.row}>
+                        <div className={styles.fieldGroup}>
+                            <label>Loja Solicitante <span className={styles.requiredAsterisk}>*</span></label>
+                            <select name="lojaId" value={formData.lojaId} onChange={handleChange} className={styles.inputLong} required>
+                                <option value="" disabled>Selecione uma loja</option>
+                                {lojas.map(l => <option key={l.id} value={l.id}>{l.nomeFantasia}</option>)}
+                            </select>
+                        </div>
 
-        <form className={styles.formCard} onSubmit={handleSubmit}>
-          <h2 className={styles.sectionTitle}>Dados do Pedido</h2>
+                        <div className={styles.fieldGroup}>
+                            <label>Fornecedor <span className={styles.requiredAsterisk}>*</span></label>
+                            <select name="fornecedorId" value={formData.fornecedorId} onChange={handleChange} className={styles.inputLong} required>
+                                <option value="" disabled>Selecione um fornecedor</option>
+                                {fornecedores.map(f => <option key={f.id} value={f.id}>{f.nomeFantasia}</option>)}
+                            </select>
+                        </div>
+                    </div>
 
-          <div className={styles.row}>
-            <div className={styles.fieldGroup}>
-              <label>Fornecedor <span className={styles.requiredAsterisk}>*</span></label>
-              <select name="fornecedorId" value={formData.fornecedorId} onChange={handleChange} className={styles.inputLong} required>
-                <option value="" disabled>Selecione um fornecedor</option>
-                {fornecedores.map(f => <option key={String(f._id)} value={String(f._id)}>{f.supplier_name}</option>)}
-              </select>
-            </div>
+                    <hr className={styles.divider} />
 
-            <div className={styles.fieldGroup}>
-              <label>Data do Pedido</label>
-              <input type="date" name="dataPedido" value={formData.dataPedido} onChange={handleChange} className={styles.inputLong} required />
-            </div>
-          </div>
+                    <h2 className={styles.sectionTitle}>Itens do Pedido</h2>
 
-          <div className={styles.fieldGroup} style={{ maxWidth: 300 }}>
-            <label>Status Inicial</label>
-            <select name="status" value={formData.status} onChange={handleChange} className={styles.inputLong}>
-              <option value="Pendente">Pendente</option>
-              <option value="Enviado">Enviado</option>
-              <option value="Entregue">Entregue</option>
-              <option value="Cancelado">Cancelado</option>
-            </select>
-          </div>
+                    {isProductSelectionDisabled && (<p className={`${styles.alertMessage} ${styles.info}`} style={{ marginBottom: 15 }}>⚠️ Selecione um <strong>Fornecedor</strong> acima para liberar a lista de produtos.</p>)}
 
-          <hr className={styles.divider} />
+                    <div className={styles.itemGridHeader}>
+                        <div className={styles.colProductHeader}>Produto</div>
+                        <div className={`${styles.colTinyHeader} ${styles.alignRight}`}>Qtd.</div>
+                        <div className={`${styles.colTinyHeader} ${styles.alignRight}`}>Valor Unit. (R$)</div>
+                        <div className={styles.colTotalHeader}>Total Item</div>
+                        <div className={styles.colRemoveButtonPlaceholder}></div>
+                    </div>
 
-          <h2 className={styles.sectionTitle}>Itens do Pedido</h2>
+                    {itensPedido.map((item, index) => (
+                        <div key={index} className={styles.itemGridRow}>
 
-          {isProductSelectionDisabled && (<p className={`${styles.alertMessage} ${styles.info}`} style={{ marginBottom: 15 }}>⚠️ Selecione um <strong>Fornecedor</strong> acima para liberar a lista de produtos.</p>)}
-
-          <div className={styles.itemGridHeader}>
-            <div className={styles.colProductHeader}>Produto</div>
-            <div className={`${styles.colTinyHeader} ${styles.alignRight}`}>Qtd.</div>
-            <div className={`${styles.colTinyHeader} ${styles.alignRight}`}>Valor Unit. (R$)</div>
-            <div className={styles.colTotalHeader}>Total Item</div>
-            <div className={styles.colRemoveButtonPlaceholder}></div>
-          </div>
-
-          {itensPedido.map((item, index) => (
-            <div key={index} className={styles.itemGridRow}>
-
-              <div className={styles.colProductInput}>
-                <CustomProductDropdown
-                  options={filteredProdutos}
-                  value={item.produtoId}
-                  onChange={(e) => handleItemChange(index, e, filteredProdutos)}
-                  placeholder={isProductSelectionDisabled ? 'Fornecedor não selecionado' : 'Selecione um produto'}
-                  required
-                  index={index}
-                  disabled={isProductSelectionDisabled}
-                />
-                {item.produtoId && (
-                  <div className={styles.stockInfo}>
-                    Estoque disponível: <strong>{getProductStock(item.produtoId)}</strong>
-                  </div>
-                )}
-              </div>
+                            <div className={styles.colProductInput}>
+                                <CustomProductDropdown
+                                    options={filteredProdutos}
+                                    value={item.produtoId}
+                                    onChange={(e) => handleItemChange(index, e, filteredProdutos)}
+                                    placeholder={isProductSelectionDisabled ? 'Fornecedor não selecionado' : 'Selecione um produto'}
+                                    required
+                                    index={index}
+                                    disabled={isProductSelectionDisabled}
+                                />
+                                {item.produtoId && (
+                                    <div className={styles.stockInfo}>
+                                        Estoque disponível: <strong>{getProductStock(item.produtoId)}</strong>
+                                    </div>
+                                )}
+                            </div>
 
 
-              <div className={styles.colTinyInput}>
-                <input
-                  type="number"
-                  name="quantidade"
-                  value={item.quantidade}
-                  onChange={(e) => handleItemChange(index, e, filteredProdutos)}
-                  min="1"
-                  max={getProductStock(item.produtoId)}
-                  className={styles.inputItem}
-                  required
-                  disabled={!item.produtoId}
-                />
-              </div>
+                            <div className={styles.colTinyInput}>
+                                <input
+                                    type="number"
+                                    name="quantidade"
+                                    value={item.quantidade}
+                                    onChange={(e) => handleItemChange(index, e, filteredProdutos)}
+                                    min="1"
+                                    max={getProductStock(item.produtoId)}
+                                    className={styles.inputItem}
+                                    required
+                                    disabled={!item.produtoId}
+                                />
+                            </div>
 
 
-              <div className={styles.colTinyInput}>
-                <input
-                  type="text"
-                  name="valorUnitario"
-                  value={formatCurrency(item.valorUnitario)}
-                  readOnly
-                  className={`${styles.inputItem} ${styles.inputReadOnly}`}
-                  tabIndex="-1"
-                />
-              </div>
+                            <div className={styles.colTinyInput}>
+                                <input
+                                    type="text"
+                                    name="valorUnitario"
+                                    value={formatCurrency(item.valorUnitario)}
+                                    readOnly
+                                    className={`${styles.inputItem} ${styles.inputReadOnly}`}
+                                    tabIndex="-1"
+                                />
+                            </div>
 
 
-              <div className={styles.colTotalDisplay}>
-                <p className={styles.totalItem}>R$ {formatCurrency((Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0))}</p>
-              </div>
+                            <div className={styles.colTotalDisplay}>
+                                <p className={styles.totalItem}>R$ {formatCurrency((Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0))}</p>
+                            </div>
 
 
-              <button type="button" className={styles.removeItemButton} onClick={() => handleRemoveItem(index)} disabled={itensPedido.length === 1 || isProductSelectionDisabled} title={itensPedido.length === 1 ? 'O pedido deve ter pelo menos um item' : 'Remover item'}>
-                <FiTrash2 size={16} />
-              </button>
-            </div>
-          ))}
+                            <button type="button" className={styles.removeItemButton} onClick={() => handleRemoveItem(index)} disabled={itensPedido.length === 1 || isProductSelectionDisabled} title={itensPedido.length === 1 ? 'O pedido deve ter pelo menos um item' : 'Remover item'}>
+                                <FiTrash2 size={16} />
+                            </button>
+                        </div>
+                    ))}
 
-          <div className={styles.addItemSection}>
-            <button type="button" className={styles.addItemButton} onClick={handleAddItem} disabled={isProductSelectionDisabled || filteredProdutos.length === 0}><FiPlus size={16} /> Adicionar Novo Item</button>
-            {filteredProdutos.length === 0 && formData.fornecedorId && (<p className={styles.noProductsMessage}>⚠️ Este fornecedor não possui produtos **ativos** cadastrados.</p>)}
-          </div>
+                    <div className={styles.addItemSection}>
+                        <button type="button" className={styles.addItemButton} onClick={handleAddItem} disabled={isProductSelectionDisabled || filteredProdutos.length === 0}><FiPlus size={16} /> Adicionar Novo Item</button>
+                        {filteredProdutos.length === 0 && formData.fornecedorId && (<p className={styles.noProductsMessage}>⚠️ Este fornecedor não possui produtos **ativos** cadastrados.</p>)}
+                    </div>
 
-          <div className={styles.totalPedidoContainer}>
-            <p className={styles.totalLabel}>Total do Pedido:</p>
-            <p className={styles.totalValue}>R$ {formatCurrency(calcularTotal())}</p>
-          </div>
+                    <div className={styles.totalPedidoContainer}>
+                        <p className={styles.totalLabel}>Total Estimado (Sem impostos/ajustes):</p>
+                        <p className={styles.totalValue}>R$ {formatCurrency(calcularTotal())}</p>
+                    </div>
 
-          <hr className={styles.divider} />
+                    <hr className={styles.divider} />
 
-          <h2 className={styles.sectionTitle}>Observações</h2>
-          <div className={styles.fieldGroup}>
-            <textarea name="observacoes" value={formData.observacoes} onChange={handleChange} className={styles.textareaLong} rows="3" placeholder="Notas internas..." />
-          </div>
+                    <div className={styles.footer}>
+                        <button type="submit" className={styles.submitButton} disabled={loading || isProductSelectionDisabled}>{loading ? 'Processando...' : 'Salvar Novo Pedido'}</button>
+                    </div>
+                </form>
 
-          <div className={styles.footer}>
-            <button type="submit" className={styles.submitButton} disabled={loading || isProductSelectionDisabled}>{loading ? 'Processando...' : 'Salvar Novo Pedido'}</button>
-          </div>
-        </form>
-
-        <div style={{ marginTop: 28 }}>
-          <BuscaPedidos allFornecedores={fornecedores} allProdutos={produtos} />
+                <div style={{ marginTop: 28 }}>
+                    <BuscaPedidos allFornecedores={fornecedores} allProdutos={produtos} />
+                </div>
+            </main>
         </div>
-      </main>
-    </div>
-  );
-};
+    );
+}
 
 export default withAuth (CadastroPedido);
