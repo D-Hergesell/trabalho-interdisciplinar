@@ -82,7 +82,7 @@ const DashboardLoja = () => {
           <li>
             <Link href="/loja/fornecedoresdisponiveis" className={styles.linkReset}>
               <div className={styles.menuItem}>
-                <FiSearch size={20} /><span>Buscar Fornecedores</span>
+                <FiSearch size={20} /><span>Fornecedores</span>
               </div>
             </Link>
           </li>
@@ -96,7 +96,7 @@ const DashboardLoja = () => {
           <li>
             <Link href="/loja/perfil" className={styles.linkReset}>
               <div className={styles.menuItem}>
-                <FiUser size={20} /><span>Meu Perfil</span>
+                <FiUser size={20} /><span>Perfil</span>
               </div>
             </Link>
           </li>
