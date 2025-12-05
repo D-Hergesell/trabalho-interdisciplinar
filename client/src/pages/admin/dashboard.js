@@ -9,7 +9,9 @@ import { FaShieldAlt } from 'react-icons/fa';
 import api from '../../services/api';
 import styles from '../../styles/Geral.module.css';
 
-
+// ============================================================================
+// COMPONENTE: ListaÚltimos (Cards de Resumo)
+// ============================================================================
 const ListaUltimos = ({ title, dados }) => {
     const gridTemplate = '2fr 1fr 1fr';
 
@@ -28,13 +30,10 @@ const ListaUltimos = ({ title, dados }) => {
                     <p style={{ padding: '20px', color: '#666', textAlign: 'center' }}>Nenhum registro encontrado.</p>
                 ) : (
                     dados.map((item) => {
-                        // Backend retorna boolean 'ativo'
                         const isOnline = item.ativo === true;
-
                         return (
                             <div key={item.id} className={styles['provider-list-item']} style={{ gridTemplateColumns: gridTemplate }}>
                                 <div className={styles['detail-cell-name']}>
-                                    {/* Backend usa nomeFantasia para Lojas e Fornecedores */}
                                     <p>{item.nomeFantasia}</p>
                                 </div>
                                 <div className={styles['detail-cell']}>
@@ -58,13 +57,15 @@ const ListaUltimos = ({ title, dados }) => {
     );
 };
 
-
+// ============================================================================
+// COMPONENTE: Modal de Edição de Usuário
+// ============================================================================
 const EditUsuarioModal = ({ usuario, onSave, onCancel, loading }) => {
     const [formData, setFormData] = useState({
         nome: '',
         email: '',
         tipoUsuario: 'LOJA',
-        senha: '' // Necessário pois o DTO do backend exige @NotBlank na senha
+        senha: '' // Sempre vazio por segurança
     });
 
     useEffect(() => {
@@ -73,7 +74,7 @@ const EditUsuarioModal = ({ usuario, onSave, onCancel, loading }) => {
                 nome: usuario.nome || '',
                 email: usuario.email || '',
                 tipoUsuario: usuario.tipoUsuario || 'LOJA',
-                senha: '' // Senha não vem do backend por segurança, user deve redefinir se editar
+                senha: '' // Reseta o campo de senha ao abrir
             });
         }
     }, [usuario]);
@@ -85,6 +86,7 @@ const EditUsuarioModal = ({ usuario, onSave, onCancel, loading }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        // O ID é passado separadamente
         onSave({ ...formData, id: usuario.id });
     };
 
@@ -92,9 +94,7 @@ const EditUsuarioModal = ({ usuario, onSave, onCancel, loading }) => {
         <div className={styles.modalBackdrop}>
             <div className={styles.modalContent} style={{ maxWidth: '600px' }}>
                 <h3 className={styles.modalTitle}>Editar Usuário: {usuario.nome}</h3>
-                <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '15px' }}>
-                    Nota: Para atualizar os dados, é necessário confirmar ou definir uma nova senha.
-                </p>
+
                 <form onSubmit={handleSubmit}>
                     <div className={styles.row}>
                         <div className={styles.fieldGroup}>
@@ -106,6 +106,7 @@ const EditUsuarioModal = ({ usuario, onSave, onCancel, loading }) => {
                             <input type="email" name="email" value={formData.email} onChange={handleChange} required className={styles.inputModal} />
                         </div>
                     </div>
+
                     <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>Nível de Acesso</label>
@@ -115,15 +116,25 @@ const EditUsuarioModal = ({ usuario, onSave, onCancel, loading }) => {
                                 <option value="FORNECEDOR">Fornecedor</option>
                             </select>
                         </div>
+
                         <div className={styles.fieldGroup}>
-                            <label>Nova Senha *</label>
-                            <input type="password" name="senha" value={formData.senha} onChange={handleChange} required className={styles.inputModal} placeholder="Mínimo 8 caracteres" minLength={8} />
+                            <label>Nova Senha</label>
+                            <input
+                                type="password"
+                                name="senha"
+                                value={formData.senha}
+                                onChange={handleChange}
+                                className={styles.inputModal}
+                                placeholder="Deixe em branco para manter a atual"
+                                minLength={8}
+                                // Removido o 'required' para permitir manter a senha antiga
+                            />
                         </div>
                     </div>
 
                     <div className={styles.modalActions}>
                         <button className={`${styles.submitButton} ${styles.btnCancel}`} type="button" onClick={onCancel} disabled={loading}>Cancelar</button>
-                        <button className={styles.submitButton} type="submit" disabled={loading}>{loading ? 'Salvando...' : 'Salvar'}</button>
+                        <button className={styles.submitButton} type="submit" disabled={loading}>{loading ? 'Salvando...' : 'Salvar Alterações'}</button>
                     </div>
                 </form>
             </div>
@@ -131,7 +142,9 @@ const EditUsuarioModal = ({ usuario, onSave, onCancel, loading }) => {
     );
 };
 
-
+// ============================================================================
+// COMPONENTE: Busca de Usuários
+// ============================================================================
 const BuscaUsuarios = () => {
     const [searchId, setSearchId] = useState('');
     const [searchName, setSearchName] = useState('');
@@ -156,11 +169,9 @@ const BuscaUsuarios = () => {
         setEditingUsuario(null);
 
         try {
-            // Rota atualizada: GET /api/v1/usuarios
             const response = await api.get('/api/v1/usuarios');
             let dados = response.data || [];
 
-            // Filtragem no Front (ID é UUID)
             if (searchId) dados = dados.filter(u => u.id && u.id.includes(searchId));
             if (searchName) dados = dados.filter(u => u.nome && u.nome.toLowerCase().includes(searchName.toLowerCase()));
             if (searchEmail) dados = dados.filter(u => u.email && u.email.toLowerCase().includes(searchEmail.toLowerCase()));
@@ -185,12 +196,10 @@ const BuscaUsuarios = () => {
         const { id, ...dataToSend } = updatedData;
 
         try {
-            // PUT /api/v1/usuarios/{id}
             await api.put(`/api/v1/usuarios/${id}`, dataToSend);
 
             setUsuarios(old => old.map(u => {
                 if (u.id === id) {
-                    // Atualiza localmente com os dados enviados (exceto senha)
                     return { ...u, nome: dataToSend.nome, email: dataToSend.email, tipoUsuario: dataToSend.tipoUsuario };
                 }
                 return u;
@@ -218,7 +227,6 @@ const BuscaUsuarios = () => {
         setLoading(true);
 
         try {
-            // DELETE /api/v1/usuarios/{id}
             await api.delete(`/api/v1/usuarios/${deleteId}`);
             setUsuarios(old => old.filter(u => u.id !== deleteId));
             setMessage({ type: 'success', text: "Usuário excluído permanentemente!" });
@@ -241,7 +249,7 @@ const BuscaUsuarios = () => {
 
     return (
         <div className={styles['search-section']} style={{ marginTop: '40px' }}>
-            <h2 className={styles['search-header']}>Consultar / Gerenciar Usuários do Sistema</h2>
+            <h2 className={styles['search-header']}>Consultar / Gerenciar Usuários</h2>
 
             {message && <div className={`${styles.alertMessage} ${styles[message.type]}`}>{message.text}</div>}
 
@@ -353,6 +361,7 @@ function Dashboard() {
     const [ultimosFornecedores, setUltimosFornecedores] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Função auxiliar para evitar quebra se o endpoint falhar
     const fetchDataSafe = async (url) => {
         try {
             const response = await api.get(url);
@@ -367,12 +376,13 @@ function Dashboard() {
         async function loadAllData() {
             setLoading(true);
 
-            // Chamadas para as novas rotas da API V1
+            // Carrega dados de todos os endpoints
             const lojasData = await fetchDataSafe('/api/v1/lojas');
             const fornecedoresData = await fetchDataSafe('/api/v1/fornecedores');
             const pedidosData = await fetchDataSafe('/api/v1/pedidos');
             const campanhasData = await fetchDataSafe('/api/v1/campanhas');
 
+            // Prepara listas de "Últimos Cadastrados" (inverte a lista e pega os 5 primeiros)
             const recentsLojas = [...lojasData].reverse().slice(0, 5);
             const recentsFornecedores = [...fornecedoresData].reverse().slice(0, 5);
 
