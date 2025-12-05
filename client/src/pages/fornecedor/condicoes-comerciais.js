@@ -112,7 +112,7 @@ const CondicoesComerciais = () => {
             <nav className={styles.sidebar}>
                 <ul>
                     <li>
-                        <Link href="/loja" className={styles.linkReset}>
+                        <Link href="/fornecedor/dashboard" className={styles.linkReset}>
                             <div className={styles.menuItem}>
                                 <FiGrid size={20} />
                                 <span>Dashboard</span>
@@ -121,7 +121,7 @@ const CondicoesComerciais = () => {
                     </li>
 
                     <li>
-                        <Link href="/pedidos-recebidos" className={styles.linkReset}>
+                        <Link href="/fornecedor/pedidos-recebidos" className={styles.linkReset}>
                             <div className={styles.menuItem}>
                                 <FiPackage size={20} />
                                 <span>Pedidos Recebidos</span>
@@ -130,7 +130,7 @@ const CondicoesComerciais = () => {
                     </li>
 
                     <li>
-                        <Link href="/meus-produtos" className={styles.linkReset}>
+                        <Link href="/fornecedor/meus-produtos" className={styles.linkReset}>
                             <div className={styles.menuItem}>
                                 <FiPackage size={20} />
                                 <span>Meus Produtos</span>
@@ -139,7 +139,7 @@ const CondicoesComerciais = () => {
                     </li>
 
                     <li>
-                        <Link href="/campanhas" className={styles.linkReset}>
+                        <Link href="/fornecedor/campanhas" className={styles.linkReset}>
                             <div className={styles.menuItem}>
                                 <FiUsers size={20} />
                                 <span>Campanhas</span>
@@ -148,7 +148,7 @@ const CondicoesComerciais = () => {
                     </li>
 
                     <li className={styles.active}>
-                        <Link href="/condicoes-comerciais" className={styles.linkReset}>
+                        <Link href="/fornecedor/condicoes-comerciais" className={styles.linkReset}>
                             <div className={styles.menuItem}>
                                 <FiSettings size={20} />
                                 <span>Condições Comerciais</span>
@@ -157,7 +157,7 @@ const CondicoesComerciais = () => {
                     </li>
 
                     <li>
-                        <Link href="/perfil" className={styles.linkReset}>
+                        <Link href="/fornecedor/perfil" className={styles.linkReset}>
                             <div className={styles.menuItem}>
                                 <FiUser size={20} />
                                 <span>Perfil</span>
