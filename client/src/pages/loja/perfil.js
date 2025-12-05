@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import styles from '@/styles/Geral.module.css';
-import api from '@/services/api';
+// Altere para o caminho correto do seu CSS Geral
+import styles from '../../styles/Geral.module.css';
+import api from '../../services/api';
+import withAuth from '../../components/withAuth'; // Recomendado usar withAuth
 
-// Ícones
 import {
   FiGrid, FiUsers, FiPackage, FiUser, FiLogOut
 } from 'react-icons/fi';
@@ -12,7 +13,6 @@ const PerfilLoja = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
-  // Estado inicial com TODOS os campos da entidade Loja.java
   const [formData, setFormData] = useState({
     id: '',
     nomeFantasia: '',
@@ -34,16 +34,15 @@ const PerfilLoja = () => {
         if (usuarioStored) {
           const usuario = JSON.parse(usuarioStored);
 
-          // LÓGICA DE ID:
-          // O ideal é que o login retorne o ID da loja.
-          // Se não tiver, você pode ter que buscar o usuário por ID para achar a loja vinculada.
-          // Aqui assumimos que usuario.lojaId existe ou simulamos isso.
-          const lojaId = usuario.lojaId || usuario.id; // Ajuste conforme seu backend retornar
+          // Tenta pegar o ID da loja. Se não tiver 'lojaId' explícito no usuário,
+          // avisa no console, pois 'usuario.id' é o ID do login, não da Loja.
+          // Nota: O backend precisa enviar o ID da loja no login para isso funcionar perfeitamente.
+          const idParaBuscar = usuario.lojaId || usuario.id;
 
-          if (lojaId) {
-            // Chamada para buscar dados atuais (GET)
-            // Se der erro 404, significa que precisa ajustar como pegamos o ID correto
-            const response = await api.get(`/api/v1/lojas/${lojaId}`);
+          if (idParaBuscar) {
+            // Ajuste na rota caso seu backend use '/lojas' ao invés de '/v1/lojas'
+            // Verifique se a rota no backend é: @RequestMapping("/api/v1/lojas")
+            const response = await api.get(`/api/v1/lojas/${idParaBuscar}`);
             const loja = response.data;
 
             setFormData({
@@ -62,7 +61,10 @@ const PerfilLoja = () => {
         }
       } catch (error) {
         console.error("Erro ao carregar perfil:", error);
-        // Não mostramos erro na tela logo de cara para não assustar se for só falta de dados
+        // Se der 404 aqui, é porque o ID do usuário não bate com o ID da loja no banco
+        if (error.response && error.response.status === 404) {
+             setMessage({ type: 'error', text: 'Loja não encontrada. Verifique se o seu usuário está vinculado a uma loja.' });
+        }
       } finally {
         setLoading(false);
       }
@@ -82,16 +84,14 @@ const PerfilLoja = () => {
 
     try {
       if (!formData.id) {
-         throw new Error("ID da loja não identificado. Faça login novamente.");
+         throw new Error("ID da loja não identificado.");
       }
 
-      // Envia PUT para atualizar
       await api.put(`/api/v1/lojas/${formData.id}`, formData);
-
-      setMessage({ type: 'success', text: 'Dados da loja atualizados com sucesso!' });
+      setMessage({ type: 'success', text: 'Dados atualizados com sucesso!' });
     } catch (error) {
       console.error("Erro ao atualizar:", error);
-      const msg = error.response?.data?.error || error.message || "Erro ao salvar alterações.";
+      const msg = error.response?.data?.error || error.message || "Erro ao salvar.";
       setMessage({ type: 'error', text: msg });
     } finally {
       setLoading(false);
@@ -99,13 +99,10 @@ const PerfilLoja = () => {
   };
 
   return (
-    <div className={styles.container}>
+    // Usa 'dashboard-container' que existe no Geral.module.css
+    <div className={styles['dashboard-container']}>
 
-      {/* SIDEBAR */}
       <nav className={styles.sidebar}>
-        <div style={{ padding: '0 30px 20px', fontSize: '20px', fontWeight: 'bold' }}>
-           Minha Loja
-        </div>
         <ul>
           <li>
             <Link href="/loja/dashboard" className={styles.linkReset}>
@@ -135,7 +132,7 @@ const PerfilLoja = () => {
               </div>
             </Link>
           </li>
-          <li style={{ marginTop: '20px' }}>
+          <li>
             <Link href="/" className={styles.linkReset}>
               <div className={styles.menuItem}>
                 <FiLogOut size={20} /><span>Sair</span>
@@ -145,35 +142,34 @@ const PerfilLoja = () => {
         </ul>
       </nav>
 
-      {/* CONTEÚDO PRINCIPAL */}
-      <main className={styles.content}>
+      {/* Usa 'main-content' que existe no Geral.module.css */}
+      <main className={styles['main-content']}>
 
-        <div className={styles.pageHeader}>
-          <h1 className={styles.pageTitle}>Perfil da Loja</h1>
-          <p className={styles.pageSubtitle}>Gerencie as informações da sua conta e dados de contato</p>
-        </div>
+        <header className={styles.header}>
+          <h1>Perfil da Loja</h1>
+        </header>
 
         {message && (
-          <div className={`${styles.message} ${styles[message.type]}`}>
+          <div className={`${styles.alertMessage} ${styles[message.type]}`}>
             {message.text}
           </div>
         )}
 
         <div className={styles.formCard}>
-          <h2 className={styles.cardTitle}>Dados da Loja</h2>
+          {/* Usa 'sectionTitle' que existe no Geral.module.css */}
+          <h2 className={styles.sectionTitle}>Dados da Loja</h2>
 
           <form onSubmit={handleSubmit}>
-            {/* GRUPO 1: Identificação */}
             <div className={styles.row}>
               <div className={styles.fieldGroup}>
                 <label>Nome da Loja</label>
+                {/* Usa 'inputLong' do Geral.module.css */}
                 <input
                   type="text"
                   name="nomeFantasia"
                   value={formData.nomeFantasia}
                   onChange={handleChange}
-                  className={styles.input}
-                  placeholder="Ex: Tech Store"
+                  className={styles.inputLong}
                   required
                 />
               </div>
@@ -184,14 +180,12 @@ const PerfilLoja = () => {
                   name="cnpj"
                   value={formData.cnpj}
                   onChange={handleChange}
-                  className={styles.input}
-                  placeholder="00.000.000/0000-00"
+                  className={styles.inputLong}
                   maxLength={18}
                 />
               </div>
             </div>
 
-            {/* GRUPO 2: Contato Pessoal */}
             <div className={styles.row}>
               <div className={styles.fieldGroup}>
                 <label>Responsável</label>
@@ -200,8 +194,7 @@ const PerfilLoja = () => {
                   name="responsavelNome"
                   value={formData.responsavelNome}
                   onChange={handleChange}
-                  className={styles.input}
-                  placeholder="Nome do Gerente"
+                  className={styles.inputLong}
                 />
               </div>
               <div className={styles.fieldGroup}>
@@ -211,13 +204,11 @@ const PerfilLoja = () => {
                   name="emailContato"
                   value={formData.emailContato}
                   onChange={handleChange}
-                  className={styles.input}
-                  placeholder="contato@loja.com"
+                  className={styles.inputLong}
                 />
               </div>
             </div>
 
-            {/* GRUPO 3: Contato Telefônico e CEP */}
             <div className={styles.row}>
               <div className={styles.fieldGroup}>
                 <label>Telefone</label>
@@ -226,8 +217,7 @@ const PerfilLoja = () => {
                   name="telefone"
                   value={formData.telefone}
                   onChange={handleChange}
-                  className={styles.input}
-                  placeholder="(00) 00000-0000"
+                  className={styles.inputLong}
                 />
               </div>
               <div className={styles.fieldGroup}>
@@ -237,58 +227,56 @@ const PerfilLoja = () => {
                   name="cep"
                   value={formData.cep}
                   onChange={handleChange}
-                  className={styles.input}
-                  placeholder="00000-000"
+                  className={styles.inputLong}
                   maxLength={9}
                 />
               </div>
             </div>
 
-            {/* GRUPO 4: Endereço */}
             <div className={styles.row}>
-              <div className={styles.fieldGroup} style={{ flex: 2 }}>
-                <label>Logradouro (Rua, Número, Bairro)</label>
+              <div className={styles.fieldGroup}>
+                <label>Logradouro</label>
                 <input
                   type="text"
                   name="logradouro"
                   value={formData.logradouro}
                   onChange={handleChange}
-                  className={styles.input}
-                  placeholder="Av. Principal, 1000"
+                  className={styles.inputLong}
                 />
               </div>
             </div>
 
-            {/* GRUPO 5: Localização */}
             <div className={styles.row}>
-              <div className={styles.fieldGroup} style={{ flex: 3 }}>
+              <div className={styles.fieldGroup}>
                 <label>Cidade</label>
                 <input
                   type="text"
                   name="cidade"
                   value={formData.cidade}
                   onChange={handleChange}
-                  className={styles.input}
+                  className={styles.inputLong}
                 />
               </div>
-              <div className={styles.fieldGroup} style={{ flex: 1 }}>
+              <div className={styles.fieldGroup}>
                 <label>Estado (UF)</label>
                 <input
                   type="text"
                   name="estado"
                   value={formData.estado}
                   onChange={handleChange}
-                  className={styles.input}
-                  placeholder="SP"
+                  className={styles.inputLong}
                   maxLength={2}
                   style={{ textTransform: 'uppercase' }}
                 />
               </div>
             </div>
 
-            <button type="submit" className={styles.saveButton} disabled={loading}>
-              {loading ? 'Salvando...' : 'Salvar Alterações'}
-            </button>
+            <div className={styles.footer}>
+                {/* Usa 'submitButton' do Geral.module.css */}
+                <button type="submit" className={styles.submitButton} disabled={loading}>
+                {loading ? 'Salvando...' : 'Salvar Alterações'}
+                </button>
+            </div>
           </form>
         </div>
       </main>
@@ -296,4 +284,4 @@ const PerfilLoja = () => {
   );
 };
 
-export default PerfilLoja;
+export default withAuth(PerfilLoja);
