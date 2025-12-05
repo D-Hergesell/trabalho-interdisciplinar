@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import styles from '../../styles/Geral.module.css';
-import api from '@/services/api';
+import styles from '../../styles/lojas.module.css'; // Ajuste o caminho se necessário (ex: ../styles/Loja.module.css)
+import api from '../../services/api';
 
+// Substituindo lucide-react por react-icons/fi (que já está instalado)
 import {
-    LayoutDashboard,
-    FileText,
-    Package,
-    Megaphone,
-    Settings,
-    User,
-    LogOut,
-    UserCircle
-} from 'lucide-react';
+    FiGrid,
+    FiShoppingBag,
+    FiPackage,
+    FiTag,
+    FiSettings,
+    FiUser,
+    FiLogOut
+} from 'react-icons/fi';
+import { FaUserCircle } from 'react-icons/fa';
 
 const Dashboard = () => {
     const [dashboardData, setDashboardData] = useState({
@@ -27,38 +28,49 @@ const Dashboard = () => {
     useEffect(() => {
         async function fetchData() {
             try {
-                const res = await api.get('/api/pedidos');
+                // Busca os pedidos (endpoint já filtrado ou geral, dependendo da lógica do back)
+                // Se for fornecedor, o backend deve filtrar pelo token ou ID.
+                const res = await api.get('/api/v1/pedidos');
                 const pedidosApi = res.data || [];
+
+                // Filtragem básica local se o backend retornar tudo (idealmente o backend filtra)
+                // Supondo que estamos vendo dados "deste" fornecedor logado.
 
                 const totalRecebidos = pedidosApi.length;
                 const valorTotal = pedidosApi.reduce(
-                    (acc, item) => acc + (item.total_amount || 0),
+                    (acc, item) => acc + (item.valorTotal || item.total_amount || 0),
                     0
                 );
+
+                // Ajuste conforme os status reais do seu Enum (PENDENTE, ENVIADO, ENTREGUE, etc)
                 const totalEnviados = pedidosApi.filter(
-                    p => p.status === 'Enviado' || p.status === 'Delivered'
+                    p => p.status === 'ENVIADO' || p.status === 'ENTREGUE'
                 ).length;
+
+                // Exemplo mockado para campanhas se não tiver endpoint ainda
+                const totalCampanhasAtivas = 3;
 
                 setDashboardData({
                     totalRecebidos,
                     valorTotal,
                     totalEnviados,
-                    totalCampanhasAtivas: 3,
+                    totalCampanhasAtivas,
                 });
 
                 const pedidosTratados = pedidosApi.map((p, index) => ({
-                    id: p._id || `#${index + 1}`,
-                    entity: p.store_id || 'Loja não informada',
+                    id: p.id || `#${index + 1}`,
+                    // store_id ou lojaNome vem do DTO
+                    entity: p.lojaNome || 'Loja não informada',
                     value: new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
                         currency: 'BRL',
-                    }).format(p.total_amount || 0),
+                    }).format(p.valorTotal || 0),
                     status: p.status || '—',
                 }));
 
                 setOrders(pedidosTratados);
             } catch (error) {
-                console.error('Erro ao carregar pedidos do fornecedor:', error);
+                console.error('Erro ao carregar dados do dashboard:', error);
             }
         }
 
@@ -82,85 +94,74 @@ const Dashboard = () => {
         <div className={styles['dashboard-container']}>
             {/* SIDEBAR */}
             <aside className={styles.sidebar}>
-                <nav>
-                    <ul>
-                        <NavItem
-                            icon={<LayoutDashboard size={20} />}
-                            label="Painel"
-                            href="/fornecedor"
-                            active
-                        />
-                        <NavItem
-                            icon={<FileText size={20} />}
-                            label="Pedidos Recebidos"
-                            href="/fornecedor/pedidos"
-                        />
-                        <NavItem
-                            icon={<Package size={20} />}
-                            label="Meus Produtos"
-                            href="/fornecedor/produtos"
-                        />
-                        <NavItem
-                            icon={<Megaphone size={20} />}
-                            label="Campanhas"
-                            href="/fornecedor/campanhas"
-                        />
-                        <NavItem
-                            icon={<Settings size={20} />}
-                            label="Condições Comerciais"
-                            href="/fornecedor/condicoes"
-                        />
-                        <NavItem
-                            icon={<User size={20} />}
-                            label="Perfil"
-                            href="/fornecedor/perfil"
-                        />
-                        <NavItem
-                            icon={<LogOut size={20} />}
-                            label="Sair"
-                            href="/"
-                        />
-                    </ul>
-                </nav>
+                <ul>
+                    <NavItem
+                        icon={<FiGrid size={20} />}
+                        label="Painel"
+                        href="/fornecedor"
+                        active
+                    />
+                    <NavItem
+                        icon={<FiShoppingBag size={20} />}
+                        label="Pedidos Recebidos"
+                        href="/fornecedor/pedidos-recebidos"
+                    />
+                    <NavItem
+                        icon={<FiPackage size={20} />}
+                        label="Meus Produtos"
+                        href="/fornecedor/meus-produtos"
+                    />
+                    <NavItem
+                        icon={<FiTag size={20} />}
+                        label="Campanhas"
+                        href="/fornecedor/campanhas"
+                    />
+                    <NavItem
+                        icon={<FiSettings size={20} />}
+                        label="Condições Comerciais"
+                        href="/fornecedor/condicoes-comerciais"
+                    />
+                    <NavItem
+                        icon={<FiUser size={20} />}
+                        label="Perfil"
+                        href="/fornecedor/perfil"
+                    />
+                    <NavItem
+                        icon={<FiLogOut size={20} />}
+                        label="Sair"
+                        href="/"
+                    />
+                </ul>
             </aside>
 
             {/* MAIN */}
-            <main className={styles.mainContent}>
+            <main className={styles['main-content']}>
                 <header className={styles.header}>
-                    <h1>FORNECEDOR XYZ</h1>
+                    <h1>DASHBOARD</h1>
                     <div className={styles['profile-area']}>
-                        <UserCircle size={24} />
+                        <FaUserCircle size={24} />
                         <span>Fornecedor</span>
                     </div>
                 </header>
 
                 {/* CARDS DE MÉTRICA */}
-                <section className={styles.statsGrid}>
+                <section className={styles['dashboard-cards']}>
                     {stats.map((stat, index) => (
-                        <div key={index} className={styles.statCard}>
+                        <div key={index} className={styles.card}>
                             <h3>{stat.label}</h3>
                             <p>{stat.value}</p>
                         </div>
                     ))}
                 </section>
 
-                {/* TABELA ESTILO PLANILHA */}
-                <section className={styles.sectionContainer}>
-                    <h2>Últimos Pedidos</h2>
+                {/* TABELA DE PEDIDOS RECENTES */}
+                <section className={styles['table-section']}>
+                    <h2 style={{ marginBottom: '20px', color: '#333' }}>Últimos Pedidos</h2>
 
-                    <div className={styles.tableWrapper}>
-                        <div className={styles.spreadsheetHeader}>
-                            <div className={styles.colIndex}></div>
-                            <div className={styles.col}>A</div>
-                            <div className={styles.col}>B</div>
-                            <div className={styles.col}>C</div>
-                            <div className={styles.col}>D</div>
-                        </div>
-
-                        <table className={styles.dataTable}>
+                    <div className={styles['table-section']}>
+                        <table className={styles['custom-table'] || styles.table}>
                             <thead>
                             <tr>
-                                <th className={styles.rowNum}>1</th>
                                 <th>Nº do Pedido</th>
                                 <th>Loja</th>
                                 <th>Valor</th>
@@ -170,32 +171,21 @@ const Dashboard = () => {
                             <tbody>
                             {orders.map((order, index) => (
                                 <tr key={index}>
-                                    <td className={styles.rowNum}>{index + 2}</td>
-                                    <td>{order.id}</td>
+                                    <td>{String(order.id).substring(0, 8)}</td>
                                     <td>{order.entity}</td>
                                     <td>{order.value}</td>
                                     <td>{order.status}</td>
                                 </tr>
                             ))}
+                            {orders.length === 0 && (
+                                <tr>
+                                    <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>
+                                        Nenhum pedido recente.
+                                    </td>
+                                </tr>
+                            )}
                             </tbody>
                         </table>
-                    </div>
-                </section>
-
-                {/* CAMPANHAS ATIVAS (AQUI QUE TAVA DIFERENTE) */}
-                <section className={styles.campaignSection}>
-                    <div className={styles.campaignCard}>
-                        <h3>Campanhas Ativas</h3>
-                        <h4>Campanha, Cashback 10% SC</h4>
-                        <p>
-                            Pedidos acima de R$ 300<br />
-                            recebem 10% de volta.
-                        </p>
-
-                        <div className={styles.campaignActions}>
-                            <button className={styles.btnPrimary}>Editar</button>
-                            <button className={styles.btnText}>Desativar</button>
-                        </div>
                     </div>
                 </section>
             </main>
@@ -203,6 +193,7 @@ const Dashboard = () => {
     );
 };
 
+// Componente Auxiliar para o Menu
 const NavItem = ({ icon, label, href, active }) => (
     <li className={active ? styles.active : ''}>
         <Link href={href} className={styles.linkReset}>
