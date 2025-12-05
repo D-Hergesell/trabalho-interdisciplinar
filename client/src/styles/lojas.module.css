@@ -1,4 +1,4 @@
-/* Arquivo: src/styles/lojas.module.css */
+/* src/styles/lojas.module.css */
 
 /* =======================================================
    LAYOUT GERAL
@@ -7,18 +7,18 @@
   display: flex;
   min-height: 100vh;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background-color: #f4f7fa; /* Fundo cinza bem claro */
+  background-color: #f4f7fa;
 }
 
 /* --- Sidebar (Menu Lateral) --- */
 .sidebar {
   width: 260px;
-  background-color: #0c2b4e; /* Azul Escuro */
+  background-color: #0c2b4e;
   color: white;
   display: flex;
   flex-direction: column;
   padding-top: 20px;
-  flex-shrink: 0; /* Impede a sidebar de encolher */
+  flex-shrink: 0;
 }
 
 .sidebar ul {
@@ -39,7 +39,7 @@
   padding: 18px 30px;
   font-size: 16px;
   font-weight: 500;
-  color: #b0c4de; /* Azul claro acinzentado para itens inativos */
+  color: #b0c4de;
 }
 
 .sidebar li:hover .menuItem {
@@ -49,9 +49,9 @@
 
 .active .menuItem {
   background-color: #ffffff;
-  color: #0c2b4e; /* Texto azul escuro no item ativo */
+  color: #0c2b4e;
   font-weight: 700;
-  border-left: 5px solid #1890ff; /* Detalhe azul brilhante */
+  border-left: 5px solid #1890ff;
 }
 
 .linkReset {
@@ -61,11 +61,16 @@
   width: 100%;
 }
 
+/* Oculta header mobile no desktop */
+.mobileHeader {
+  display: none;
+}
+
 /* --- Conteúdo Principal --- */
 .main-content {
   flex: 1;
   padding: 40px;
-  overflow-y: auto; /* Permite rolar se o conteúdo for grande */
+  overflow-y: auto;
 }
 
 .header {
@@ -111,7 +116,7 @@
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s;
-  border-left: 4px solid #0c2b4e; /* Detalhe visual */
+  border-left: 4px solid #0c2b4e;
 }
 
 .card:hover {
@@ -177,285 +182,7 @@
   border-bottom: none;
 }
 
-/* =======================================================
-   ÁREA DE BUSCA (FORNECEDORES)
-   ======================================================= */
-.search-section {
-  background: white;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  margin-bottom: 30px;
-}
-
-.search-header {
-  margin-top: 0;
-  font-size: 18px;
-  color: #0c2b4e;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
-}
-
-.search-inputs {
-  display: flex;
-  gap: 20px;
-  align-items: flex-end;
-  flex-wrap: wrap;
-}
-
-.search-group {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 200px;
-}
-
-.search-group label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #666;
-  margin-bottom: 6px;
-}
-
-.search-group input {
-  padding: 10px 15px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 15px;
-  transition: border 0.2s;
-}
-
-.search-group input:focus {
-  outline: none;
-  border-color: #0c2b4e;
-  box-shadow: 0 0 0 3px rgba(12, 43, 78, 0.1);
-}
-
-.btn-search {
-  background-color: #0c2b4e;
-  color: white;
-  border: none;
-  padding: 10px 25px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  height: 42px; /* Alinha com os inputs */
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background 0.2s;
-}
-
-.btn-search:hover {
-  background-color: #1a4a7d;
-}
-
-.btn-search:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-/* =======================================================
-   LISTA / GRID DE FORNECEDORES
-   ======================================================= */
-.provider-list-container {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* Grid definition: Define as colunas alinhadas */
-.grid-style {
-  display: grid;
-  /* Colunas: Nome (3 partes), ID (1.5), Email (3), Resp (2), Ações (auto) */
-  grid-template-columns: 3fr 1.5fr 3fr 2fr 100px;
-  gap: 15px;
-  align-items: center;
-  padding: 15px 20px;
-}
-
-.provider-list-header {
-  composes: grid-style; /* Herda o grid acima */
-  background-color: #e9ecef;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #6c757d;
-  letter-spacing: 0.5px;
-}
-
-.provider-list-item {
-  composes: grid-style; /* Herda o grid acima */
-  background-color: white;
-  border-radius: 8px;
-  border: 1px solid #eee;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-  transition: transform 0.1s, box-shadow 0.1s;
-}
-
-.provider-list-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
-  border-color: #dbe9f5;
-}
-
-.detail-cell {
-  font-size: 14px;
-  color: #444;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.detail-cell-name {
-  font-weight: 600;
-  color: #0c2b4e;
-}
-
-.item-actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-/* Botões de Ação */
-.btn-edit {
-  background-color: #e3f2fd;
-  color: #1976d2;
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-.btn-edit:hover { background-color: #bbdefb; }
-
-.btn-delete {
-  background-color: #ffebee;
-  color: #d32f2f;
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-.btn-delete:hover { background-color: #ffcdd2; }
-
-/* =======================================================
-   PAGINAÇÃO E MENSAGENS
-   ======================================================= */
-.paginationControls {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  margin-top: 30px;
-  margin-bottom: 50px;
-}
-
-.nav-btn {
-  background: white;
-  border: 1px solid #ddd;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: #555;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.nav-btn:hover:not(:disabled) {
-  border-color: #0c2b4e;
-  color: #0c2b4e;
-}
-
-.nav-btn:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.pageInfo {
-  font-size: 14px;
-  color: #777;
-}
-
-.no-data {
-  text-align: center;
-  padding: 40px;
-  color: #888;
-  background: white;
-  border-radius: 8px;
-  border: 1px dashed #ddd;
-}
-
-/* =======================================================
-   RESPONSIVIDADE (MOBILE)
-   ======================================================= */
-@media (max-width: 768px) {
-  .dashboard-container {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-    padding-bottom: 10px;
-  }
-
-  .main-content {
-    padding: 20px;
-  }
-
-  .grid-style {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-    padding: 15px;
-  }
-
-  .provider-list-header {
-    display: none; /* Esconde cabeçalho em mobile */
-  }
-
-  .detail-cell {
-    width: 100%;
-    white-space: normal;
-  }
-
-  .detail-cell::before {
-    /* Adiciona label no mobile */
-    content: attr(title);
-    font-weight: bold;
-    display: inline-block;
-    margin-right: 5px;
-  }
-
-  .item-actions {
-    width: 100%;
-    justify-content: flex-start;
-    margin-top: 10px;
-    border-top: 1px dashed #eee;
-    padding-top: 10px;
-  }
-}
-
-/* =======================================================
-   NOVAS CLASSES: STATUS E BOTÃO CANCELAR
-   ======================================================= */
-
-/* Badges de Status (Cores) */
+/* Status Badges */
 .statusBadge {
   font-weight: 700;
   font-size: 12px;
@@ -465,59 +192,154 @@
   display: inline-block;
 }
 
-.statusPendente {
-  color: #f0ad4e; /* Amarelo */
-  background-color: rgba(240, 173, 78, 0.1);
-}
+.statusPendente { color: #f0ad4e; background-color: rgba(240, 173, 78, 0.1); }
+.statusEmSeparacao { color: #007bff; background-color: rgba(0, 123, 255, 0.1); }
+.statusEnviado { color: #17a2b8; background-color: rgba(23, 162, 184, 0.1); }
+.statusEntregue { color: #28a745; background-color: rgba(40, 167, 69, 0.1); }
+.statusCancelado { color: #dc3545; background-color: rgba(220, 53, 69, 0.1); }
 
-.statusEmSeparacao {
-  color: #007bff; /* Azul */
-  background-color: rgba(0, 123, 255, 0.1);
-}
 
-.statusEnviado {
-  color: #17a2b8; /* Ciano */
-  background-color: rgba(23, 162, 184, 0.1);
-}
+/* =======================================================
+   RESPONSIVIDADE MOBILE (Menu Três Pontinhos & Cards)
+   ======================================================= */
+@media (max-width: 768px) {
 
-.statusEntregue {
-  color: #28a745; /* Verde */
-  background-color: rgba(40, 167, 69, 0.1);
-}
+  /* 1. Layout Coluna */
+  .dashboard-container {
+    flex-direction: column;
+  }
 
-.statusCancelado {
-  color: #dc3545; /* Vermelho */
-  background-color: rgba(220, 53, 69, 0.1);
-}
+  /* 2. Sidebar vira Barra Superior Fixa */
+  .sidebar {
+    width: 100%;
+    height: auto;
+    padding: 0;
+    background-color: #0c2b4e;
+    display: flex;
+    flex-direction: column; /* Header em cima, lista embaixo */
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
 
-/* Botão Cancelar */
-.btnCancelAction {
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  transition: all 0.2s;
-  color: white;
-  font-weight: 500;
-}
+  /* Cabeçalho Mobile */
+  .mobileHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #0c2b4e;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
 
-/* Estado Ativo (Pode cancelar - Vermelho) */
-.btnCancelActive {
-  background-color: #dc3545;
-  cursor: pointer;
-  opacity: 1;
-}
+  .mobileLogo {
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    text-transform: uppercase;
+  }
 
-.btnCancelActive:hover {
-  background-color: #c82333;
-}
+  .menuToggle {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-/* Estado Inativo (Não pode cancelar - Cinza) */
-.btnCancelDisabled {
-  background-color: #ccc;
-  cursor: pointer; /* Mantém pointer para clicar e ver o aviso */
-  opacity: 0.7;
+  /* 3. Lista do Menu (Escondida) */
+  .sidebar ul {
+    display: none; /* Escondido por padrão */
+    flex-direction: column;
+    width: 100%;
+    background-color: #0a2340;
+    padding: 0;
+    margin: 0;
+    animation: slideDown 0.3s ease-out;
+  }
+
+  .sidebar ul.open {
+    display: flex; /* Mostra ao clicar */
+  }
+
+  .sidebar ul li {
+    padding: 0;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .active .menuItem {
+    border-left: 4px solid #1890ff; /* Indicador lateral no mobile */
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 4. Conteúdo Principal */
+  .main-content {
+    padding: 20px 15px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+  }
+
+  /* 5. Cards de Métricas */
+  .dashboard-cards {
+    grid-template-columns: 1fr; /* Um card por linha */
+  }
+
+  /* 6. TABELA RESPONSIVA EM CARDS */
+  .orders-table, .orders-table tbody, .orders-table tr, .orders-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .orders-table thead {
+    display: none; /* Esconde cabeçalho */
+  }
+
+  .orders-table tr {
+    background: white;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    padding: 15px;
+    border: 1px solid #eee;
+  }
+
+  .orders-table td {
+    text-align: left;
+    padding: 10px 0;
+    border-bottom: 1px dashed #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .orders-table td:last-child {
+    border-bottom: none;
+  }
+
+  /* Rótulos Data-Label */
+  .orders-table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: #888;
+    font-size: 12px;
+    text-transform: uppercase;
+  }
 }

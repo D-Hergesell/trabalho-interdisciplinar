@@ -1,21 +1,24 @@
+/* src/styles/LojaPedidos.module.css */
+
 /* =======================================================
-   BARRA LATERAL E LAYOUT (Idêntico ao Admin/Geral)
+   LAYOUT GERAL
    ======================================================= */
 .dashboard-container {
   display: flex;
   min-height: 100vh;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: #f4f7fa;
 }
 
 /* --- Sidebar --- */
 .sidebar {
-  width: 240px;
+  width: 260px;
   background-color: #0c2b4e;
   color: white;
   display: flex;
   flex-direction: column;
   padding-top: 20px;
+  flex-shrink: 0;
 }
 
 .sidebar ul {
@@ -24,36 +27,35 @@
   margin: 0;
 }
 
-.sidebar ul li {
-  padding: 18px 30px;
+.sidebar li {
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  font-size: 16px;
-  font-weight: 500;
-  border-right: 4px solid transparent;
-  transition: background-color 0.2s, color 0.2s;
+  transition: all 0.2s ease;
 }
 
+/* Estilo unificado no menuItem (igual aos outros) */
 .menuItem {
   display: flex;
   align-items: center;
   gap: 15px;
-  width: 100%;
+  padding: 18px 30px; /* Padding movido para cá */
+  font-size: 16px;
+  font-weight: 500;
+  color: #b0c4de;
+  transition: all 0.2s;
 }
 
-.sidebar ul li:hover:not(.active) {
-  background-color: #1a4a7d;
+.sidebar li:hover .menuItem {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
 }
 
-/* Item Ativo: Fundo Branco, Texto Azul */
-.sidebar ul li.active {
+.active .menuItem {
   background-color: #ffffff;
   color: #0c2b4e;
-  font-weight: bold;
-  border-radius: 8px 0 0 8px;
+  font-weight: 700;
+  border-left: 5px solid #1890ff; /* Indicador azul */
+  border-radius: 8px 0 0 8px; /* Arredondado apenas na esquerda */
   margin-right: -1px;
-  position: relative;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
@@ -62,6 +64,11 @@
   color: inherit;
   width: 100%;
   display: block;
+}
+
+/* Esconde header mobile no desktop */
+.mobileHeader {
+  display: none;
 }
 
 /* --- Conteúdo Principal --- */
@@ -183,6 +190,7 @@
 .dataTable td {
   font-size: 14px;
   color: #555;
+  vertical-align: middle;
 }
 
 .dataTable tbody tr:hover {
@@ -196,27 +204,13 @@
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
+  display: inline-block;
 }
 
-.statusPendente {
-  background-color: #fff3cd;
-  color: #856404;
-}
-
-.statusAprovado {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.statusEnviado {
-  background-color: #cce5ff;
-  color: #004085;
-}
-
-.statusCancelado {
-  background-color: #f8d7da;
-  color: #721c24;
-}
+.statusPendente { background-color: #fff3cd; color: #856404; }
+.statusAprovado { background-color: #d4edda; color: #155724; }
+.statusEnviado { background-color: #cce5ff; color: #004085; }
+.statusCancelado { background-color: #f8d7da; color: #721c24; }
 
 .emptyState {
   text-align: center;
@@ -237,4 +231,180 @@
 
 .actionButton:hover {
   color: #275fdc;
+}
+
+/* =======================================================
+   RESPONSIVIDADE MOBILE
+   ======================================================= */
+@media (max-width: 768px) {
+
+  /* 1. Layout Coluna */
+  .dashboard-container {
+    flex-direction: column;
+  }
+
+  /* 2. Sidebar vira Menu Superior Fixo */
+  .sidebar {
+    width: 100%;
+    height: auto;
+    padding: 0;
+    background-color: #0c2b4e;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+
+  /* Header Mobile */
+  .mobileHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #0c2b4e;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .mobileLogo {
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    text-transform: uppercase;
+  }
+
+  .menuToggle {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Lista de Menu (Escondida) */
+  .sidebar ul {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    background-color: #0a2340;
+    padding: 0;
+    margin: 0;
+    animation: slideDown 0.3s ease-out;
+  }
+
+  .sidebar ul.open {
+    display: flex;
+  }
+
+  .sidebar ul li {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 0;
+  }
+
+  /* Item ativo no mobile */
+  .active .menuItem {
+    border-radius: 0;
+    margin: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-left: 4px solid #4CAF50; /* Verde ou cor de destaque */
+    box-shadow: none;
+  }
+
+  .menuItem {
+    width: 100%;
+    padding: 15px 20px;
+    justify-content: flex-start;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 3. Conteúdo Principal */
+  .main-content {
+    padding: 20px 15px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+  }
+
+  /* 4. Busca e Botão */
+  .actionsSection {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+
+  .searchWrapper {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .newOrderButton {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* 5. Tabela Responsiva (Cards) */
+  .tableWrapper {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .dataTable, .dataTable tbody, .dataTable tr, .dataTable td {
+    display: block;
+    width: 100%;
+  }
+
+  .dataTable thead {
+    display: none; /* Esconde cabeçalho */
+  }
+
+  .dataTable tr {
+    background: white;
+    margin-bottom: 15px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 20px;
+    border: 1px solid #eef0f2;
+  }
+
+  .dataTable td {
+    text-align: left;
+    padding: 10px 0;
+    border-bottom: 1px dashed #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+  }
+
+  .dataTable td:last-child {
+    border-bottom: none;
+    padding-top: 15px;
+    justify-content: flex-end;
+  }
+
+  /* Rótulos Data-Label */
+  .dataTable td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: #888;
+    font-size: 12px;
+    text-transform: uppercase;
+    margin-right: 15px;
+  }
+
+  /* Exceção para o botão de ação */
+  .dataTable td[data-label="Ações"]::before {
+    display: none;
+  }
 }

@@ -1,25 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-// AJUSTE AQUI: Caminho do CSS voltou ao normal (apenas 2 níveis)
 import styles from '../../styles/lojascatalogo.module.css';
 import api from '@/services/api';
 
 import {
-    FiArrowLeft, FiShoppingCart, FiBox, FiGrid, FiUsers, FiPackage, FiUser, FiLogOut
+    FiArrowLeft, FiShoppingCart, FiBox, FiGrid, FiUsers, FiPackage, FiUser, FiLogOut,
+    FiMoreVertical, FiX // Novos ícones
 } from 'react-icons/fi';
 
 const CatalogoFornecedor = () => {
     const router = useRouter();
-    // O router.query pega tanto rotas dinâmicas quanto query params (?id=123)
     const { id } = router.query;
 
     const [produtos, setProdutos] = useState([]);
     const [fornecedorInfo, setFornecedorInfo] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // Estado para Menu Mobile
+    const [menuOpen, setMenuOpen] = useState(false);
+
     useEffect(() => {
-        // Só busca se o ID estiver disponível
         if (router.isReady && id) {
             fetchData();
         }
@@ -54,17 +55,24 @@ const CatalogoFornecedor = () => {
         }
     }
 
-    const handleIniciarPedido = () => {
-        router.push(`/loja/novo-pedido?fornecedorId=${id}`);
-    };
-
     const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
     return (
         <div className={styles['dashboard-container']}>
 
+            {/* SIDEBAR COM MENU MOBILE */}
             <nav className={styles.sidebar}>
-                <ul>
+                <div className={styles.mobileHeader}>
+                    <span className={styles.mobileLogo}>Menu Loja</span>
+                    <button
+                        className={styles.menuToggle}
+                        onClick={() => setMenuOpen(!menuOpen)}
+                    >
+                        {menuOpen ? <FiX size={24} /> : <FiMoreVertical size={24} />}
+                    </button>
+                </div>
+
+                <ul className={menuOpen ? styles.open : ''}>
                     <li><Link href="/loja/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20}/><span>Dashboard</span></div></Link></li>
                     <li><Link href="/loja/fornecedoresdisponiveis" className={styles.linkReset}><div className={styles.menuItem}><FiUsers size={20}/><span>Fornecedores</span></div></Link></li>
                     <li><Link href="/loja/pedidos" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20}/><span>Meus Pedidos</span></div></Link></li>

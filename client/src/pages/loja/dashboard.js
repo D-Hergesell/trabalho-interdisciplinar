@@ -4,11 +4,16 @@ import { useRouter } from 'next/router';
 import styles from '@/styles/lojas.module.css';
 import api from '@/services/api';
 import {
-  FiGrid, FiUsers, FiPackage, FiUser, FiLogOut, FiUserCheck, FiSearch
+  FiGrid, FiUsers, FiPackage, FiUser, FiLogOut, FiUserCheck, FiSearch,
+  FiMoreVertical, FiX // Novos ícones importados
 } from 'react-icons/fi';
 
 const DashboardLoja = () => {
   const router = useRouter();
+
+  // Estado para o menu mobile
+  const [menuOpen, setMenuOpen] = useState(false);
+
   const [dashboardData, setDashboardData] = useState({
     totalRealizados: 0,
     valorTotal: 0,
@@ -35,7 +40,6 @@ const DashboardLoja = () => {
 
       const totalRealizados = lista.length;
 
-      // CORREÇÃO: Soma apenas se o status NÃO for CANCELADO
       const valorTotal = lista.reduce((acc, item) => {
           if (item.status === 'CANCELADO') return acc;
           return acc + (item.valorTotal || 0);
@@ -55,7 +59,6 @@ const DashboardLoja = () => {
     }
   }
 
-  // Função auxiliar para pegar a CLASSE CSS baseada no status
   const getStatusClassName = (status) => {
     switch (status) {
       case 'PENDENTE': return styles.statusPendente;
@@ -69,9 +72,23 @@ const DashboardLoja = () => {
 
   return (
     <div className={styles['dashboard-container']}>
-      {/* Sidebar */}
+
+      {/* --- SIDEBAR COM MENU DROPDOWN --- */}
       <nav className={styles.sidebar}>
-        <ul>
+
+        {/* Cabeçalho Mobile (Três Pontinhos) */}
+        <div className={styles.mobileHeader}>
+            <span className={styles.mobileLogo}>Menu Loja</span>
+            <button
+                className={styles.menuToggle}
+                onClick={() => setMenuOpen(!menuOpen)}
+            >
+                {menuOpen ? <FiX size={24} /> : <FiMoreVertical size={24} />}
+            </button>
+        </div>
+
+        {/* Lista de Links (Classe 'open' controla visibilidade no mobile) */}
+        <ul className={menuOpen ? styles.open : ''}>
           <li className={styles.active}>
             <Link href="/loja/dashboard" className={styles.linkReset}>
               <div className={styles.menuItem}>
@@ -114,7 +131,13 @@ const DashboardLoja = () => {
       <main className={styles['main-content']}>
         <header className={styles.header}>
           <h1>DASHBOARD</h1>
-          <div className={styles['profile-area']}>
+
+          <div
+            className={styles['profile-area']}
+            onClick={() => router.push('/loja/perfil')}
+            style={{ cursor: 'pointer' }}
+            title="Ir para meu perfil"
+          >
             <FiUserCheck size={24} />
             <span>Minha Loja</span>
           </div>
@@ -152,12 +175,13 @@ const DashboardLoja = () => {
               {pedidosRecentes.length > 0 ? (
                 pedidosRecentes.map((pedido) => (
                   <tr key={pedido.id}>
-                    <td>#{String(pedido.id).substring(0, 8)}</td>
-                    <td>{pedido.fornecedorNome || '—'}</td>
-                    <td>
+                    {/* Adicionado data-label para responsividade CSS */}
+                    <td data-label="ID">#{String(pedido.id).substring(0, 8)}</td>
+                    <td data-label="Fornecedor">{pedido.fornecedorNome || '—'}</td>
+                    <td data-label="Valor">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pedido.valorTotal || 0)}
                     </td>
-                    <td>
+                    <td data-label="Status">
                         <span className={`${styles.statusBadge} ${getStatusClassName(pedido.status)}`}>
                             {pedido.status}
                         </span>

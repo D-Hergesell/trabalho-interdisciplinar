@@ -10,7 +10,9 @@ import {
     FiUser,
     FiLogOut,
     FiUsers,
-    FiSearch
+    FiSearch,
+    FiMoreVertical, // Novo ícone
+    FiX             // Novo ícone
 } from 'react-icons/fi';
 
 const FornecedoresDisponiveis = () => {
@@ -19,12 +21,14 @@ const FornecedoresDisponiveis = () => {
     const [filtroBusca, setFiltroBusca] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // ESTADO DO MENU MOBILE
+    const [menuOpen, setMenuOpen] = useState(false);
+
     // Carregar fornecedores ativos do Backend
     useEffect(() => {
         async function fetchFornecedores() {
             setLoading(true);
             try {
-                // Busca apenas os fornecedores ativos
                 const res = await api.get('/api/v1/fornecedores/ativos');
                 setFornecedores(res.data || []);
             } catch (error) {
@@ -37,7 +41,6 @@ const FornecedoresDisponiveis = () => {
         fetchFornecedores();
     }, []);
 
-    // Filtro de busca (Frontend)
     const fornecedoresFiltrados = useMemo(() => {
         if (!filtroBusca.trim()) return fornecedores;
         const termo = filtroBusca.toLowerCase();
@@ -46,24 +49,34 @@ const FornecedoresDisponiveis = () => {
             const nome = f.nomeFantasia || '';
             const cidade = f.cidade || '';
             const categoria = f.categoria || '';
-
             return [nome, cidade, categoria]
                 .some(valor => valor.toString().toLowerCase().includes(termo));
         });
     }, [fornecedores, filtroBusca]);
 
-    // --- FUNÇÃO CORRIGIDA DO CATÁLOGO ---
     const handleVerCatalogo = (idFornecedor) => {
-        // Redireciona para a página catalogo.js passando o ID pela URL
         router.push(`/loja/catalogo?id=${idFornecedor}`);
     };
 
     return (
         <div className={styles['dashboard-container']}>
 
-            {/* Sidebar */}
+            {/* --- SIDEBAR COM MENU DROPDOWN --- */}
             <nav className={styles.sidebar}>
-                <ul>
+
+                {/* Cabeçalho Mobile (Três Pontinhos) */}
+                <div className={styles.mobileHeader}>
+                    <span className={styles.mobileLogo}>Menu Loja</span>
+                    <button
+                        className={styles.menuToggle}
+                        onClick={() => setMenuOpen(!menuOpen)}
+                    >
+                        {menuOpen ? <FiX size={24} /> : <FiMoreVertical size={24} />}
+                    </button>
+                </div>
+
+                {/* Lista de Links (Escondida no mobile até clicar) */}
+                <ul className={menuOpen ? styles.open : ''}>
                     <li>
                         <Link href="/loja/dashboard" className={styles.linkReset}>
                             <div className={styles.menuItem}>
@@ -90,8 +103,6 @@ const FornecedoresDisponiveis = () => {
                             </div>
                         </Link>
                     </li>
-
-
 
                     <li>
                         <Link href="/loja/perfil" className={styles.linkReset}>
@@ -156,22 +167,21 @@ const FornecedoresDisponiveis = () => {
                                 ) : fornecedoresFiltrados.length > 0 ? (
                                     fornecedoresFiltrados.map((fornecedor) => (
                                         <tr key={fornecedor.id}>
-                                            <td style={{ fontWeight: 600, color: '#333' }}>
+                                            <td data-label="Fornecedor" style={{ fontWeight: 600, color: '#333' }}>
                                                 {fornecedor.nomeFantasia}
                                             </td>
-                                            <td>
+                                            <td data-label="Categoria">
                                                 {fornecedor.categoria || '-'}
                                             </td>
-                                            <td>
+                                            <td data-label="Localização">
                                                 {fornecedor.cidade} {fornecedor.estado ? `- ${fornecedor.estado}` : ''}
                                             </td>
-                                            <td>
+                                            <td data-label="Contato">
                                                 {fornecedor.emailContato}
                                             </td>
-                                            <td>
+                                            <td data-label="Ação" style={{textAlign: 'center'}}>
                                                 <button
                                                     className={styles.btnCatalogo}
-                                                    // Passa o ID para a função de navegação
                                                     onClick={() => handleVerCatalogo(fornecedor.id)}
                                                 >
                                                     Ver Catálogo

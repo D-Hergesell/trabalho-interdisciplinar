@@ -1,5 +1,7 @@
+/* src/styles/lojafornecedor.module.css */
+
 /* =======================================================
-   BARRA LATERAL E LAYOUT (Padrão Admin/Loja)
+   BARRA LATERAL E LAYOUT
    ======================================================= */
 .dashboard-container {
   display: flex;
@@ -8,7 +10,7 @@
   background-color: #f4f7fa;
 }
 
-/* --- Sidebar --- */
+/* --- Sidebar (Desktop) --- */
 .sidebar {
   width: 240px;
   background-color: #0c2b4e;
@@ -16,6 +18,7 @@
   display: flex;
   flex-direction: column;
   padding-top: 20px;
+  flex-shrink: 0;
 }
 
 .sidebar ul {
@@ -46,7 +49,6 @@
   background-color: #1a4a7d;
 }
 
-/* Item Ativo: Fundo Branco, Texto Azul Escuro */
 .sidebar ul li.active {
   background-color: #ffffff;
   color: #0c2b4e;
@@ -62,6 +64,11 @@
   color: inherit;
   width: 100%;
   display: block;
+}
+
+/* Esconde o cabeçalho mobile no Desktop */
+.mobileHeader {
+  display: none;
 }
 
 /* --- Conteúdo Principal --- */
@@ -173,7 +180,6 @@
   background-color: #f8f9fa;
 }
 
-/* Botão de Ação (Fazer Pedido) */
 .btnCatalogo {
   background-color: #275fdc;
   color: white;
@@ -195,4 +201,182 @@
   padding: 40px;
   color: #888;
   font-size: 14px;
+}
+
+/* =======================================================
+   RESPONSIVIDADE E MENU MOBILE (TRÊS PONTINHOS)
+   ======================================================= */
+@media (max-width: 768px) {
+
+  /* 1. Layout */
+  .dashboard-container {
+    flex-direction: column;
+  }
+
+  /* 2. Sidebar vira Barra Superior Fixa */
+  .sidebar {
+    width: 100%;
+    height: auto;
+    padding: 0;
+    background-color: #0c2b4e;
+    display: flex;
+    flex-direction: column; /* Empilha Header e Lista */
+    position: relative; /* Se quiser que "flutue", use sticky */
+    z-index: 1000;
+  }
+
+  /* Cabeçalho Mobile com Toggle */
+  .mobileHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #0c2b4e;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .mobileLogo {
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    text-transform: uppercase;
+  }
+
+  .menuToggle {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 3. Lista de Menu (Escondida por padrão) */
+  .sidebar ul {
+    display: none; /* Só aparece com a classe .open */
+    flex-direction: column;
+    width: 100%;
+    background-color: #0a2340;
+    padding: 0;
+    margin: 0;
+    animation: slideDown 0.3s ease-out;
+  }
+
+  .sidebar ul.open {
+    display: flex;
+  }
+
+  .sidebar ul li {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 0;
+  }
+
+  /* Ajuste do item ativo no menu mobile */
+  .sidebar ul li.active {
+    border-radius: 0;
+    margin: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-left: 4px solid #4CAF50;
+  }
+
+  .menuItem {
+    padding: 15px 20px;
+    justify-content: flex-start;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 4. Conteúdo Principal */
+  .main-content {
+    padding: 20px 15px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+  }
+
+  /* 5. Inputs de Busca */
+  .actionsSection {
+    margin-bottom: 25px;
+  }
+  .searchWrapper {
+    width: 100%;
+    min-width: 100%;
+  }
+  .searchInput {
+    height: 48px;
+    font-size: 16px;
+  }
+
+  /* 6. TABELA RESPONSIVA EM CARDS */
+  .tableWrapper {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .dataTable, .dataTable tbody, .dataTable tr, .dataTable td {
+    display: block;
+    width: 100%;
+  }
+
+  .dataTable thead {
+    display: none; /* Esconde cabeçalho da tabela */
+  }
+
+  .dataTable tr {
+    background: white;
+    margin-bottom: 15px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 20px;
+    border: 1px solid #eef0f2;
+  }
+
+  .dataTable td {
+    padding: 8px 0;
+    text-align: left;
+    border-bottom: 1px dashed #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+  }
+
+  .dataTable td:last-child {
+    border-bottom: none;
+    padding-top: 15px;
+    justify-content: center;
+  }
+
+  /* Rótulos Data-Label */
+  .dataTable td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #888;
+    font-size: 12px;
+    text-transform: uppercase;
+    margin-right: 15px;
+  }
+
+  /* Exceções: Nome e Botão */
+  .dataTable td[data-label="Fornecedor"]::before { display: none; }
+  .dataTable td[data-label="Ação"]::before { display: none; }
+
+  /* Botão full width no card */
+  .btnCatalogo {
+    width: 100%;
+    height: 45px;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }

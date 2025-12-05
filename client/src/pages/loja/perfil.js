@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-// Altere para o caminho correto do seu CSS Geral
-import styles from '../../styles/Geral.module.css';
+import styles from '../../styles/Geral.module.css'; // Certifique-se que o caminho está correto
 import api from '../../services/api';
 
 import {
-  FiGrid, FiUsers, FiPackage, FiUser, FiLogOut
+  FiGrid, FiUsers, FiPackage, FiUser, FiLogOut, FiMoreVertical, FiX
 } from 'react-icons/fi';
 
 const PerfilLoja = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+
+  // Estado para controlar o menu no mobile
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     id: '',
@@ -32,9 +34,6 @@ const PerfilLoja = () => {
         const usuarioStored = localStorage.getItem("usuario");
         if (usuarioStored) {
           const usuario = JSON.parse(usuarioStored);
-
-          // Tenta pegar o ID da loja. Se não tiver 'lojaId' explícito no usuário,
-          // usa o ID do usuário (caso a lógica do seu backend seja 1 pra 1).
           const idParaBuscar = usuario.lojaId || usuario.id;
 
           if (idParaBuscar) {
@@ -96,8 +95,22 @@ const PerfilLoja = () => {
   return (
     <div className={styles['dashboard-container']}>
 
+      {/* SIDEBAR ADAPTADA PARA MOBILE */}
       <nav className={styles.sidebar}>
-        <ul>
+
+        {/* Cabeçalho Mobile com Botão Toggle (Só aparece em telas pequenas via CSS) */}
+        <div className={styles.mobileHeader}>
+            <span className={styles.mobileLogo}>Menu Loja</span>
+            <button
+                className={styles.menuToggle}
+                onClick={() => setMenuOpen(!menuOpen)}
+            >
+                {menuOpen ? <FiX size={24} /> : <FiMoreVertical size={24} />}
+            </button>
+        </div>
+
+        {/* Lista de Links: Recebe a classe 'open' se o menu estiver aberto */}
+        <ul className={menuOpen ? styles.open : ''}>
           <li>
             <Link href="/loja/dashboard" className={styles.linkReset}>
               <div className={styles.menuItem}>

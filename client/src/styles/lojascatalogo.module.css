@@ -24,21 +24,36 @@
     margin: 0;
 }
 
+.sidebar ul li {
+    padding: 18px 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    font-weight: 500;
+    border-right: 4px solid transparent;
+    transition: background-color 0.2s, color 0.2s;
+}
+
 .menuItem {
     display: flex;
     align-items: center;
     gap: 15px;
-    padding: 18px 30px;
-    font-size: 16px;
-    font-weight: 500;
+    width: 100%;
     color: #b0c4de;
-    cursor: pointer;
-    transition: 0.2s;
 }
 
-.menuItem:hover {
+.sidebar ul li:hover .menuItem {
     background-color: rgba(255, 255, 255, 0.1);
     color: white;
+}
+
+.active .menuItem {
+    background-color: #ffffff;
+    color: #0c2b4e;
+    font-weight: 700;
+    border-left: 5px solid #1890ff;
+    border-radius: 8px 0 0 8px;
 }
 
 .linkReset {
@@ -46,6 +61,11 @@
     color: inherit;
     display: block;
     width: 100%;
+}
+
+/* Esconde header mobile no desktop */
+.mobileHeader {
+    display: none;
 }
 
 /* --- Conteúdo Principal --- */
@@ -100,27 +120,10 @@
     background-color: #e9ecef;
 }
 
-.btnNewOrder {
-    background-color: #275fdc; /* Azul */
-    color: white;
-    border: none;
-    padding: 10px 25px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: 0.2s;
-}
-
-.btnNewOrder:hover {
-    background-color: #1f4fb5;
-}
-
 /* --- Grid de Produtos --- */
 .catalogGrid {
     display: grid;
+    /* Garante que não fique menor que 250px, senão cai pra próxima linha */
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 25px;
 }
@@ -146,6 +149,10 @@
     background-color: #f8f9fa;
     border-bottom: 1px solid #eee;
     text-align: center;
+    height: 150px; /* Altura fixa para imagem */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Placeholder para imagem ou ícone */
@@ -167,6 +174,7 @@
     font-weight: 700;
     color: #333;
     margin-bottom: 8px;
+    line-height: 1.4;
 }
 
 .productCategory {
@@ -210,4 +218,125 @@
     padding: 50px;
     color: #777;
     font-size: 18px;
+}
+
+/* =======================================================
+   RESPONSIVIDADE MOBILE
+   ======================================================= */
+@media (max-width: 768px) {
+
+  /* 1. Layout Vertical */
+  .dashboard-container {
+    flex-direction: column;
+  }
+
+  /* 2. Sidebar vira Menu Superior Fixo */
+  .sidebar {
+    width: 100%;
+    height: auto;
+    padding: 0;
+    background-color: #0c2b4e;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+
+  /* Header Mobile */
+  .mobileHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #0c2b4e;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .mobileLogo {
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    text-transform: uppercase;
+  }
+
+  .menuToggle {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Lista Oculta */
+  .sidebar ul {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    background-color: #0a2340;
+    padding: 0;
+    margin: 0;
+    animation: slideDown 0.3s ease-out;
+  }
+
+  .sidebar ul.open {
+    display: flex;
+  }
+
+  .sidebar ul li {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 0;
+  }
+
+  .active .menuItem {
+    border-radius: 0;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-left: 4px solid #1890ff;
+  }
+
+  .menuItem {
+      padding: 15px 20px;
+      justify-content: flex-start;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 3. Conteúdo e Grade */
+  .main-content {
+    padding: 20px 15px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+  }
+
+  .headerActions {
+    width: 100%;
+  }
+
+  .btnBack {
+      width: 100%;
+      justify-content: center;
+      height: 45px;
+  }
+
+  /* Grid Responsivo */
+  .catalogGrid {
+    grid-template-columns: 1fr; /* Um produto por linha no mobile para melhor visualização */
+    gap: 20px;
+  }
 }
