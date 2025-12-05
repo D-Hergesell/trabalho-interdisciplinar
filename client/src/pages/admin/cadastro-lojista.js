@@ -8,6 +8,15 @@ import {
     FiSearch, FiArrowRight, FiTrash2, FiChevronLeft, FiChevronRight, FiEdit, FiShoppingBag, FiTag
 } from 'react-icons/fi';
 
+// Função auxiliar para gerar senha aleatória
+const gerarSenhaAleatoria = (tamanho = 12) => {
+    const caracteres = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let senha = "";
+    for (let i = 0; i < tamanho; i++) {
+        senha += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
+    return senha;
+};
 
 const EditLojistaModal = ({ lojista, onSave, onCancel, loading }) => {
 
@@ -21,7 +30,7 @@ const EditLojistaModal = ({ lojista, onSave, onCancel, loading }) => {
         estado: '',
         cep: '',
         telefone: '',
-        ativo: 'true' // Padrão
+        ativo: 'true'
     });
 
     useEffect(() => {
@@ -36,7 +45,6 @@ const EditLojistaModal = ({ lojista, onSave, onCancel, loading }) => {
                 estado: lojista.estado || '',
                 cep: lojista.cep || '',
                 telefone: lojista.telefone || '',
-                // Converte Boolean do banco para String do Select
                 ativo: lojista.ativo ? 'true' : 'false'
             });
         }
@@ -49,7 +57,6 @@ const EditLojistaModal = ({ lojista, onSave, onCancel, loading }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Converte String do Select de volta para Boolean
         onSave({
             ...formData,
             id: lojista.id,
@@ -68,8 +75,6 @@ const EditLojistaModal = ({ lojista, onSave, onCancel, loading }) => {
                             <label>Nome Fantasia *</label>
                             <input type="text" name="nomeFantasia" value={formData.nomeFantasia} onChange={handleChange} required className={styles.inputModal} />
                         </div>
-
-                        {/* CAMPO DE STATUS */}
                         <div className={styles.fieldGroup} style={{ maxWidth: '150px' }}>
                             <label>Status</label>
                             <select
@@ -156,10 +161,6 @@ const EditLojistaModal = ({ lojista, onSave, onCancel, loading }) => {
     );
 };
 
-
-// ============================================================================
-// COMPONENTE: BuscaLojistas
-// ============================================================================
 const BuscaLojistas = () => {
     const [searchId, setSearchId] = useState('');
     const [searchName, setSearchName] = useState('');
@@ -173,13 +174,10 @@ const BuscaLojistas = () => {
     const [deleteId, setDeleteId] = useState(null);
     const [expandedId, setExpandedId] = useState(null);
     const [message, setMessage] = useState(null);
-
-    // Controle de Ação Inteligente
-    const [currentAction, setCurrentAction] = useState('deactivate'); // 'deactivate' | 'delete'
+    const [currentAction, setCurrentAction] = useState('deactivate');
 
     const [editingLojista, setEditingLojista] = useState(null);
 
-    // Paginação
     const [currentIndex, setCurrentIndex] = useState(0);
     const itemsPerPage = 5;
 
@@ -206,8 +204,8 @@ const BuscaLojistas = () => {
             setLojistas(dados);
         } catch (error) {
             console.error("Erro ao buscar:", error);
-            const errorMsg = error.response ? `Status: ${error.response.status} - ${error.response.data?.error || error.message}` : 'Erro de conexão.';
-            setMessage({ type: 'error', text: `Erro ao buscar lojistas. Detalhe: ${errorMsg}` });
+            const errorMsg = error.response ? `Status: ${error.response.status}` : 'Erro de conexão.';
+            setMessage({ type: 'error', text: `Erro ao buscar lojistas. ${errorMsg}` });
         } finally {
             setLoading(false);
         }
@@ -267,12 +265,10 @@ const BuscaLojistas = () => {
 
         try {
             if (currentAction === 'delete') {
-                // Exclusão Permanente
                 await api.delete(`/api/v1/lojas/${deleteId}`);
                 setLojistas(oldList => oldList.filter(item => item.id !== deleteId));
                 setMessage({ type: 'success', text: "Lojista excluído permanentemente!" });
             } else {
-                // Desativação
                 const lojaParaDesativar = lojistas.find(l => l.id === deleteId);
                 if (lojaParaDesativar) {
                     const dadosAtualizados = { ...lojaParaDesativar, ativo: false };
@@ -286,9 +282,7 @@ const BuscaLojistas = () => {
                     setMessage({ type: 'success', text: "Lojista desativado com sucesso!" });
                 }
             }
-
             if (expandedId === deleteId) setExpandedId(null);
-
         } catch (error) {
             console.error(`Erro ao ${currentAction}:`, error);
             const actionName = currentAction === 'delete' ? 'excluir' : 'desativar';
@@ -323,8 +317,8 @@ const BuscaLojistas = () => {
         const isDelete = currentAction === 'delete';
         const title = isDelete ? 'Confirmação de Exclusão' : 'Confirmação de Desativação';
         const text = isDelete
-            ? 'Tem certeza que quer EXCLUIR PERMANENTEMENTE esta loja? Esta ação não pode ser desfeita.'
-            : 'Tem certeza que quer DESATIVAR esta loja? O acesso será revogado, mas o cadastro permanecerá.';
+            ? 'Tem certeza que quer EXCLUIR PERMANENTEMENTE esta loja?'
+            : 'Tem certeza que quer DESATIVAR esta loja?';
 
         return (
             <div className={styles.modalBackdrop}>
@@ -335,12 +329,8 @@ const BuscaLojistas = () => {
                         <button className={`${styles.submitButton} ${styles.btnCancel}`} onClick={cancelAction}>
                             Cancelar
                         </button>
-                        <button
-                            className={`${styles.submitButton} ${styles.btnDanger}`}
-                            onClick={handleConfirmAction}
-                            disabled={loading}
-                        >
-                            {loading ? 'Processando...' : `Confirmar ${isDelete ? 'Exclusão' : 'Desativação'}`}
+                        <button className={`${styles.submitButton} ${styles.btnDanger}`} onClick={handleConfirmAction} disabled={loading}>
+                            {loading ? 'Processando...' : `Confirmar`}
                         </button>
                     </div>
                 </div>
@@ -351,32 +341,22 @@ const BuscaLojistas = () => {
     const ExpandedDetailsRow = ({ item }) => (
         <div className={styles['expanded-details-row']}>
             <div className={styles['detail-full-span']}>
-                <p className={styles['detail-text-p']}>
-                    <strong className={styles.detailLabel}>ID Completo:</strong> {item.id}
-                </p>
+                <p className={styles['detail-text-p']}><strong className={styles.detailLabel}>ID:</strong> {item.id}</p>
             </div>
             <div className={styles['detail-half-span']}>
-                <p className={styles['detail-text-p']}>
-                    <strong className={styles.detailLabel}>CNPJ:</strong> {item.cnpj || 'N/A'}
-                </p>
+                <p className={styles['detail-text-p']}><strong className={styles.detailLabel}>CNPJ:</strong> {item.cnpj || 'N/A'}</p>
             </div>
             <div className={styles['detail-half-span']}>
-                <p className={styles['detail-text-p']}>
-                    <strong className={styles.detailLabel}>Telefone:</strong> {item.telefone || 'N/A'}
-                </p>
+                <p className={styles['detail-text-p']}><strong className={styles.detailLabel}>Telefone:</strong> {item.telefone || 'N/A'}</p>
             </div>
             <div className={`${styles['detail-half-span']} ${styles['detail-status']}`}>
                 <p className={styles['detail-text-p']}>
                     <strong className={styles.detailLabel}>Status:</strong>
-                    <span className={!item.ativo ? styles.statusOff : styles.statusOn}>
-            {' '}{item.ativo ? 'Ativo' : 'Inativo'}
-          </span>
+                    <span className={!item.ativo ? styles.statusOff : styles.statusOn}>{' '}{item.ativo ? 'Ativo' : 'Inativo'}</span>
                 </p>
             </div>
             <div className={styles['detail-full-span']}>
-                <p className={styles['detail-text-p']}>
-                    <strong className={styles.detailLabel}>Endereço:</strong> {item.logradouro || 'N/A'}, {item.cidade || ''} - {item.estado || ''} (CEP: {item.cep})
-                </p>
+                <p className={styles['detail-text-p']}><strong className={styles.detailLabel}>Endereço:</strong> {item.logradouro || 'N/A'}, {item.cidade}</p>
             </div>
         </div>
     );
@@ -384,7 +364,7 @@ const BuscaLojistas = () => {
     return (
         <>
             <div className={styles['search-section']}>
-                <h2 className={styles['search-header']}>Consultar / Gerenciar Lojistas</h2>
+                <h2 className={styles['search-header']}>Gerenciar Lojistas</h2>
 
                 {message && (
                     <div className={`${styles.alertMessage} ${styles[message.type]}`}>
@@ -400,7 +380,7 @@ const BuscaLojistas = () => {
                         <input type="text" placeholder="Ex: 64b..." value={searchId} onChange={e => setSearchId(e.target.value)} />
                     </div>
                     <div className={styles['search-group']}>
-                        <label>Nome da Loja</label>
+                        <label>Nome</label>
                         <input type="text" placeholder="Ex: Tech Store..." value={searchName} onChange={e => setSearchName(e.target.value)} />
                     </div>
                     <div className={styles['search-group']}>
@@ -409,7 +389,7 @@ const BuscaLojistas = () => {
                     </div>
                     <button className={styles['btn-search']} onClick={handleSearch} disabled={loading}>
                         <FiSearch size={20} />
-                        {loading ? 'Buscando...' : 'Buscar'}
+                        {loading ? '...' : 'Buscar'}
                     </button>
                 </div>
 
@@ -417,8 +397,8 @@ const BuscaLojistas = () => {
                     <>
                         <div className={styles['provider-list-container']}>
                             <div className={`${styles['provider-list-item']} ${styles['provider-list-header']}`}>
-                                <div className={styles['header-cell']}>Nome da Loja</div>
-                                <div className={styles['header-cell']}>ID (Início)</div>
+                                <div className={styles['header-cell']}>Nome</div>
+                                <div className={styles['header-cell']}>ID</div>
                                 <div className={styles['header-cell']}>Email</div>
                                 <div className={styles['header-cell']}>Responsável</div>
                                 <div className={styles['header-cell-actions']}>Ações</div>
@@ -427,128 +407,59 @@ const BuscaLojistas = () => {
                             {visibleItems.map(item => {
                                 const isExpanded = expandedId === item.id;
                                 const isDeactivated = !item.ativo;
-
                                 let itemClasses = styles['provider-list-item'];
                                 if (isExpanded) itemClasses += ` ${styles['item-expanded']}`;
                                 if (isDeactivated) itemClasses += ` ${styles['item-status-off']}`;
 
                                 return (
                                     <React.Fragment key={item.id}>
-                                        <div
-                                            className={itemClasses}
-                                            onClick={() => handleToggleExpand(item.id)}
-                                        >
-                                            <div className={styles['detail-cell-name']}>
-                                                <p>{item.nomeFantasia}</p>
-                                            </div>
-                                            <div className={styles['detail-cell']}>
-                                                <p>{item.id ? item.id.substring(0, 10) + '...' : ''}</p>
-                                            </div>
-                                            <div className={styles['detail-cell']}>
-                                                <p>{item.emailContato}</p>
-                                            </div>
-                                            <div className={styles['detail-cell']}>
-                                                <p>{item.responsavelNome || '-'}</p>
-                                            </div>
+                                        <div className={itemClasses} onClick={() => handleToggleExpand(item.id)}>
+                                            <div className={styles['detail-cell-name']}><p>{item.nomeFantasia}</p></div>
+                                            <div className={styles['detail-cell']}><p>{item.id ? item.id.substring(0, 8) + '...' : ''}</p></div>
+                                            <div className={styles['detail-cell']}><p>{item.emailContato}</p></div>
+                                            <div className={styles['detail-cell']}><p>{item.responsavelNome || '-'}</p></div>
                                             <div className={styles['item-actions']}>
-
-                                                <button
-                                                    className={`${styles['btn-detail']} ${isExpanded ? styles['btn-rotated'] : ''}`}
-                                                    title={isExpanded ? "Esconder Detalhes" : "Ver Detalhes"}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleToggleExpand(item.id);
-                                                    }}
-                                                >
+                                                <button className={`${styles['btn-detail']} ${isExpanded ? styles['btn-rotated'] : ''}`} onClick={(e) => { e.stopPropagation(); handleToggleExpand(item.id); }}>
                                                     <FiArrowRight size={20} />
                                                 </button>
-
-                                                <button
-                                                    className={styles['btn-edit']}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        startEdit(item);
-                                                    }}
-                                                    title="Editar Lojista"
-                                                    disabled={loading}
-                                                >
+                                                <button className={styles['btn-edit']} onClick={(e) => { e.stopPropagation(); startEdit(item); }}>
                                                     <FiEdit size={18} />
                                                 </button>
-
-                                                <button
-                                                    className={styles['btn-delete']}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        // Ação inteligente: Desativar se ativo, Excluir se inativo
-                                                        if (isDeactivated) {
-                                                            startAction(item.id, 'delete');
-                                                        } else {
-                                                            startAction(item.id, 'deactivate');
-                                                        }
-                                                    }}
-                                                    title={isDeactivated ? "Excluir Permanentemente" : "Desativar Lojista"}
-                                                    disabled={loading}
-                                                >
+                                                <button className={styles['btn-delete']} onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (isDeactivated) { startAction(item.id, 'delete'); } else { startAction(item.id, 'deactivate'); }
+                                                }} title={isDeactivated ? "Excluir" : "Desativar"}>
                                                     <FiTrash2 size={18} />
                                                 </button>
                                             </div>
                                         </div>
-
                                         {isExpanded && <ExpandedDetailsRow item={item} />}
                                     </React.Fragment>
                                 );
                             })}
                         </div>
-
                         <div className={styles.paginationControls}>
-                            <button className={styles['nav-btn']} onClick={prevSlide} disabled={currentIndex === 0 || loading}>
-                                <FiChevronLeft size={24} />
-                            </button>
+                            <button className={styles['nav-btn']} onClick={prevSlide} disabled={currentIndex === 0}><FiChevronLeft size={24} /></button>
                             <span className={styles.pageInfo}>Página {currentPage} de {totalPages}</span>
-                            <button className={styles['nav-btn']} onClick={nextSlide} disabled={currentIndex + itemsPerPage >= lojistas.length || loading}>
-                                <FiChevronRight size={24} />
-                            </button>
+                            <button className={styles['nav-btn']} onClick={nextSlide} disabled={currentIndex + itemsPerPage >= lojistas.length}><FiChevronRight size={24} /></button>
                         </div>
                     </>
                 )}
-
-                {!loading && searched && lojistas.length === 0 && (
-                    <p className={styles['no-data']}>Nenhuma loja encontrada com os filtros especificados.</p>
-                )}
             </div>
-
             {showConfirm && <ConfirmationModal />}
-
-            {editingLojista && (
-                <EditLojistaModal
-                    lojista={editingLojista}
-                    onSave={handleUpdateSubmit}
-                    onCancel={cancelEdit}
-                    loading={loading}
-                />
-            )}
+            {editingLojista && <EditLojistaModal lojista={editingLojista} onSave={handleUpdateSubmit} onCancel={cancelEdit} loading={loading} />}
         </>
     );
 };
 
 
-// ============================================================================
-// COMPONENTE PRINCIPAL: cadastro-lojista
-// ============================================================================
 function CadastroLojista() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
 
     const [formData, setFormData] = useState({
-        nomeFantasia: '',
-        cnpj: '',
-        responsavelNome: '',
-        emailContato: '',
-        logradouro: '',
-        cidade: '',
-        estado: '',
-        cep: '',
-        telefone: '',
+        nomeFantasia: '', cnpj: '', responsavelNome: '', emailContato: '',
+        logradouro: '', cidade: '', estado: '', cep: '', telefone: '',
         gerarAutomaticamente: false,
         senhaManual: ''
     });
@@ -563,14 +474,17 @@ function CadastroLojista() {
         setLoading(true);
         setMessage(null);
 
-        // --- VALIDAÇÃO DE SENHA CORRIGIDA ---
-        // Se "Gerar Automaticamente" estiver DESMARCADO, a senha manual é OBRIGATÓRIA.
-        if (!formData.gerarAutomaticamente && !formData.senhaManual.trim()) {
-            setMessage({ type: 'error', text: 'Erro: A senha é obrigatória. Digite uma senha ou marque "Gerar automaticamente".' });
+        // --- LÓGICA DE SENHA ALEATÓRIA ---
+        let senhaFinal = formData.senhaManual;
+
+        if (formData.gerarAutomaticamente) {
+            senhaFinal = gerarSenhaAleatoria(12); // Gera 12 caracteres alfanuméricos
+        } else if (!senhaFinal || !senhaFinal.trim()) {
+            // Validação: Se não for automático, campo não pode ser vazio
+            setMessage({ type: 'error', text: 'Erro: A senha é obrigatória. Digite uma senha ou marque "Gerar senha automaticamente".' });
             setLoading(false);
             return;
         }
-        // ------------------------------------
 
         const dadosParaBackend = {
             nomeFantasia: formData.nomeFantasia,
@@ -583,13 +497,19 @@ function CadastroLojista() {
             cidade: formData.cidade,
             estado: formData.estado,
             ativo: true,
-            senha: formData.gerarAutomaticamente ? null : formData.senhaManual
+            senha: senhaFinal // Envia a senha gerada ou digitada
         };
 
         try {
             const response = await api.post('/api/v1/lojas', dadosParaBackend);
 
-            setMessage({ type: 'success', text: `Sucesso! Loja "${response.data.nomeFantasia}" cadastrada.` });
+            // Monta a mensagem de sucesso com as credenciais
+            const textoSucesso = `✅ Sucesso! Loja "${response.data.nomeFantasia}" cadastrada.\n\n` +
+                `📧 Login: ${formData.emailContato}\n` +
+                `🔑 Senha: ${senhaFinal}\n\n` +
+                `(Copie a senha agora, ela não será exibida novamente)`;
+
+            setMessage({ type: 'success', text: textoSucesso });
 
             setFormData({
                 nomeFantasia: '', cnpj: '', responsavelNome: '', emailContato: '',
@@ -607,7 +527,6 @@ function CadastroLojista() {
 
     return (
         <div className={styles['dashboard-container']}>
-
 
       <nav className={styles.sidebar}>
         <ul>
@@ -639,7 +558,7 @@ function CadastroLojista() {
                     <h2 className={styles.sectionTitle}>Dados do Lojista</h2>
 
                     <div className={styles.fieldGroup}>
-                        <label>Nome Fantasia <span className={styles.requiredAsterisk}>*</span></label>
+                        <label>Nome da Loja <span className={styles.requiredAsterisk}>*</span></label>
                         <input type="text" name="nomeFantasia" className={styles.inputLong} value={formData.nomeFantasia} onChange={handleChange} required />
                     </div>
 
@@ -654,8 +573,8 @@ function CadastroLojista() {
                     </div>
 
                     <div className={styles.fieldGroup}>
-                        <label>Email de Contato</label>
-                        <input type="email" name="emailContato" className={styles.inputLong} value={formData.emailContato} onChange={handleChange} />
+                        <label>Email de Contato (Login) <span className={styles.requiredAsterisk}>*</span></label>
+                        <input type="email" name="emailContato" className={styles.inputLong} value={formData.emailContato} onChange={handleChange} required />
                     </div>
 
                     <h2 className={styles.sectionTitle}>Endereço & Contato</h2>
@@ -704,7 +623,7 @@ function CadastroLojista() {
                         <label className={styles.checkboxContainer}>
                             <input type="checkbox" name="gerarAutomaticamente" checked={formData.gerarAutomaticamente} onChange={handleChange} />
                             <span className={styles.checkmark}></span>
-                            Gerar senha automaticamente (12345678)
+                            Gerar senha automaticamente (12 caracteres)
                         </label>
 
                         <button type="submit" className={styles.submitButton} disabled={loading}>

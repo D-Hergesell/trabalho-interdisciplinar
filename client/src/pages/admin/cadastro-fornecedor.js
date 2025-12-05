@@ -9,6 +9,16 @@ import {
     FiArrowRight, FiEdit, FiShoppingBag, FiTag
 } from 'react-icons/fi';
 
+// Função auxiliar para gerar senha aleatória
+const gerarSenhaAleatoria = (tamanho = 12) => {
+    const caracteres = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let senha = "";
+    for (let i = 0; i < tamanho; i++) {
+        senha += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
+    return senha;
+};
+
 const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
     const [formData, setFormData] = useState({
         nomeFantasia: '',
@@ -155,9 +165,8 @@ const BuscaFornecedores = () => {
     const [editingFornecedor, setEditingFornecedor] = useState(null);
     const [showConfirm, setShowConfirm] = useState(false);
 
-    // Controle da Ação (Deletar ou Desativar)
     const [deleteId, setDeleteId] = useState(null);
-    const [currentAction, setCurrentAction] = useState('deactivate'); // 'deactivate' | 'delete'
+    const [currentAction, setCurrentAction] = useState('deactivate');
 
     const [expandedId, setExpandedId] = useState(null);
     const [message, setMessage] = useState(null);
@@ -187,7 +196,7 @@ const BuscaFornecedores = () => {
             setFornecedores(dados);
         } catch (error) {
             console.error("Erro ao buscar:", error);
-            const errorMsg = error.response ? `Status: ${error.response.status} - ${error.response.data?.error || error.message}` : 'Erro de conexão/rede.';
+            const errorMsg = error.response ? `Status: ${error.response.status}` : 'Erro de conexão.';
             setMessage({ type: 'error', text: `Erro ao buscar fornecedores: ${errorMsg}` });
         } finally {
             setLoading(false);
@@ -221,7 +230,7 @@ const BuscaFornecedores = () => {
 
         } catch (error) {
             console.error("Erro ao atualizar:", error);
-            const errorMessage = error.response?.data?.error || error.response?.data?.erro || "Erro desconhecido.";
+            const errorMessage = error.response?.data?.error || "Erro desconhecido.";
             setMessage({ type: 'error', text: `Erro ao atualizar fornecedor: ${errorMessage}` });
         } finally {
             setLoading(false);
@@ -248,19 +257,13 @@ const BuscaFornecedores = () => {
 
         try {
             if (currentAction === 'delete') {
-                // Exclusão Permanente
                 await api.delete(`/api/v1/fornecedores/${deleteId}`);
                 setFornecedores(oldList => oldList.filter(item => item.id !== deleteId));
                 setMessage({ type: 'success', text: "Fornecedor excluído permanentemente!" });
             } else {
-                // Desativação
-                // O backend Java exige o objeto completo no PUT.
-                // Vamos encontrar o objeto atual e mudar apenas o 'ativo'.
                 const fornecedorParaDesativar = fornecedores.find(f => f.id === deleteId);
-
                 if (fornecedorParaDesativar) {
                     const dadosAtualizados = { ...fornecedorParaDesativar, ativo: false };
-                    // Removemos o ID do corpo se necessário, mas mantemos os dados para validar @NotBlank
                     const { id: _id, ...payload } = dadosAtualizados;
 
                     await api.put(`/api/v1/fornecedores/${deleteId}`, payload);
@@ -271,13 +274,11 @@ const BuscaFornecedores = () => {
                     setMessage({ type: 'success', text: "Fornecedor desativado com sucesso!" });
                 }
             }
-
             if (expandedId === deleteId) setExpandedId(null);
-
         } catch (error) {
             console.error(`Erro ao ${currentAction}:`, error);
             const actionName = currentAction === 'delete' ? 'excluir' : 'desativar';
-            const errorMessage = error.response?.data?.error || error.response?.data?.erro || "Erro desconhecido.";
+            const errorMessage = error.response?.data?.error || "Erro desconhecido.";
             setMessage({ type: 'error', text: `Erro ao ${actionName}: ${errorMessage}` });
         } finally {
             setLoading(false);
@@ -308,8 +309,8 @@ const BuscaFornecedores = () => {
         const isDelete = currentAction === 'delete';
         const title = isDelete ? 'Confirmação de Exclusão' : 'Confirmação de Desativação';
         const text = isDelete
-            ? 'Tem certeza que quer EXCLUIR PERMANENTEMENTE este fornecedor? Esta ação não pode ser desfeita.'
-            : 'Tem certeza que quer DESATIVAR este fornecedor? O acesso será revogado, mas o cadastro permanecerá no sistema.';
+            ? 'Tem certeza que quer EXCLUIR PERMANENTEMENTE este fornecedor?'
+            : 'Tem certeza que quer DESATIVAR este fornecedor?';
 
         return (
             <div className={styles.modalBackdrop}>
@@ -321,7 +322,7 @@ const BuscaFornecedores = () => {
                             Cancelar
                         </button>
                         <button className={`${styles.submitButton} ${styles.btnDanger}`} onClick={handleConfirmAction} disabled={loading}>
-                            {loading ? 'Processando...' : `Confirmar ${isDelete ? 'Exclusão' : 'Desativação'}`}
+                            {loading ? 'Processando...' : `Confirmar`}
                         </button>
                     </div>
                 </div>
@@ -332,32 +333,22 @@ const BuscaFornecedores = () => {
     const ExpandedDetailsRow = ({ fornecedor }) => (
         <div className={styles['expanded-details-row']}>
             <div className={styles['detail-full-span']}>
-                <p className={styles['detail-text-p']}>
-                    <strong className={styles.detailLabel}>ID Completo:</strong> {fornecedor.id}
-                </p>
+                <p className={styles['detail-text-p']}><strong className={styles.detailLabel}>ID:</strong> {fornecedor.id}</p>
             </div>
             <div className={styles['detail-half-span']}>
-                <p className={styles['detail-text-p']}>
-                    <strong className={styles.detailLabel}>CNPJ:</strong> {fornecedor.cnpj || 'N/A'}
-                </p>
+                <p className={styles['detail-text-p']}><strong className={styles.detailLabel}>CNPJ:</strong> {fornecedor.cnpj || 'N/A'}</p>
             </div>
             <div className={styles['detail-half-span']}>
-                <p className={styles['detail-text-p']}>
-                    <strong className={styles.detailLabel}>Telefone:</strong> {fornecedor.telefone || 'N/A'}
-                </p>
+                <p className={styles['detail-text-p']}><strong className={styles.detailLabel}>Telefone:</strong> {fornecedor.telefone || 'N/A'}</p>
             </div>
             <div className={`${styles['detail-half-span']} ${styles['detail-status']}`}>
                 <p className={styles['detail-text-p']}>
                     <strong className={styles.detailLabel}>Status:</strong>
-                    <span className={fornecedor.ativo ? styles.statusOn : styles.statusOff}>
-                        {fornecedor.ativo ? 'Ativo' : 'Inativo'}
-                    </span>
+                    <span className={fornecedor.ativo ? styles.statusOn : styles.statusOff}>{fornecedor.ativo ? 'Ativo' : 'Inativo'}</span>
                 </p>
             </div>
             <div className={styles['detail-full-span']}>
-                <p className={styles['detail-text-p']}>
-                    <strong className={styles.detailLabel}>Endereço:</strong> {fornecedor.logradouro || 'N/A'}, {fornecedor.cidade || ''} - {fornecedor.estado || ''} (CEP: {fornecedor.cep})
-                </p>
+                <p className={styles['detail-text-p']}><strong className={styles.detailLabel}>Endereço:</strong> {fornecedor.logradouro || 'N/A'}, {fornecedor.cidade}</p>
             </div>
         </div>
     );
@@ -381,7 +372,7 @@ const BuscaFornecedores = () => {
                         <input type="text" placeholder="Ex: 64b..." value={searchId} onChange={e => setSearchId(e.target.value)} />
                     </div>
                     <div className={styles['search-group']}>
-                        <label>Nome Fantasia</label>
+                        <label>Nome</label>
                         <input type="text" placeholder="Ex: Eletrônicos..." value={searchNome} onChange={e => setSearchNome(e.target.value)} />
                     </div>
                     <div className={styles['search-group']}>
@@ -398,8 +389,8 @@ const BuscaFornecedores = () => {
                     <>
                         <div className={styles['provider-list-container']}>
                             <div className={`${styles['provider-list-item']} ${styles['provider-list-header']}`}>
-                                <div className={styles['header-cell']}>Nome Fantasia</div>
-                                <div className={styles['header-cell']}>ID (Início)</div>
+                                <div className={styles['header-cell']}>Nome</div>
+                                <div className={styles['header-cell']}>ID</div>
                                 <div className={styles['header-cell']}>Email</div>
                                 <div className={styles['header-cell']}>Responsável</div>
                                 <div className={styles['header-cell-actions']}>Ações</div>
@@ -408,104 +399,49 @@ const BuscaFornecedores = () => {
                             {visibleItems.map(fornecedor => {
                                 const isExpanded = expandedId === fornecedor.id;
                                 const isDeactivated = !fornecedor.ativo;
-
                                 let itemClasses = styles['provider-list-item'];
                                 if (isExpanded) itemClasses += ` ${styles['item-expanded']}`;
                                 if (isDeactivated) itemClasses += ` ${styles['item-status-off']}`;
 
                                 return (
                                     <React.Fragment key={fornecedor.id}>
-                                        <div
-                                            className={itemClasses}
-                                            onClick={() => handleToggleExpand(fornecedor.id)}
-                                        >
-                                            <div className={styles['detail-cell-name']}>
-                                                <p>{fornecedor.nomeFantasia}</p>
-                                            </div>
-                                            <div className={styles['detail-cell']}>
-                                                <p>{fornecedor.id ? fornecedor.id.substring(0, 10) + '...' : ''}</p>
-                                            </div>
-                                            <div className={styles['detail-cell']}>
-                                                <p>{fornecedor.emailContato}</p>
-                                            </div>
-                                            <div className={styles['detail-cell']}>
-                                                <p>{fornecedor.responsavelNome || '-'}</p>
-                                            </div>
-
+                                        <div className={itemClasses} onClick={() => handleToggleExpand(fornecedor.id)}>
+                                            <div className={styles['detail-cell-name']}><p>{fornecedor.nomeFantasia}</p></div>
+                                            <div className={styles['detail-cell']}><p>{fornecedor.id ? fornecedor.id.substring(0, 8) + '...' : ''}</p></div>
+                                            <div className={styles['detail-cell']}><p>{fornecedor.emailContato}</p></div>
+                                            <div className={styles['detail-cell']}><p>{fornecedor.responsavelNome || '-'}</p></div>
                                             <div className={styles['item-actions']}>
-                                                <button
-                                                    className={`${styles['btn-detail']} ${isExpanded ? styles['btn-rotated'] : ''}`}
-                                                    title={isExpanded ? "Esconder Detalhes" : "Ver Detalhes"}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleToggleExpand(fornecedor.id);
-                                                    }}
-                                                >
+                                                <button className={`${styles['btn-detail']} ${isExpanded ? styles['btn-rotated'] : ''}`} onClick={(e) => { e.stopPropagation(); handleToggleExpand(fornecedor.id); }}>
                                                     <FiArrowRight size={20} />
                                                 </button>
-
-                                                <button
-                                                    className={styles['btn-edit']}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        startEdit(fornecedor);
-                                                    }}
-                                                    title="Editar Fornecedor"
-                                                    disabled={loading}
-                                                >
+                                                <button className={styles['btn-edit']} onClick={(e) => { e.stopPropagation(); startEdit(fornecedor); }}>
                                                     <FiEdit size={18} />
                                                 </button>
-
-                                                <button
-                                                    className={styles['btn-delete']}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        // Lógica de Ação Inteligente (Desativar vs Deletar)
-                                                        if (isDeactivated) {
-                                                            startAction(fornecedor.id, 'delete');
-                                                        } else {
-                                                            startAction(fornecedor.id, 'deactivate');
-                                                        }
-                                                    }}
-                                                    title={isDeactivated ? "Excluir Permanentemente" : "Desativar Fornecedor"}
-                                                    disabled={loading}
-                                                >
+                                                <button className={styles['btn-delete']} onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (isDeactivated) { startAction(fornecedor.id, 'delete'); } else { startAction(fornecedor.id, 'deactivate'); }
+                                                }} title={isDeactivated ? "Excluir" : "Desativar"}>
                                                     <FiTrash2 size={18} />
                                                 </button>
                                             </div>
                                         </div>
-
                                         {isExpanded && <ExpandedDetailsRow fornecedor={fornecedor} />}
                                     </React.Fragment>
                                 );
                             })}
                         </div>
-
                         <div className={styles.paginationControls}>
-                            <button className={styles['nav-btn']} onClick={prevSlide} disabled={currentIndex === 0 || loading}>
-                                <FiChevronLeft size={24} />
-                            </button>
+                            <button className={styles['nav-btn']} onClick={prevSlide} disabled={currentIndex === 0}><FiChevronLeft size={24} /></button>
                             <span className={styles.pageInfo}>Página {currentPage} de {totalPages}</span>
-                            <button className={styles['nav-btn']} onClick={nextSlide} disabled={currentIndex + itemsPerPage >= fornecedores.length || loading}>
-                                <FiChevronRight size={24} />
-                            </button>
+                            <button className={styles['nav-btn']} onClick={nextSlide} disabled={currentIndex + itemsPerPage >= fornecedores.length}><FiChevronRight size={24} /></button>
                         </div>
                     </>
                 ) : (
                     !loading && searched && <p className={styles['no-data']}>Nenhum fornecedor encontrado.</p>
                 )}
             </div>
-
             {showConfirm && <ConfirmationModal />}
-
-            {editingFornecedor && (
-                <EditFornecedorModal
-                    fornecedor={editingFornecedor}
-                    onSave={handleUpdateSubmit}
-                    onCancel={cancelEdit}
-                    loading={loading}
-                />
-            )}
+            {editingFornecedor && <EditFornecedorModal fornecedor={editingFornecedor} onSave={handleUpdateSubmit} onCancel={cancelEdit} loading={loading} />}
         </>
     );
 };
@@ -515,16 +451,9 @@ function CadastroFornecedor() {
     const [message, setMessage] = useState(null);
 
     const [formData, setFormData] = useState({
-        nomeFantasia: '',
-        cnpj: '',
-        responsavelNome: '',
-        emailContato: '',
-        telefone: '',
-        cep: '',
-        logradouro: '',
-        cidade: '',
-        estado: '',
-        gerarAutomaticamente: false, // Lógica de Senha
+        nomeFantasia: '', cnpj: '', responsavelNome: '', emailContato: '',
+        telefone: '', cep: '', logradouro: '', cidade: '', estado: '',
+        gerarAutomaticamente: false,
         senhaManual: ''
     });
 
@@ -538,7 +467,18 @@ function CadastroFornecedor() {
         setLoading(true);
         setMessage(null);
 
-        // Prepara payload com senha
+        // --- LÓGICA DE SENHA ALEATÓRIA E VALIDAÇÃO ---
+        let senhaFinal = formData.senhaManual;
+
+        if (formData.gerarAutomaticamente) {
+            senhaFinal = gerarSenhaAleatoria(12); // Gera a senha
+        } else if (!senhaFinal || !senhaFinal.trim()) {
+            // Se NÃO for automático e estiver vazio, barra.
+            setMessage({ type: 'error', text: 'Erro: A senha é obrigatória. Digite uma senha ou marque "Gerar senha automaticamente".' });
+            setLoading(false);
+            return;
+        }
+
         const payload = {
             nomeFantasia: formData.nomeFantasia,
             cnpj: formData.cnpj,
@@ -550,23 +490,23 @@ function CadastroFornecedor() {
             cidade: formData.cidade,
             estado: formData.estado,
             ativo: true,
-            // Envia senha (se gerarAutomaticamente for true, backend pode gerar, ou mandamos default aqui)
-            // Assumindo que o backend espera 'senha' e se vier vazia, usa padrão.
-            // Mas vamos seguir a lógica do Lojista de enviar.
-            senha: formData.gerarAutomaticamente ? null : formData.senhaManual
+            senha: senhaFinal // Envia a senha correta (manual ou gerada)
         };
 
         try {
             const response = await api.post('/api/v1/fornecedores', payload);
 
-            // Mensagem com credenciais (se o backend retornar usuário/senha no responseDTO personalizado)
-            // Se o seu FornecedorResponseDTO não tiver senha, o usuário usará o que digitou ou padrão.
-            const msgSucesso = `✅ Sucesso! Fornecedor "${response.data.nomeFantasia}" cadastrado com sucesso.`;
-            setMessage({ type: 'success', text: msgSucesso });
+            // Mensagem de Sucesso com Credenciais
+            const textoSucesso = `✅ Sucesso! Fornecedor "${response.data.nomeFantasia}" cadastrado.\n\n` +
+                `📧 Login: ${formData.emailContato}\n` +
+                `🔑 Senha: ${senhaFinal}\n\n` +
+                `(Copie a senha agora, ela não será exibida novamente)`;
+
+            setMessage({ type: 'success', text: textoSucesso });
 
             setFormData({
-                nomeFantasia: '', cnpj: '', responsavelNome: '', emailContato: '', telefone: '',
-                cep: '', logradouro: '', cidade: '', estado: '',
+                nomeFantasia: '', cnpj: '', responsavelNome: '', emailContato: '',
+                telefone: '', cep: '', logradouro: '', cidade: '', estado: '',
                 gerarAutomaticamente: false, senhaManual: ''
             });
         } catch (error) {
@@ -658,11 +598,18 @@ function CadastroFornecedor() {
                         </div>
                     </div>
 
-                    {/* Lógica de Senha Adicionada */}
+                    {/* Lógica de Senha - Exibição Condicional */}
                     {!formData.gerarAutomaticamente && (
                         <div className={styles.fieldGroup} style={{ marginTop: '15px' }}>
-                            <label>Senha (opcional)</label>
-                            <input type="password" name="senhaManual" className={styles.inputMedium} value={formData.senhaManual} onChange={handleChange} placeholder="Deixe vazio para gerar automaticamente" />
+                            <label>Senha (opcional se Automático)</label>
+                            <input
+                                type="password"
+                                name="senhaManual"
+                                className={styles.inputMedium}
+                                value={formData.senhaManual}
+                                onChange={handleChange}
+                                placeholder="Digite a senha..."
+                            />
                         </div>
                     )}
 
@@ -670,7 +617,7 @@ function CadastroFornecedor() {
                         <label className={styles.checkboxContainer}>
                             <input type="checkbox" name="gerarAutomaticamente" checked={formData.gerarAutomaticamente} onChange={handleChange} />
                             <span className={styles.checkmark}></span>
-                            Gerar senha automaticamente
+                            Gerar senha automaticamente (12 caracteres)
                         </label>
                         <button type="submit" className={styles.submitButton} disabled={loading}>
                             {loading ? 'Cadastrando...' : 'Criar Fornecedor'}
