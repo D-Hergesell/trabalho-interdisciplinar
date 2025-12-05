@@ -70,8 +70,7 @@ public class UsuarioController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deletar(
-            @PathVariable UUID id,
-            @Valid @RequestBody UsuarioRequestDTO dto
+            @PathVariable UUID id
     ) {
         usuarioService.deletarUsuario(id);
         return ResponseEntity.noContent().build();

@@ -24,78 +24,57 @@ public class UsuarioService {
     private final UsuarioMapper usuarioMapper;
     private final PasswordEncoder passwordEncoder;
 
-    /**
-     * Recebe um DTO, retorna um DTO.
-     * Contém a lógica de negócio real.
-     */
     @Transactional
     public UsuarioResponseDTO criarUsuario(UsuarioRequestDTO dto) {
 
-        // 1. LÓGICA DE NEGÓCIO: O email já existe?
         if (usuarioRepository.findByEmail(dto.email()).isPresent()) {
-            throw new RuntimeException("Email já cadastrado."); // (No futuro, uma exceção customizada)
+            throw new RuntimeException("Email já cadastrado.");
         }
 
-        // 2. TRADUÇÃO: DTO -> Entidade
+        // --- VALIDAÇÃO MANUAL DE SENHA (CRIAÇÃO) ---
+        if (dto.senha() == null || dto.senha().isBlank() || dto.senha().length() < 8) {
+            throw new RuntimeException("A senha é obrigatória e deve ter no mínimo 8 caracteres.");
+        }
+        // -------------------------------------------
+
         Usuario novoUsuario = usuarioMapper.toEntity(dto);
-
-        // 3. LÓGICA DE NEGÓCIO: Hash da senha (JAMAIS salve texto puro)
         novoUsuario.setSenhaHash(passwordEncoder.encode(dto.senha()));
-
-        // 4. LÓGICA DE NEGÓCIO: Definir padrões
         novoUsuario.setAtivo(true);
 
         if (dto.tipoUsuario() != null) {
             novoUsuario.setTipoUsuario(dto.tipoUsuario());
         } else {
-            // Define um padrão caso não venha nada
             novoUsuario.setTipoUsuario(TipoUsuario.LOJA);
         }
 
-        // 5. SALVAR: O repositório salva a Entidade
         Usuario usuarioSalvo = usuarioRepository.save(novoUsuario);
-
-        // 6. TRADUÇÃO: Entidade -> DTO
         return usuarioMapper.toResponseDTO(usuarioSalvo);
     }
 
-    /**
-     * Verifica as credenciais e retorna o usuário se estiverem corretas.
-     */
     @Transactional(readOnly = true)
     public UsuarioResponseDTO autenticar(LoginRequestDTO loginDTO) {
-        // 1. Busca o usuário pelo email
         Usuario usuario = usuarioRepository.findByEmail(loginDTO.email())
-                .orElseThrow(() -> new RuntimeException("Usuário ou senha inválidos")); // Mensagem genérica por segurança
+                .orElseThrow(() -> new RuntimeException("Usuário ou senha inválidos"));
 
-        // 2. Verifica se a senha bate com o hash
         if (!passwordEncoder.matches(loginDTO.senha(), usuario.getSenhaHash())) {
             throw new RuntimeException("Usuário ou senha inválidos");
         }
 
-        // 3. Verifica se está ativo
         if (!usuario.getAtivo()) {
             throw new RuntimeException("Usuário desativado.");
         }
 
-        // 4. Retorna o DTO do usuário
         return usuarioMapper.toResponseDTO(usuario);
     }
 
-    /**
-     * Retorna uma Lista de DTOs, não de Entidades.
-     */
     @Transactional(readOnly = true)
     public List<UsuarioResponseDTO> listarUsuarios() {
         return usuarioRepository.findAll()
                 .stream()
-                .map(usuarioMapper::toResponseDTO) // Converte cada Usuario em um UsuarioResponseDTO
+                .map(usuarioMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Retorna uma Lista de DTOs, não de Entidades.
-     */
     @Transactional(readOnly = true)
     public List<UsuarioResponseDTO> listarUsuariosPorNome(String nome) {
         return usuarioRepository.findByNomeContainingIgnoreCase(nome)
@@ -117,38 +96,37 @@ public class UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
 
-        // Atualizações simples
         usuario.setNome(dto.nome());
         usuario.setEmail(dto.email());
 
-        // Atualiza senha somente se enviada
+        // --- VALIDAÇÃO MANUAL DE SENHA (ATUALIZAÇÃO) ---
+        // Se vier preenchida, valida tamanho e atualiza. Se vier vazia, ignora.
         if (dto.senha() != null && !dto.senha().isBlank()) {
+            if (dto.senha().length() < 8) {
+                throw new RuntimeException("A nova senha deve ter no mínimo 8 caracteres.");
+            }
             usuario.setSenhaHash(passwordEncoder.encode(dto.senha()));
         }
+        // -----------------------------------------------
 
-        // Atualiza o tipo do usuário
         if (dto.tipoUsuario() != null) {
             usuario.setTipoUsuario(dto.tipoUsuario());
         }
 
         Usuario salvo = usuarioRepository.save(usuario);
-
         return usuarioMapper.toResponseDTO(salvo);
     }
 
     @Transactional
     public UsuarioResponseDTO atualizarTipoUsuario(UUID id, TipoUsuario tipo) {
-
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
 
-        // Proteção extra opcional
         if (usuario.getTipoUsuario() == TipoUsuario.ADMIN && tipo != TipoUsuario.ADMIN) {
             throw new RuntimeException("Não é permitido alterar o tipo de um ADMIN.");
         }
 
         usuario.setTipoUsuario(tipo);
-
         Usuario salvo = usuarioRepository.save(usuario);
         return usuarioMapper.toResponseDTO(salvo);
     }
@@ -157,8 +135,6 @@ public class UsuarioService {
     public void deletarUsuario(UUID id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
-
         usuarioRepository.delete(usuario);
     }
-
 }
