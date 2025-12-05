@@ -4,7 +4,7 @@ import withAuth from '../../components/withAuth';
 import api from '../../services/api';
 import styles from '../../styles/Geral.module.css';
 import {
-    FiGrid, FiUsers, FiPackage, FiUser, FiLogOut, FiBox,
+    FiGrid, FiUsers, FiPackage, FiLogOut, FiBox,
     FiSearch, FiTrash2, FiChevronLeft, FiChevronRight,
     FiArrowRight, FiEdit, FiShoppingBag, FiTag
 } from 'react-icons/fi';
@@ -20,7 +20,7 @@ const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
         logradouro: '',
         cidade: '',
         estado: '',
-        ativo: 'true' // Valor padrão (string para controlar o select)
+        ativo: 'true'
     });
 
     useEffect(() => {
@@ -35,7 +35,6 @@ const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
                 logradouro: fornecedor.logradouro || '',
                 cidade: fornecedor.cidade || '',
                 estado: fornecedor.estado || '',
-                // Converte o booleano que vem do banco para string 'true'/'false' pro Select funcionar
                 ativo: fornecedor.ativo ? 'true' : 'false'
             });
         }
@@ -48,15 +47,11 @@ const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-
-        // CONVERSÃO CRUCIAL:
-        // O Backend espera um Boolean (true/false), mas o <select> HTML devolve String ("true"/"false").
         const payload = {
             ...formData,
             id: fornecedor.id,
-            ativo: formData.ativo === 'true' // Converte string para boolean real
+            ativo: formData.ativo === 'true'
         };
-
         onSave(payload);
     };
 
@@ -71,7 +66,6 @@ const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
                             <label>Nome Fantasia *</label>
                             <input type="text" name="nomeFantasia" value={formData.nomeFantasia} onChange={handleChange} required className={styles.inputModal} />
                         </div>
-                        {/* NOVO CAMPO DE STATUS */}
                         <div className={styles.fieldGroup} style={{ maxWidth: '150px' }}>
                             <label>Status</label>
                             <select
@@ -102,7 +96,6 @@ const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
                         </div>
                     </div>
 
-                    {/* ... (O restante dos campos de endereço continua igual) ... */}
                     <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>Email</label>
@@ -130,7 +123,7 @@ const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
                             <label>Cidade</label>
                             <input type="text" name="cidade" value={formData.cidade} onChange={handleChange} className={styles.inputModal} />
                         </div>
-                        <div className={styles.fieldGroup} style={{maxWidth: '80px'}}>
+                        <div className={styles.fieldGroup} style={{ maxWidth: '80px' }}>
                             <label>UF</label>
                             <input type="text" name="estado" value={formData.estado} onChange={handleChange} className={styles.inputModal} maxLength="2" />
                         </div>
@@ -161,7 +154,11 @@ const BuscaFornecedores = () => {
 
     const [editingFornecedor, setEditingFornecedor] = useState(null);
     const [showConfirm, setShowConfirm] = useState(false);
+
+    // Controle da Ação (Deletar ou Desativar)
     const [deleteId, setDeleteId] = useState(null);
+    const [currentAction, setCurrentAction] = useState('deactivate'); // 'deactivate' | 'delete'
+
     const [expandedId, setExpandedId] = useState(null);
     const [message, setMessage] = useState(null);
 
@@ -183,7 +180,6 @@ const BuscaFornecedores = () => {
             const response = await api.get('/api/v1/fornecedores');
             let dados = response.data || [];
 
-            // Filtros no frontend
             if (searchId) dados = dados.filter(f => f.id && f.id.includes(searchId));
             if (searchNome) dados = dados.filter(f => f.nomeFantasia && f.nomeFantasia.toLowerCase().includes(searchNome.toLowerCase()));
             if (searchEmail) dados = dados.filter(f => f.emailContato && f.emailContato.toLowerCase().includes(searchEmail.toLowerCase()));
@@ -192,7 +188,7 @@ const BuscaFornecedores = () => {
         } catch (error) {
             console.error("Erro ao buscar:", error);
             const errorMsg = error.response ? `Status: ${error.response.status} - ${error.response.data?.error || error.message}` : 'Erro de conexão/rede.';
-            setMessage({ type: 'error', text: `Erro ao buscar fornecedores. Detalhe: ${errorMsg}` });
+            setMessage({ type: 'error', text: `Erro ao buscar fornecedores: ${errorMsg}` });
         } finally {
             setLoading(false);
         }
@@ -211,7 +207,7 @@ const BuscaFornecedores = () => {
         setLoading(true);
         setMessage(null);
         const id = updatedData.id;
-        const { id: _id, ...dataToSend } = updatedData; // Remove ID do corpo se o DTO não exigir, mas o endpoint precisa na URL
+        const { id: _id, ...dataToSend } = updatedData;
 
         try {
             await api.put(`/api/v1/fornecedores/${id}`, dataToSend);
@@ -232,34 +228,61 @@ const BuscaFornecedores = () => {
         }
     };
 
-    const startDelete = (id) => {
+    const startAction = (id, type) => {
         setDeleteId(id);
+        setCurrentAction(type);
         setShowConfirm(true);
     };
 
-    const cancelDelete = () => {
+    const cancelAction = () => {
         setDeleteId(null);
         setShowConfirm(false);
+        setCurrentAction('deactivate');
     };
 
-    const handleConfirmDelete = async () => {
+    const handleConfirmAction = async () => {
         if (!deleteId) return;
         setShowConfirm(false);
         setLoading(true);
         setMessage(null);
 
         try {
-            await api.delete(`/api/v1/fornecedores/${deleteId}`);
-            setFornecedores(oldList => oldList.filter(item => item.id !== deleteId));
-            setMessage({ type: 'success', text: "Fornecedor deletado com sucesso!" });
+            if (currentAction === 'delete') {
+                // Exclusão Permanente
+                await api.delete(`/api/v1/fornecedores/${deleteId}`);
+                setFornecedores(oldList => oldList.filter(item => item.id !== deleteId));
+                setMessage({ type: 'success', text: "Fornecedor excluído permanentemente!" });
+            } else {
+                // Desativação
+                // O backend Java exige o objeto completo no PUT.
+                // Vamos encontrar o objeto atual e mudar apenas o 'ativo'.
+                const fornecedorParaDesativar = fornecedores.find(f => f.id === deleteId);
+
+                if (fornecedorParaDesativar) {
+                    const dadosAtualizados = { ...fornecedorParaDesativar, ativo: false };
+                    // Removemos o ID do corpo se necessário, mas mantemos os dados para validar @NotBlank
+                    const { id: _id, ...payload } = dadosAtualizados;
+
+                    await api.put(`/api/v1/fornecedores/${deleteId}`, payload);
+
+                    setFornecedores(oldList => oldList.map(item =>
+                        item.id === deleteId ? { ...item, ativo: false } : item
+                    ));
+                    setMessage({ type: 'success', text: "Fornecedor desativado com sucesso!" });
+                }
+            }
+
             if (expandedId === deleteId) setExpandedId(null);
+
         } catch (error) {
-            console.error("Erro ao deletar:", error);
-            const errorMessage = error.response?.data?.error || "Erro desconhecido.";
-            setMessage({ type: 'error', text: `Erro ao deletar: ${errorMessage}` });
+            console.error(`Erro ao ${currentAction}:`, error);
+            const actionName = currentAction === 'delete' ? 'excluir' : 'desativar';
+            const errorMessage = error.response?.data?.error || error.response?.data?.erro || "Erro desconhecido.";
+            setMessage({ type: 'error', text: `Erro ao ${actionName}: ${errorMessage}` });
         } finally {
             setLoading(false);
             setDeleteId(null);
+            setCurrentAction('deactivate');
         }
     };
 
@@ -281,24 +304,30 @@ const BuscaFornecedores = () => {
     const totalPages = Math.ceil(fornecedores.length / itemsPerPage);
     const currentPage = Math.floor(currentIndex / itemsPerPage) + 1;
 
-    const ConfirmationModal = () => (
-        <div className={styles.modalBackdrop}>
-            <div className={styles.modalContent}>
-                <h3 className={styles.modalTitle}>Confirmação de Exclusão</h3>
-                <p className={styles.modalText}>
-                    Tem certeza que quer EXCLUIR PERMANENTEMENTE este fornecedor?
-                </p>
-                <div className={styles.modalActions}>
-                    <button className={`${styles.submitButton} ${styles.btnCancel}`} onClick={cancelDelete}>
-                        Cancelar
-                    </button>
-                    <button className={`${styles.submitButton} ${styles.btnDanger}`} onClick={handleConfirmDelete} disabled={loading}>
-                        {loading ? 'Processando...' : 'Confirmar Exclusão'}
-                    </button>
+    const ConfirmationModal = () => {
+        const isDelete = currentAction === 'delete';
+        const title = isDelete ? 'Confirmação de Exclusão' : 'Confirmação de Desativação';
+        const text = isDelete
+            ? 'Tem certeza que quer EXCLUIR PERMANENTEMENTE este fornecedor? Esta ação não pode ser desfeita.'
+            : 'Tem certeza que quer DESATIVAR este fornecedor? O acesso será revogado, mas o cadastro permanecerá no sistema.';
+
+        return (
+            <div className={styles.modalBackdrop}>
+                <div className={styles.modalContent}>
+                    <h3 className={styles.modalTitle}>{title}</h3>
+                    <p className={styles.modalText}>{text}</p>
+                    <div className={styles.modalActions}>
+                        <button className={`${styles.submitButton} ${styles.btnCancel}`} onClick={cancelAction}>
+                            Cancelar
+                        </button>
+                        <button className={`${styles.submitButton} ${styles.btnDanger}`} onClick={handleConfirmAction} disabled={loading}>
+                            {loading ? 'Processando...' : `Confirmar ${isDelete ? 'Exclusão' : 'Desativação'}`}
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const ExpandedDetailsRow = ({ fornecedor }) => (
         <div className={styles['expanded-details-row']}>
@@ -317,12 +346,12 @@ const BuscaFornecedores = () => {
                     <strong className={styles.detailLabel}>Telefone:</strong> {fornecedor.telefone || 'N/A'}
                 </p>
             </div>
-            <div className={styles['detail-half-span']}>
+            <div className={`${styles['detail-half-span']} ${styles['detail-status']}`}>
                 <p className={styles['detail-text-p']}>
                     <strong className={styles.detailLabel}>Status:</strong>
                     <span className={fornecedor.ativo ? styles.statusOn : styles.statusOff}>
-            {fornecedor.ativo ? 'Ativo' : 'Inativo'}
-          </span>
+                        {fornecedor.ativo ? 'Ativo' : 'Inativo'}
+                    </span>
                 </p>
             </div>
             <div className={styles['detail-full-span']}>
@@ -431,9 +460,14 @@ const BuscaFornecedores = () => {
                                                     className={styles['btn-delete']}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        startDelete(fornecedor.id);
+                                                        // Lógica de Ação Inteligente (Desativar vs Deletar)
+                                                        if (isDeactivated) {
+                                                            startAction(fornecedor.id, 'delete');
+                                                        } else {
+                                                            startAction(fornecedor.id, 'deactivate');
+                                                        }
                                                     }}
-                                                    title="Excluir Fornecedor"
+                                                    title={isDeactivated ? "Excluir Permanentemente" : "Desativar Fornecedor"}
                                                     disabled={loading}
                                                 >
                                                     <FiTrash2 size={18} />
@@ -489,12 +523,14 @@ function CadastroFornecedor() {
         cep: '',
         logradouro: '',
         cidade: '',
-        estado: ''
+        estado: '',
+        gerarAutomaticamente: false, // Lógica de Senha
+        senhaManual: ''
     });
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        const { name, value, type, checked } = e.target;
+        setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
     };
 
     const handleSubmit = async (e) => {
@@ -502,20 +538,36 @@ function CadastroFornecedor() {
         setLoading(true);
         setMessage(null);
 
+        // Prepara payload com senha
+        const payload = {
+            nomeFantasia: formData.nomeFantasia,
+            cnpj: formData.cnpj,
+            responsavelNome: formData.responsavelNome,
+            emailContato: formData.emailContato,
+            telefone: formData.telefone,
+            cep: formData.cep,
+            logradouro: formData.logradouro,
+            cidade: formData.cidade,
+            estado: formData.estado,
+            ativo: true,
+            // Envia senha (se gerarAutomaticamente for true, backend pode gerar, ou mandamos default aqui)
+            // Assumindo que o backend espera 'senha' e se vier vazia, usa padrão.
+            // Mas vamos seguir a lógica do Lojista de enviar.
+            senha: formData.gerarAutomaticamente ? null : formData.senhaManual
+        };
+
         try {
-            const response = await api.post('/api/v1/fornecedores', formData);
-            setMessage({ type: 'success', text: `✅ Sucesso! Fornecedor "${response.data.nomeFantasia}" cadastrado com sucesso.` });
+            const response = await api.post('/api/v1/fornecedores', payload);
+
+            // Mensagem com credenciais (se o backend retornar usuário/senha no responseDTO personalizado)
+            // Se o seu FornecedorResponseDTO não tiver senha, o usuário usará o que digitou ou padrão.
+            const msgSucesso = `✅ Sucesso! Fornecedor "${response.data.nomeFantasia}" cadastrado com sucesso.`;
+            setMessage({ type: 'success', text: msgSucesso });
 
             setFormData({
-                nomeFantasia: '',
-                cnpj: '',
-                responsavelNome: '',
-                emailContato: '',
-                telefone: '',
-                cep: '',
-                logradouro: '',
-                cidade: '',
-                estado: ''
+                nomeFantasia: '', cnpj: '', responsavelNome: '', emailContato: '', telefone: '',
+                cep: '', logradouro: '', cidade: '', estado: '',
+                gerarAutomaticamente: false, senhaManual: ''
             });
         } catch (error) {
             console.error(error);
@@ -574,8 +626,8 @@ function CadastroFornecedor() {
                             <input type="text" name="responsavelNome" className={styles.inputLong} value={formData.responsavelNome} onChange={handleChange} />
                         </div>
                         <div className={styles.fieldGroup}>
-                            <label>Email de Contato</label>
-                            <input type="email" name="emailContato" className={styles.inputLong} value={formData.emailContato} onChange={handleChange} />
+                            <label>Email de Contato (Login) <span className={styles.requiredAsterisk}>*</span></label>
+                            <input type="email" name="emailContato" className={styles.inputLong} value={formData.emailContato} onChange={handleChange} required />
                         </div>
                     </div>
 
@@ -606,7 +658,20 @@ function CadastroFornecedor() {
                         </div>
                     </div>
 
+                    {/* Lógica de Senha Adicionada */}
+                    {!formData.gerarAutomaticamente && (
+                        <div className={styles.fieldGroup} style={{ marginTop: '15px' }}>
+                            <label>Senha (opcional)</label>
+                            <input type="password" name="senhaManual" className={styles.inputMedium} value={formData.senhaManual} onChange={handleChange} placeholder="Deixe vazio para gerar automaticamente" />
+                        </div>
+                    )}
+
                     <div className={styles.footer}>
+                        <label className={styles.checkboxContainer}>
+                            <input type="checkbox" name="gerarAutomaticamente" checked={formData.gerarAutomaticamente} onChange={handleChange} />
+                            <span className={styles.checkmark}></span>
+                            Gerar senha automaticamente
+                        </label>
                         <button type="submit" className={styles.submitButton} disabled={loading}>
                             {loading ? 'Cadastrando...' : 'Criar Fornecedor'}
                         </button>

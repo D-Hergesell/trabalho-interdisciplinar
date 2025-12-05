@@ -20,7 +20,8 @@ const EditLojistaModal = ({ lojista, onSave, onCancel, loading }) => {
         cidade: '',
         estado: '',
         cep: '',
-        telefone: ''
+        telefone: '',
+        ativo: 'true' // Padrão
     });
 
     useEffect(() => {
@@ -34,7 +35,9 @@ const EditLojistaModal = ({ lojista, onSave, onCancel, loading }) => {
                 cidade: lojista.cidade || '',
                 estado: lojista.estado || '',
                 cep: lojista.cep || '',
-                telefone: lojista.telefone || ''
+                telefone: lojista.telefone || '',
+                // Converte Boolean do banco para String do Select
+                ativo: lojista.ativo ? 'true' : 'false'
             });
         }
     }, [lojista]);
@@ -46,8 +49,12 @@ const EditLojistaModal = ({ lojista, onSave, onCancel, loading }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Envia o objeto com o ID original e os dados atualizados
-        onSave({ ...formData, id: lojista.id });
+        // Converte String do Select de volta para Boolean
+        onSave({
+            ...formData,
+            id: lojista.id,
+            ativo: formData.ativo === 'true'
+        });
     };
 
     return (
@@ -61,40 +68,61 @@ const EditLojistaModal = ({ lojista, onSave, onCancel, loading }) => {
                             <label>Nome Fantasia *</label>
                             <input type="text" name="nomeFantasia" value={formData.nomeFantasia} onChange={handleChange} required className={styles.inputModal} />
                         </div>
+
+                        {/* CAMPO DE STATUS */}
+                        <div className={styles.fieldGroup} style={{ maxWidth: '150px' }}>
+                            <label>Status</label>
+                            <select
+                                name="ativo"
+                                value={formData.ativo}
+                                onChange={handleChange}
+                                className={styles.inputModal}
+                                style={{
+                                    borderColor: formData.ativo === 'true' ? '#28a745' : '#dc3545',
+                                    color: formData.ativo === 'true' ? '#28a745' : '#dc3545',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                <option value="true">Ativo</option>
+                                <option value="false">Inativo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>CNPJ *</label>
                             <input type="text" name="cnpj" value={formData.cnpj} onChange={handleChange} required className={styles.inputModal} maxLength="14" />
                         </div>
-                    </div>
-
-                    <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>Responsável</label>
                             <input type="text" name="responsavelNome" value={formData.responsavelNome} onChange={handleChange} className={styles.inputModal} />
                         </div>
+                    </div>
+
+                    <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>Email de Contato</label>
                             <input type="email" name="emailContato" value={formData.emailContato} onChange={handleChange} className={styles.inputModal} />
                         </div>
-                    </div>
-
-                    <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>Telefone</label>
                             <input type="text" name="telefone" value={formData.telefone} onChange={handleChange} className={styles.inputModal} />
                         </div>
+                    </div>
+
+                    <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>CEP</label>
                             <input type="text" name="cep" value={formData.cep} onChange={handleChange} className={styles.inputModal} maxLength="8" />
                         </div>
-                    </div>
-
-                    <h4 className={styles.sectionTitle} style={{ marginTop: '15px' }}>Endereço</h4>
-                    <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>Logradouro</label>
                             <input type="text" name="logradouro" value={formData.logradouro} onChange={handleChange} className={styles.inputModal} />
                         </div>
+                    </div>
+
+                    <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>Cidade</label>
                             <input type="text" name="cidade" value={formData.cidade} onChange={handleChange} className={styles.inputModal} />
@@ -146,6 +174,9 @@ const BuscaLojistas = () => {
     const [expandedId, setExpandedId] = useState(null);
     const [message, setMessage] = useState(null);
 
+    // Controle de Ação Inteligente
+    const [currentAction, setCurrentAction] = useState('deactivate'); // 'deactivate' | 'delete'
+
     const [editingLojista, setEditingLojista] = useState(null);
 
     // Paginação
@@ -165,11 +196,9 @@ const BuscaLojistas = () => {
         setEditingLojista(null);
 
         try {
-            // Rota atualizada para o backend Spring
             const response = await api.get('/api/v1/lojas');
             let dados = response.data || [];
 
-            // Filtros no frontend
             if (searchId) dados = dados.filter(l => l.id && l.id.includes(searchId));
             if (searchName) dados = dados.filter(l => l.nomeFantasia && l.nomeFantasia.toLowerCase().includes(searchName.toLowerCase()));
             if (searchEmail) dados = dados.filter(l => l.emailContato && l.emailContato.toLowerCase().includes(searchEmail.toLowerCase()));
@@ -197,7 +226,6 @@ const BuscaLojistas = () => {
         setLoading(true);
         setMessage(null);
         const id = updatedData.id;
-        // Remove o ID do corpo do objeto enviado, pois o backend espera no PathVariable
         const { id: _id, ...dataToSend } = updatedData;
 
         try {
@@ -219,36 +247,57 @@ const BuscaLojistas = () => {
         }
     };
 
-    const startDelete = (id) => {
+    const startAction = (id, type) => {
         setDeleteId(id);
+        setCurrentAction(type);
         setShowConfirm(true);
     };
 
-    const cancelDelete = () => {
+    const cancelAction = () => {
         setDeleteId(null);
         setShowConfirm(false);
+        setCurrentAction('deactivate');
     };
 
-    const handleConfirmDelete = async () => {
+    const handleConfirmAction = async () => {
         if (!deleteId) return;
         setShowConfirm(false);
         setLoading(true);
         setMessage(null);
 
         try {
-            // Rota atualizada para Delete
-            await api.delete(`/api/v1/lojas/${deleteId}`);
-            setLojistas(oldList => oldList.filter(item => item.id !== deleteId));
-            setMessage({ type: 'success', text: "Lojista excluído permanentemente com sucesso!" });
+            if (currentAction === 'delete') {
+                // Exclusão Permanente
+                await api.delete(`/api/v1/lojas/${deleteId}`);
+                setLojistas(oldList => oldList.filter(item => item.id !== deleteId));
+                setMessage({ type: 'success', text: "Lojista excluído permanentemente!" });
+            } else {
+                // Desativação
+                const lojaParaDesativar = lojistas.find(l => l.id === deleteId);
+                if (lojaParaDesativar) {
+                    const dadosAtualizados = { ...lojaParaDesativar, ativo: false };
+                    const { id: _id, ...payload } = dadosAtualizados;
+
+                    await api.put(`/api/v1/lojas/${deleteId}`, payload);
+
+                    setLojistas(oldList => oldList.map(item =>
+                        item.id === deleteId ? { ...item, ativo: false } : item
+                    ));
+                    setMessage({ type: 'success', text: "Lojista desativado com sucesso!" });
+                }
+            }
+
             if (expandedId === deleteId) setExpandedId(null);
 
         } catch (error) {
-            console.error("Erro ao deletar:", error);
+            console.error(`Erro ao ${currentAction}:`, error);
+            const actionName = currentAction === 'delete' ? 'excluir' : 'desativar';
             const errorMessage = error.response?.data?.error || "Erro de rede/servidor.";
-            setMessage({ type: 'error', text: `Erro ao excluir: ${errorMessage}` });
+            setMessage({ type: 'error', text: `Erro ao ${actionName}: ${errorMessage}` });
         } finally {
             setLoading(false);
             setDeleteId(null);
+            setCurrentAction('deactivate');
         }
     };
 
@@ -270,28 +319,34 @@ const BuscaLojistas = () => {
     const totalPages = Math.ceil(lojistas.length / itemsPerPage);
     const currentPage = Math.floor(currentIndex / itemsPerPage) + 1;
 
-    const ConfirmationModal = () => (
-        <div className={styles.modalBackdrop}>
-            <div className={styles.modalContent}>
-                <h3 className={styles.modalTitle}>Confirmação de Exclusão</h3>
-                <p className={styles.modalText}>
-                    Tem certeza que quer EXCLUIR PERMANENTEMENTE esta loja? Esta ação não pode ser desfeita.
-                </p>
-                <div className={styles.modalActions}>
-                    <button className={`${styles.submitButton} ${styles.btnCancel}`} onClick={cancelDelete}>
-                        Cancelar
-                    </button>
-                    <button
-                        className={`${styles.submitButton} ${styles.btnDanger}`}
-                        onClick={handleConfirmDelete}
-                        disabled={loading}
-                    >
-                        {loading ? 'Processando...' : 'Confirmar Exclusão'}
-                    </button>
+    const ConfirmationModal = () => {
+        const isDelete = currentAction === 'delete';
+        const title = isDelete ? 'Confirmação de Exclusão' : 'Confirmação de Desativação';
+        const text = isDelete
+            ? 'Tem certeza que quer EXCLUIR PERMANENTEMENTE esta loja? Esta ação não pode ser desfeita.'
+            : 'Tem certeza que quer DESATIVAR esta loja? O acesso será revogado, mas o cadastro permanecerá.';
+
+        return (
+            <div className={styles.modalBackdrop}>
+                <div className={styles.modalContent}>
+                    <h3 className={styles.modalTitle}>{title}</h3>
+                    <p className={styles.modalText}>{text}</p>
+                    <div className={styles.modalActions}>
+                        <button className={`${styles.submitButton} ${styles.btnCancel}`} onClick={cancelAction}>
+                            Cancelar
+                        </button>
+                        <button
+                            className={`${styles.submitButton} ${styles.btnDanger}`}
+                            onClick={handleConfirmAction}
+                            disabled={loading}
+                        >
+                            {loading ? 'Processando...' : `Confirmar ${isDelete ? 'Exclusão' : 'Desativação'}`}
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const ExpandedDetailsRow = ({ item }) => (
         <div className={styles['expanded-details-row']}>
@@ -424,9 +479,14 @@ const BuscaLojistas = () => {
                                                     className={styles['btn-delete']}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        startDelete(item.id);
+                                                        // Ação inteligente: Desativar se ativo, Excluir se inativo
+                                                        if (isDeactivated) {
+                                                            startAction(item.id, 'delete');
+                                                        } else {
+                                                            startAction(item.id, 'deactivate');
+                                                        }
                                                     }}
-                                                    title="Excluir Lojista"
+                                                    title={isDeactivated ? "Excluir Permanentemente" : "Desativar Lojista"}
                                                     disabled={loading}
                                                 >
                                                     <FiTrash2 size={18} />
@@ -479,7 +539,6 @@ function CadastroLojista() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
 
-    // Estados atualizados para corresponder ao DTO
     const [formData, setFormData] = useState({
         nomeFantasia: '',
         cnpj: '',
@@ -489,12 +548,14 @@ function CadastroLojista() {
         cidade: '',
         estado: '',
         cep: '',
-        telefone: ''
+        telefone: '',
+        gerarAutomaticamente: false,
+        senhaManual: ''
     });
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        const { name, value, type, checked } = e.target;
+        setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
     };
 
     const handleSubmit = async (e) => {
@@ -502,7 +563,15 @@ function CadastroLojista() {
         setLoading(true);
         setMessage(null);
 
-        // DTO exato esperado pelo backend
+        // --- VALIDAÇÃO DE SENHA CORRIGIDA ---
+        // Se "Gerar Automaticamente" estiver DESMARCADO, a senha manual é OBRIGATÓRIA.
+        if (!formData.gerarAutomaticamente && !formData.senhaManual.trim()) {
+            setMessage({ type: 'error', text: 'Erro: A senha é obrigatória. Digite uma senha ou marque "Gerar automaticamente".' });
+            setLoading(false);
+            return;
+        }
+        // ------------------------------------
+
         const dadosParaBackend = {
             nomeFantasia: formData.nomeFantasia,
             cnpj: formData.cnpj,
@@ -512,25 +581,20 @@ function CadastroLojista() {
             cep: formData.cep,
             logradouro: formData.logradouro,
             cidade: formData.cidade,
-            estado: formData.estado
+            estado: formData.estado,
+            ativo: true,
+            senha: formData.gerarAutomaticamente ? null : formData.senhaManual
         };
 
         try {
-            // Rota atualizada para API Java
             const response = await api.post('/api/v1/lojas', dadosParaBackend);
 
             setMessage({ type: 'success', text: `Sucesso! Loja "${response.data.nomeFantasia}" cadastrada.` });
 
             setFormData({
-                nomeFantasia: '',
-                cnpj: '',
-                responsavelNome: '',
-                emailContato: '',
-                logradouro: '',
-                cidade: '',
-                estado: '',
-                cep: '',
-                telefone: ''
+                nomeFantasia: '', cnpj: '', responsavelNome: '', emailContato: '',
+                logradouro: '', cidade: '', estado: '', cep: '', telefone: '',
+                gerarAutomaticamente: false, senhaManual: ''
             });
         } catch (error) {
             console.error("Erro ao cadastrar Lojista:", error);
@@ -558,13 +622,11 @@ function CadastroLojista() {
         </ul>
       </nav>
 
-            {/* --- CONTEÚDO PRINCIPAL --- */}
             <main className={styles['main-content']}>
                 <header className={styles.header}>
                     <h1>Cadastrar Lojista</h1>
                 </header>
 
-                {/* Mensagens de Feedback no Topo */}
                 {message && message.type !== 'info' && (
                     <div className={`${styles.alertMessage} ${styles[message.type]}`}>
                         {message.text.split('\n').map((line, index) => (
@@ -623,7 +685,28 @@ function CadastroLojista() {
                         </div>
                     </div>
 
+                    {/* SESSÃO DE SENHA */}
+                    {!formData.gerarAutomaticamente && (
+                        <div className={styles.fieldGroup} style={{ marginTop: '20px' }}>
+                            <label>Senha <span className={styles.requiredAsterisk}>*</span></label>
+                            <input
+                                type="password"
+                                name="senhaManual"
+                                className={styles.inputMedium}
+                                value={formData.senhaManual}
+                                onChange={handleChange}
+                                placeholder="Digite a senha..."
+                            />
+                        </div>
+                    )}
+
                     <div className={styles.footer}>
+                        <label className={styles.checkboxContainer}>
+                            <input type="checkbox" name="gerarAutomaticamente" checked={formData.gerarAutomaticamente} onChange={handleChange} />
+                            <span className={styles.checkmark}></span>
+                            Gerar senha automaticamente (12345678)
+                        </label>
+
                         <button type="submit" className={styles.submitButton} disabled={loading}>
                             {loading ? 'Cadastrando...' : 'Criar Lojista'}
                         </button>
