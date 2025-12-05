@@ -64,6 +64,13 @@ const EditCampanhaModal = ({ campanha, onSave, onCancel, loading }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        if (formData.dataFim && formData.dataInicio) {
+            if (new Date(formData.dataFim) < new Date(formData.dataInicio)) {
+                alert("A data de fim não pode ser anterior à data de início.");
+                return;
+            }
+        }
+
         // Prepara o payload convertendo tipos
         const payload = {
             id: campanha.id, // ID para update
@@ -493,6 +500,15 @@ function CadastroCampanha() {
         e.preventDefault();
         setLoading(true);
         setMessage(null);
+
+        if (form.dataFim && form.dataInicio) {
+            if (new Date(form.dataFim) < new Date(form.dataInicio)) {
+                setMessage({ type: 'error', text: "A data de fim não pode ser anterior à data de início." });
+                setLoading(false);
+                return;
+            }
+        }
+
         try {
             // Conversão de tipos para o DTO
             const payload = {
