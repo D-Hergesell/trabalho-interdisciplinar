@@ -556,7 +556,7 @@ function CadastroFornecedor() {
                         </div>
                         <div className={styles.fieldGroup}>
                             <label>CNPJ <span className={styles.requiredAsterisk}>*</span></label>
-                            <input type="text" name="cnpj" className={styles.inputLong} value={formData.cnpj} onChange={handleChange} required maxLength="14" placeholder="Apenas números" />
+                            <input type="text" name="cnpj" className={styles.inputLong} value={formData.cnpj} onChange={handleChange} required maxLength="14" placeholder="99.999.999/0001-98" />
                         </div>
                     </div>
 

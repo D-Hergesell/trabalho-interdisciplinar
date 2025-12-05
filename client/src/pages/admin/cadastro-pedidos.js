@@ -706,7 +706,7 @@ function CadastroPedido (){
             <div className={styles['dashboard-container']}>
                 <nav className={styles.sidebar}>
                     <ul>
-                        <li><Link href="/admin/Dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
+                        <li><Link href="/admin/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
                     </ul>
                 </nav>
                 <main className={styles['main-content']}>
@@ -866,6 +866,6 @@ function CadastroPedido (){
             </main>
         </div>
     );
-};
+}
 
 export default withAuth (CadastroPedido);
