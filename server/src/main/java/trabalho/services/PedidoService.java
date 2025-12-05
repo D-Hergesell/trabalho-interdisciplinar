@@ -13,6 +13,7 @@ import trabalho.mapper.PedidoMapper;
 import trabalho.repository.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
@@ -30,12 +31,9 @@ public class PedidoService {
     private final UsuarioRepository usuarioRepository;
     private final ProdutoRepository produtoRepository;
     private final CondicoesEstadoRepository condicoesEstadoRepository;
-    private final CampanhaRepository campanhaRepository; // Injetado novo repository
+    private final CampanhaRepository campanhaRepository;
     private final PedidoMapper pedidoMapper;
 
-    // -----------------------------------------
-    // CREATE
-    // -----------------------------------------
     @Transactional
     public PedidoResponseDTO criarPedido(PedidoRequestDTO dto) {
 
@@ -50,16 +48,26 @@ public class PedidoService {
         Usuario usuario = usuarioRepository.findById(dto.criadoPorUsuarioId())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
 
-        // --- LÓGICA 1: Condições Regionais (Estado) ---
+        // =================================================================================
+        // LÓGICA DE CONDIÇÕES REGIONAIS (ESTADO)
+        // =================================================================================
         Optional<CondicoesEstado> condicaoEstadoOpt = condicoesEstadoRepository
                 .findByFornecedor_IdAndEstado(fornecedor.getId(), loja.getEstado());
 
         BigDecimal ajustePorUnidade = BigDecimal.ZERO;
+        BigDecimal cashbackPercentualEstado = BigDecimal.ZERO;
 
         if (condicaoEstadoOpt.isPresent() && Boolean.TRUE.equals(condicaoEstadoOpt.get().getAtivo())) {
             CondicoesEstado cond = condicaoEstadoOpt.get();
+
+            // 1. Captura o ajuste de preço (ex: +R$ 2,00)
             if (cond.getAjusteUnitarioAplicado() != null) {
                 ajustePorUnidade = cond.getAjusteUnitarioAplicado();
+            }
+
+            // 2. Captura o percentual de cashback (ex: 10%)
+            if (cond.getCashbackPercentual() != null) {
+                cashbackPercentualEstado = cond.getCashbackPercentual();
             }
         }
 
@@ -83,22 +91,23 @@ public class PedidoService {
 
             // Baixa de estoque
             produto.setQuantidadeEstoque(produto.getQuantidadeEstoque() - itemDto.quantidade());
-            produtoRepository.save(produto); // Garante a atualização
+            produtoRepository.save(produto);
 
             PedidoItem item = new PedidoItem();
             item.setPedido(pedido);
             item.setProduto(produto);
             item.setQuantidade(itemDto.quantidade());
 
-            // Aplica ajuste regional
+            // APLICAÇÃO DO AJUSTE REGIONAL NO PREÇO
             BigDecimal precoBase = produto.getPrecoBase();
-            BigDecimal precoFinal = precoBase.add(ajustePorUnidade);
+            BigDecimal precoFinal = precoBase.add(ajustePorUnidade); // Soma o ajuste (pode ser negativo)
+
             if (precoFinal.compareTo(BigDecimal.ZERO) < 0) {
                 precoFinal = BigDecimal.ZERO;
             }
 
             item.setPrecoUnitarioMomento(precoFinal);
-            item.setAjusteUnitarioAplicado(ajustePorUnidade);
+            item.setAjusteUnitarioAplicado(ajustePorUnidade); // Registra histórico do ajuste
 
             pedido.getItens().add(item);
 
@@ -111,52 +120,57 @@ public class PedidoService {
 
         pedido.setValorTotal(valorTotalCalculado);
 
-        // --- LÓGICA 2: Aplicação de Campanhas (Cashback e Brindes) ---
+        // =================================================================================
+        // CÁLCULO DE CASHBACK (CAMPANHAS + ESTADO)
+        // =================================================================================
+        BigDecimal totalCashback = BigDecimal.ZERO;
+
+        // 1. Cashback por Estado (CORRIGIDO: Adicionado RoundingMode)
+        if (cashbackPercentualEstado.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal cashbackDoEstado = valorTotalCalculado
+                    .multiply(cashbackPercentualEstado)
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP); // <--- CORREÇÃO AQUI
+            totalCashback = totalCashback.add(cashbackDoEstado);
+        }
+
+        // 2. Cashback por Campanhas
         List<Campanha> campanhasAtivas = campanhaRepository.findByFornecedor_IdAndAtivoTrue(fornecedor.getId());
         LocalDate hoje = LocalDate.now();
 
         for (Campanha campanha : campanhasAtivas) {
-            // Verifica validade da data (se houver datas configuradas)
             if (campanha.getDataInicio() != null && hoje.isBefore(campanha.getDataInicio())) continue;
             if (campanha.getDataFim() != null && hoje.isAfter(campanha.getDataFim())) continue;
 
-            // CASO 1: Campanha de Cashback (Valor da Compra)
+            // Campanha de Valor
             if (campanha.getTipo() == TipoCampanha.valor_compra && campanha.getValorMinimoCompra() != null) {
-                // Se o valor total do pedido >= mínimo exigido
                 if (valorTotalCalculado.compareTo(campanha.getValorMinimoCompra()) >= 0) {
-                    // Aplica o Cashback (acumulativo ou regra de maior valor, aqui estamos somando se houver múltiplas)
                     if (campanha.getCashbackValor() != null) {
-                        BigDecimal novoCashback = pedido.getCashbackGerado().add(campanha.getCashbackValor());
-                        pedido.setCashbackGerado(novoCashback);
+                        totalCashback = totalCashback.add(campanha.getCashbackValor());
                     }
                 }
             }
 
-            // CASO 2: Campanha de Brinde (Quantidade de Produtos)
+            // Lógica de Brinde
             if (campanha.getTipo() == TipoCampanha.quantidade_produto && campanha.getQuantidadeMinimaProduto() != null) {
-                // Lógica Simplificada: Se a quantidade TOTAL de itens no pedido >= mínimo, ganha o brinde.
-                // (Para refinar por produto específico, seria necessário alterar a entidade Campanha para ter "produtoAlvo")
                 if (quantidadeTotalItens >= campanha.getQuantidadeMinimaProduto()) {
                     Produto brinde = campanha.getProdutoIdBrinde();
-
                     if (brinde != null && brinde.getQuantidadeEstoque() > 0) {
-                        // Adiciona o item Brinde ao pedido com custo ZERO
                         PedidoItem itemBrinde = new PedidoItem();
                         itemBrinde.setPedido(pedido);
                         itemBrinde.setProduto(brinde);
-                        itemBrinde.setQuantidade(1); // Ganha 1 unidade
-                        itemBrinde.setPrecoUnitarioMomento(BigDecimal.ZERO); // Grátis
+                        itemBrinde.setQuantidade(1);
+                        itemBrinde.setPrecoUnitarioMomento(BigDecimal.ZERO);
                         itemBrinde.setAjusteUnitarioAplicado(BigDecimal.ZERO);
 
-                        // Baixa estoque do brinde
                         brinde.setQuantidadeEstoque(brinde.getQuantidadeEstoque() - 1);
                         produtoRepository.save(brinde);
-
                         pedido.getItens().add(itemBrinde);
                     }
                 }
             }
         }
+
+        pedido.setCashbackGerado(totalCashback);
 
         Pedido salvo = pedidoRepository.save(pedido);
         return pedidoMapper.toResponseDTO(salvo);
