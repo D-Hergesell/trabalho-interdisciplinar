@@ -31,7 +31,6 @@ const formatCurrency = (value) => {
 // 1. COMPONENTE MODAL DE EDIÇÃO DE PEDIDO (STATUS)
 // ============================================================================
 const EditPedidoModal = ({ pedido = {}, onSave, onCancel, loading }) => {
-    // Backend usa OffsetDateTime, então pegamos só a data YYYY-MM-DD
     const safeDate = pedido.dataPedido ? String(pedido.dataPedido).substring(0, 10) : new Date().toISOString().substring(0, 10);
 
     const [formData, setFormData] = useState({
@@ -54,8 +53,6 @@ const EditPedidoModal = ({ pedido = {}, onSave, onCancel, loading }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // A edição completa não é suportada pelo backend atual (apenas status via PATCH),
-        // mas enviaremos o objeto para manter a interface genérica
         onSave({
             id: pedido.id,
             status: formData.status
@@ -249,15 +246,12 @@ const BuscaPedidos = ({ allFornecedores = [] }) => {
 
     const cancelEdit = () => setEditingPedido(null);
 
-    // No backend atual, a edição é feita via PATCH de status.
-    // Vamos simular a atualização chamando o endpoint de status.
     const handleUpdateSubmit = async (updatedData) => {
         setLoading(true);
         setMessage(null);
         const id = updatedData.id;
 
         try {
-            // Recupera usuário logado para validação
             const usuarioLogado = JSON.parse(localStorage.getItem('usuario'));
             if(!usuarioLogado || !usuarioLogado.id) throw new Error("Usuário não logado");
 
@@ -322,15 +316,21 @@ const BuscaPedidos = ({ allFornecedores = [] }) => {
         }
     };
 
+    // --- CORREÇÃO DA PAGINAÇÃO AQUI ---
     const nextSlide = () => {
-        setCurrentIndex((prev) =>
-            Math.min(prev + itemsPerPage, Math.max(0, pedidos.length - itemsPerPage))
-        );
+        if (currentIndex + itemsPerPage < pedidos.length) {
+            setCurrentIndex(currentIndex + itemsPerPage);
+            setExpandedPedidoId(null); // Fecha detalhes ao trocar página
+        }
     };
 
     const prevSlide = () => {
-        setCurrentIndex((prev) => Math.max(prev - itemsPerPage, 0));
+        if (currentIndex - itemsPerPage >= 0) {
+            setCurrentIndex(currentIndex - itemsPerPage);
+            setExpandedPedidoId(null);
+        }
     };
+    // ------------------------------------
 
     const visibleItems = pedidos.slice(currentIndex, currentIndex + itemsPerPage);
     const totalPages = Math.max(1, Math.ceil(pedidos.length / itemsPerPage));
@@ -501,14 +501,16 @@ function CadastroPedido (){
     const [message, setMessage] = useState(null);
 
     const [fornecedores, setFornecedores] = useState([]);
-    const [lojas, setLojas] = useState([]); // Nova lista de lojas
+    const [lojas, setLojistas] = useState([]);
     const [produtos, setProdutos] = useState([]);
     const [filteredProdutos, setFilteredProdutos] = useState([]);
 
     const [formData, setFormData] = useState({
         fornecedorId: '',
-        lojaId: '', // Campo obrigatório
-        // status é PENDENTE por padrão no backend
+        lojaId: '',
+        dataPedido: new Date().toISOString().substring(0, 10),
+        status: 'Pendente',
+        observacoes: ''
     });
 
     const [itensPedido, setItensPedido] = useState([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
@@ -523,7 +525,7 @@ function CadastroPedido (){
             setFornecedores(respFornecedores.data || []);
 
             const respLojas = await api.get('/api/v1/lojas');
-            setLojas(respLojas.data || []);
+            setLojistas(respLojas.data || []);
 
             const respProdutos = await api.get('/api/v1/produtos');
             setProdutos(respProdutos.data || []);
@@ -544,7 +546,6 @@ function CadastroPedido (){
         const selectedSupplierId = String(formData.fornecedorId).trim();
 
         if (selectedSupplierId) {
-            // Filtrar produtos ativos do fornecedor selecionado
             const produtosDoFornecedor = produtos.filter(p =>
                 String(p.fornecedorId).trim() === selectedSupplierId && p.ativo === true
             );
@@ -596,7 +597,6 @@ function CadastroPedido (){
                 novosItens[index][name] = cleanedValue;
                 const produtoSelecionado = productsList.find(p => String(p.id).trim() === cleanedValue);
 
-                // Preço base vindo do produto (o backend aplicará descontos regionais depois)
                 novosItens[index].valorUnitario = Number(produtoSelecionado?.precoBase) || 0.00;
 
                 if (produtoSelecionado && produtoSelecionado.quantidadeEstoque <= 0) {
@@ -638,7 +638,6 @@ function CadastroPedido (){
         setLoading(true);
         setMessage(null);
 
-        // Validação de Estoque no Front
         for (const item of itensPedido) {
             const prod = filteredProdutos.find(p => String(p.id) === String(item.produtoId));
             if (prod && item.quantidade > prod.quantidadeEstoque) {
@@ -667,7 +666,6 @@ function CadastroPedido (){
             return;
         }
 
-        // Recupera ID do usuário logado
         const usuarioLogado = JSON.parse(localStorage.getItem('usuario'));
         if (!usuarioLogado || !usuarioLogado.id) {
             setMessage({ type: 'error', text: 'Erro de autenticação. Usuário não identificado.' });
@@ -679,7 +677,7 @@ function CadastroPedido (){
             lojaId: formData.lojaId,
             fornecedorId: formData.fornecedorId,
             criadoPorUsuarioId: usuarioLogado.id,
-            condicaoPagamentoId: null, // Pode ser implementado depois
+            condicaoPagamentoId: null,
             itens: itensValidos
         };
 
@@ -689,8 +687,10 @@ function CadastroPedido (){
 
             setMessage({ type: 'success', text: ` Pedido #${String(novoPedido.id || '').substring(0, 8)} criado com sucesso! Total: R$ ${formatCurrency(novoPedido.valorTotal)}` });
 
-            setFormData({ fornecedorId: '', lojaId: '' });
+            setFormData({ fornecedorId: '', lojaId: '', dataPedido: new Date().toISOString().substring(0, 10), status: 'Pendente', observacoes: '' });
             setItensPedido([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
+
+            await loadInitialData();
 
         } catch (error) {
             console.error('Erro ao cadastrar Pedido:', error);
@@ -706,7 +706,7 @@ function CadastroPedido (){
             <div className={styles['dashboard-container']}>
                 <nav className={styles.sidebar}>
                     <ul>
-                        <li><Link href="/admin/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
+                        <li><Link href="/admin/Dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
                     </ul>
                 </nav>
                 <main className={styles['main-content']}>
@@ -728,7 +728,6 @@ function CadastroPedido (){
                     <li><Link href="/admin/cadastro-produto" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Produtos</span></div></Link></li>
                     <li className={styles.active}><Link href="/admin/cadastro-pedidos" className={styles.linkReset}><div className={styles.menuItem}><FiShoppingBag size={20} /><span>Pedidos</span></div></Link></li>
                     <li><Link href="/admin/cadastro-campanha" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Campanhas</span></div></Link></li>
-                    {/* <li><Link href="/admin/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li> */}
                     <li><Link href="/admin/login" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
                 </ul>
             </nav>
@@ -756,6 +755,13 @@ function CadastroPedido (){
                                 <option value="" disabled>Selecione um fornecedor</option>
                                 {fornecedores.map(f => <option key={f.id} value={f.id}>{f.nomeFantasia}</option>)}
                             </select>
+                        </div>
+                    </div>
+
+                    <div className={styles.row}>
+                        <div className={styles.fieldGroup}>
+                            <label>Data do Pedido</label>
+                            <input type="date" name="dataPedido" value={formData.dataPedido} onChange={handleChange} className={styles.inputLong} required />
                         </div>
                     </div>
 
@@ -838,11 +844,16 @@ function CadastroPedido (){
                     </div>
 
                     <div className={styles.totalPedidoContainer}>
-                        <p className={styles.totalLabel}>Total Estimado (Sem impostos/ajustes):</p>
+                        <p className={styles.totalLabel}>Total Estimado:</p>
                         <p className={styles.totalValue}>R$ {formatCurrency(calcularTotal())}</p>
                     </div>
 
                     <hr className={styles.divider} />
+
+                    <h2 className={styles.sectionTitle}>Observações</h2>
+                    <div className={styles.fieldGroup}>
+                        <textarea name="observacoes" value={formData.observacoes} onChange={handleChange} className={styles.textareaLong} rows="3" placeholder="Notas internas..." />
+                    </div>
 
                     <div className={styles.footer}>
                         <button type="submit" className={styles.submitButton} disabled={loading || isProductSelectionDisabled}>{loading ? 'Processando...' : 'Salvar Novo Pedido'}</button>
@@ -855,6 +866,6 @@ function CadastroPedido (){
             </main>
         </div>
     );
-}
+};
 
 export default withAuth (CadastroPedido);
