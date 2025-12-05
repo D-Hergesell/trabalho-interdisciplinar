@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import withAuth from '../../components/withAuth';
-import styles from '../../styles/Pedido.module.css';
+import styles from '../../styles/AdminPedido.module.css';
 import api from '../../services/api';
 import {
     FiGrid,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import withAuth from '../../components/withAuth';
 import api from '../../services/api';
-import styles from '../../styles/Geral.module.css';
+import styles from '../../styles/AdminGeral.module.css';
 import {
     FiGrid, FiUsers, FiPackage, FiLogOut, FiBox,
     FiSearch, FiTrash2, FiChevronLeft, FiChevronRight,

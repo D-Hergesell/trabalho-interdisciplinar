@@ -7,7 +7,7 @@ import {
 } from 'react-icons/fi';
 import { FaShieldAlt } from 'react-icons/fa';
 import api from '../../services/api';
-import styles from '../../styles/Geral.module.css';
+import styles from '../../styles/AdminGeral.module.css';
 
 // ============================================================================
 // COMPONENTE: ListaÚltimos (Cards de Resumo)

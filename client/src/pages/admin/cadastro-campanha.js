@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import withAuth from '../../components/withAuth';
-import styles from '../../styles/Geral.module.css';
+import styles from '../../styles/AdminGeral.module.css';
 import api from '../../services/api';
 
 // Importação dos ícones

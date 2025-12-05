@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import withAuth from '../../components/withAuth';
-import styles from '../../styles/Geral.module.css'; // Reaproveitando estilos padrão
+import styles from '../../styles/AdminGeral.module.css'; // Reaproveitando estilos padrão
 import api from '../../services/api';
 
 import {
