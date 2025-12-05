@@ -1,13 +1,17 @@
 package trabalho.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import trabalho.dto.LojaRequestDTO;
 import trabalho.dto.LojaResponseDTO;
 import trabalho.entities.Loja;
+import trabalho.entities.Usuario;
+import trabalho.enums.TipoUsuario;
 import trabalho.mapper.LojaMapper;
 import trabalho.repository.LojaRepository;
+import trabalho.repository.UsuarioRepository;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,6 +23,9 @@ public class LojaService {
 
     private final LojaRepository lojaRepository;
     private final LojaMapper lojaMapper;
+
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
 
     // -----------------------------------------
     // CREATE
@@ -36,6 +43,19 @@ public class LojaService {
         novaLoja.setAtivo(true);
 
         Loja lojaSalva = lojaRepository.save(novaLoja);
+
+        Usuario novoUsuario = new Usuario();
+        novoUsuario.setNome(dto.nomeFantasia());
+        novoUsuario.setEmail(dto.emailContato());
+        novoUsuario.setTipoUsuario(TipoUsuario.LOJA);
+        novoUsuario.setAtivo(true);
+        novoUsuario.setLoja(lojaSalva); // Vincula à loja criada
+
+        String senhaRaw = (dto.senha() != null && !dto.senha().isBlank()) ? dto.senha() : "12345678";
+        novoUsuario.setSenhaHash(passwordEncoder.encode(senhaRaw));
+
+        usuarioRepository.save(novoUsuario);
+
         return lojaMapper.toResponseDTO(lojaSalva);
     }
 

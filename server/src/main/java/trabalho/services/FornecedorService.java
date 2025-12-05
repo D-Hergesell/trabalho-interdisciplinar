@@ -1,13 +1,17 @@
 package trabalho.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import trabalho.dto.FornecedorRequestDTO;
 import trabalho.dto.FornecedorResponseDTO;
 import trabalho.entities.Fornecedor;
+import trabalho.entities.Usuario;
+import trabalho.enums.TipoUsuario;
 import trabalho.mapper.FornecedorMapper;
 import trabalho.repository.FornecedorRepository;
+import trabalho.repository.UsuarioRepository;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,6 +24,9 @@ public class FornecedorService {
     private final FornecedorRepository fornecedorRepository;
     private final FornecedorMapper fornecedorMapper;
 
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
+
     @Transactional
     public FornecedorResponseDTO criarFornecedor(FornecedorRequestDTO dto) {
         if (fornecedorRepository.findByCnpj(dto.cnpj()).isPresent()) {
@@ -29,6 +36,19 @@ public class FornecedorService {
         Fornecedor fornecedor = fornecedorMapper.toEntity(dto);
         fornecedor.setAtivo(true);
         Fornecedor salvo = fornecedorRepository.save(fornecedor);
+
+        Usuario novoUsuario = new Usuario();
+        novoUsuario.setNome(dto.nomeFantasia()); // Usa o nome da empresa
+        novoUsuario.setEmail(dto.emailContato());
+        novoUsuario.setTipoUsuario(TipoUsuario.FORNECEDOR);
+        novoUsuario.setAtivo(true);
+        novoUsuario.setFornecedor(salvo); // Vincula ao fornecedor criado
+
+        // Define a senha (usa a enviada ou uma padrão se vier vazia)
+        String senhaRaw = (dto.senha() != null && !dto.senha().isBlank()) ? dto.senha() : "12345678";
+        novoUsuario.setSenhaHash(passwordEncoder.encode(senhaRaw));
+
+        usuarioRepository.save(novoUsuario);
 
         return fornecedorMapper.toResponseDTO(salvo);
     }

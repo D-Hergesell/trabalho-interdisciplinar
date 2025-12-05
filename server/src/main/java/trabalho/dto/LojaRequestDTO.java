@@ -31,5 +31,7 @@ public record LojaRequestDTO(
         @Size(min = 2, max = 2, message = "Use a sigla do estado (ex: SP, SC)")
         String estado,
 
-        Boolean ativo
+        Boolean ativo,
+
+        String senha
 ) {}
