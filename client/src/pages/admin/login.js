@@ -15,7 +15,7 @@ export default function LoginAdmin() {
     setErroLogin("");
 
     try {
-      const response = await api.post('/login', {
+      const response = await api.post('/auth/login', {
         contact_email: email,
         pwd: senha,
         level: "admin"
@@ -25,7 +25,7 @@ export default function LoginAdmin() {
       localStorage.setItem("usuario", JSON.stringify(response.data));
 
 
-      router.push('/admin/Dashboard');
+      router.push('/admin/dashboard');
 
     } catch (err) {
       console.error("Erro de Login:", err.response?.data || err);

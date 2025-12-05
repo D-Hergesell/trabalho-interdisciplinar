@@ -141,7 +141,7 @@ const BuscaCampanhas = () => {
         setEditingCampanha(null);
 
         try {
-            const response = await api.get('/api/campanhas');
+            const response = await api.get('/api/v1/campanhas');
             let dados = response.data.map(item => ({
                 ...item,
                 status: item.status || 'on'
@@ -178,7 +178,7 @@ const BuscaCampanhas = () => {
         const { _id, ...dataToSend } = updatedData;
 
         try {
-            await api.put(`/api/campanhas/${id}`, dataToSend);
+            await api.put(`/api/v1/campanhas/${id}`, dataToSend);
             setCampanhas(oldList => oldList.map(item => item._id === id ? { ...item, ...dataToSend } : item));
             setEditingCampanha(null);
             setMessage({ type: 'success', text: "Campanha atualizada com sucesso!" });
@@ -204,11 +204,11 @@ const BuscaCampanhas = () => {
 
         try {
             if (currentAction === 'delete') {
-                await api.delete(`/api/campanhas/${deleteId}`);
+                await api.delete(`/api/v1/campanhas/${deleteId}`);
                 setCampanhas(oldList => oldList.filter(item => item._id !== deleteId));
                 setMessage({ type: 'success', text: "Campanha excluída permanentemente!" });
             } else {
-                await api.put(`/api/campanhas/${deleteId}`, { status: 'off' });
+                await api.put(`/api/v1/campanhas/${deleteId}`, { status: 'off' });
                 setCampanhas(oldList => oldList.map(item => item._id === deleteId ? { ...item, status: 'off' } : item));
                 setMessage({ type: 'success', text: "Campanha desativada com sucesso!" });
             }
@@ -392,7 +392,7 @@ function CadastroCampanha() {
         setMessage(null);
         try {
             const payload = { ...form, discount_percentage: Number(form.discount_percentage), status: 'on' };
-            await api.post('/api/campanhas', payload);
+            await api.post('/api/v1/campanhas', payload);
             setForm({ name: '', supplier_id: '', start_date: '', end_date: '', discount_percentage: '' });
             setMessage({ type: 'success', text: 'Campanha criada com sucesso! Atualize a busca abaixo para ver.' });
         } catch (error) {

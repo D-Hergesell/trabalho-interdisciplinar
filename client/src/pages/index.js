@@ -13,7 +13,7 @@ export default function Login() {
     setErro("");
 
     try {
-      const r = await api.post('/login', {
+      const r = await api.post('/auth/login', {
         contact_email: email,
         pwd: senha,
         level: levelEscolhido

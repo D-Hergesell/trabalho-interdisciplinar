@@ -234,7 +234,7 @@ const BuscaPedidos = ({ allFornecedores = [], allProdutos = [] }) => {
     setExpandedPedidoId(null);
 
     try {
-      const response = await api.get('/api/pedidos');
+      const response = await api.get('/api/v1/pedidos');
       let dados = Array.isArray(response.data) ? response.data : [];
 
 
@@ -296,7 +296,7 @@ const BuscaPedidos = ({ allFornecedores = [], allProdutos = [] }) => {
     const { _id, ...dataToSend } = updatedData;
 
     try {
-      await api.put(`/api/pedidos/${id}`, dataToSend);
+      await api.put(`/api/v1/pedidos/${id}`, dataToSend);
       setPedidos((oldList) =>
         oldList.map((item) =>
           normalizeId(item._id) === id ? { ...item, ...dataToSend } : item
@@ -333,7 +333,7 @@ const BuscaPedidos = ({ allFornecedores = [], allProdutos = [] }) => {
     setMessage(null);
 
     try {
-      await api.delete(`/api/pedidos/${deleteId}`);
+      await api.delete(`/api/v1/pedidos/${deleteId}`);
       setPedidos((oldList) =>
         oldList.filter((item) => normalizeId(item._id) !== deleteId)
       );
@@ -541,13 +541,13 @@ function CadastroPedido (){
     setMessage(null);
 
     try {
-      const respFornecedores = await api.get('/api/fornecedores');
+      const respFornecedores = await api.get('/api/v1/fornecedores');
       const normalizedFornecedores = Array.isArray(respFornecedores.data)
         ? respFornecedores.data.map(f => ({ ...f, _id: String(f._id).trim() }))
         : [];
       setFornecedores(normalizedFornecedores);
 
-      const respProdutos = await api.get('/api/produtos');
+      const respProdutos = await api.get('/api/v1/produtos');
       const normalizedProdutos = Array.isArray(respProdutos.data) ? respProdutos.data.map(p => ({
         ...p,
         supplier_id: String(p.supplier_id || '').trim(),
@@ -719,7 +719,7 @@ function CadastroPedido (){
     };
 
     try {
-      const response = await api.post('/api/pedidos', pedidoParaBackend);
+      const response = await api.post('/api/v1/pedidos', pedidoParaBackend);
       setMessage({ type: 'success', text: ` Pedido #${String(response.data._id || '').substring(0, 8)} criado com sucesso! Total: R$ ${formatCurrency(totalCalculado)}` });
 
       setFormData({ fornecedorId: '', dataPedido: new Date().toISOString().substring(0, 10), status: 'Pendente', observacoes: '' });
@@ -739,7 +739,7 @@ function CadastroPedido (){
       <div className={styles['dashboard-container']}>
         <nav className={styles.sidebar}>
           <ul>
-            <li><Link href="/admin/Dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
+            <li><Link href="/admin/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
           </ul>
         </nav>
         <main className={styles['main-content']}>
