@@ -15,6 +15,7 @@ import trabalho.repository.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -213,11 +214,34 @@ public class PedidoService {
             validarTransicao(pedido.getStatus(), novoStatus, isUsuarioDaLoja, isUsuarioDoFornecedor);
         }
 
-        // --- LÓGICA DE ESTORNO DE ESTOQUE AO CANCELAR ---
-        if (novoStatus == StatusPedido.CANCELADO && pedido.getStatus() != StatusPedido.CANCELADO) {
-            restaurarEstoque(pedido);
+        OffsetDateTime agora = OffsetDateTime.now();
+
+        switch (novoStatus) {
+            case EM_SEPARACAO:
+                if (pedido.getDataSeparacao() == null) pedido.setDataSeparacao(agora);
+                break;
+
+            case ENVIADO:
+                if (pedido.getDataEnviado() == null) pedido.setDataEnviado(agora);
+                break;
+
+            case ENTREGUE:
+                if (pedido.getDataEntregue() == null) pedido.setDataEntregue(agora);
+                break;
+
+            case CANCELADO:
+                if (pedido.getDataCancelado() == null) pedido.setDataCancelado(agora);
+
+                // IMPORTANTE: Estorno de estoque se for cancelado agora
+                if (pedido.getStatus() != StatusPedido.CANCELADO) {
+                    restaurarEstoque(pedido);
+                }
+                break;
+
+            case PENDENTE:
+                // Nenhuma ação de data específica
+                break;
         }
-        // -------------------------------------------------
 
         pedido.setStatus(novoStatus);
         Pedido atualizado = pedidoRepository.save(pedido);
