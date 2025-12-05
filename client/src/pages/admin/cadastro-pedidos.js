@@ -190,12 +190,6 @@ const BuscaPedidos = ({ allFornecedores = [] }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const itemsPerPage = 5;
 
-    const getSupplierName = (fornecedorId) => {
-        if (!fornecedorId) return 'N/A';
-        const supplier = allFornecedores.find(f => f.id === fornecedorId);
-        return supplier ? supplier.nomeFantasia : 'N/A';
-    };
-
     const toggleDetails = (pedidoId) => {
         setExpandedPedidoId((prev) => (prev === pedidoId ? null : pedidoId));
     };
@@ -506,6 +500,7 @@ function CadastroPedido (){
     // === NOVOS ESTADOS ===
     const [lojaSelecionadaEstado, setLojaSelecionadaEstado] = useState(null);
     const [ajusteUnitario, setAjusteUnitario] = useState(0);
+    const [condicoesEstados, setCondicoesEstados] = useState([]);
 
     const [formData, setFormData] = useState({
         fornecedorId: '',
@@ -532,6 +527,10 @@ function CadastroPedido (){
             const respProdutos = await api.get('/api/v1/produtos');
             setProdutos(respProdutos.data || []);
 
+            // Busca todas as regras de estado ativas
+            const resCond = await api.get('/api/v1/condicoes-estado/ativos');
+            setCondicoesEstados(resCond.data || []);
+
         } catch (error) {
             console.error('Erro ao carregar dados:', error);
             const errorMsg = error.response ? error.response.data?.error || error.message : error.message;
@@ -546,7 +545,6 @@ function CadastroPedido (){
     // 1. Efeito para capturar o Estado da Loja quando o Admin seleciona uma loja
     useEffect(() => {
         if (formData.lojaId) {
-            // 'lojas' já é carregado no loadInitialData
             const lojaEncontrada = lojas.find(l => String(l.id) === String(formData.lojaId));
             if (lojaEncontrada) {
                 setLojaSelecionadaEstado(lojaEncontrada.estado);
@@ -558,44 +556,29 @@ function CadastroPedido (){
 
     // 2. Efeito para buscar/calcular o Ajuste quando Loja ou Fornecedor mudam
     useEffect(() => {
-        async function calcularAjuste() {
-            if (!formData.fornecedorId || !lojaSelecionadaEstado) {
+        function calcularAjuste() {
+            if (!formData.fornecedorId || !lojaSelecionadaEstado || condicoesEstados.length === 0) {
                 setAjusteUnitario(0);
                 return;
             }
 
-            try {
-                // Busca condições ativas
-                const res = await api.get('/api/v1/condicoes-estado/ativos');
-                const condicoes = res.data || [];
+            const regra = condicoesEstados.find(c =>
+                String(c.fornecedorId) === String(formData.fornecedorId) &&
+                c.estado === lojaSelecionadaEstado
+            );
 
-                // Encontra regra compatível
-                const regra = condicoes.find(c =>
-                    String(c.fornecedorId) === String(formData.fornecedorId) &&
-                    c.estado === lojaSelecionadaEstado
-                );
-
-                if (regra && regra.ajusteUnitarioAplicado) {
-                    const valor = Number(regra.ajusteUnitarioAplicado);
-                    setAjusteUnitario(valor);
-
-                    // Opcional: Avisar o admin visualmente (console ou log)
-                    if(valor !== 0) {
-                        console.log(`Aplicando ajuste de R$ ${valor} devido ao estado ${lojaSelecionadaEstado}`);
-                    }
-                } else {
-                    setAjusteUnitario(0);
-                }
-            } catch (error) {
-                console.error("Erro ao buscar condições:", error);
+            if (regra && regra.ajusteUnitarioAplicado) {
+                const valor = Number(regra.ajusteUnitarioAplicado);
+                setAjusteUnitario(valor);
+            } else {
                 setAjusteUnitario(0);
             }
         }
 
         calcularAjuste();
-    }, [formData.fornecedorId, lojaSelecionadaEstado]);
+    }, [formData.fornecedorId, lojaSelecionadaEstado, condicoesEstados]);
 
-    // Efeito para filtrar produtos (Mantido lógica original, mas limpa produtos ao trocar fornecedor)
+    // 3. Efeito para filtrar produtos e resetar carrinho se mudar fornecedor
     useEffect(() => {
         const selectedSupplierId = String(formData.fornecedorId).trim();
 
@@ -605,25 +588,42 @@ function CadastroPedido (){
             );
             setFilteredProdutos(produtosDoFornecedor);
 
-            setItensPedido(currentItens => currentItens.map(item => {
-                const produtoValido = produtosDoFornecedor.some(p => String(p.id).trim() === String(item.produtoId).trim());
-                if (item.produtoId && !produtoValido) {
-                    return { produtoId: '', quantidade: 1, valorUnitario: 0.00 };
-                }
-                return item;
-            }));
+            // Verifica se tem itens no carrinho que não são desse fornecedor
+            const temItemInvalido = itensPedido.some(i => i.produtoId && !produtosDoFornecedor.find(p => String(p.id) === String(i.produtoId)));
+
+            if (temItemInvalido) {
+                setItensPedido([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
+            }
         } else {
             setFilteredProdutos([]);
             setItensPedido([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
         }
     }, [formData.fornecedorId, produtos]);
 
+    // 4. NOVO: Efeito para atualizar preços de itens JÁ ADICIONADOS se o ajuste mudar
+    // (Ex: O admin seleciona produtos, e DEPOIS muda a loja para uma de outro estado)
+    useEffect(() => {
+        setItensPedido(currentItens => currentItens.map(item => {
+            if (!item.produtoId) return item;
+
+            const prod = filteredProdutos.find(p => String(p.id) === String(item.produtoId));
+            if (prod) {
+                const novoPreco = Math.max(0, Number(prod.precoBase) + ajusteUnitario);
+                // Só atualiza se mudou
+                if (item.valorUnitario !== novoPreco) {
+                    return { ...item, valorUnitario: novoPreco };
+                }
+            }
+            return item;
+        }));
+    }, [ajusteUnitario, filteredProdutos]);
+
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // 3. handleItemChange Atualizado para usar o ajuste
     const handleItemChange = useCallback((index, e, productsList = filteredProdutos) => {
         const { name, value } = e.target;
 
@@ -637,11 +637,9 @@ function CadastroPedido (){
 
                 if (itemAtual.produtoId) {
                     const produtoRef = productsList.find(p => String(p.id).trim() === String(itemAtual.produtoId).trim());
-                    if (produtoRef) {
-                        if (novaQtd > produtoRef.quantidadeEstoque) {
-                            alert(`Quantidade indisponível! Estoque atual: ${produtoRef.quantidadeEstoque}`);
-                            novaQtd = produtoRef.quantidadeEstoque > 0 ? produtoRef.quantidadeEstoque : 1;
-                        }
+                    if (produtoRef && novaQtd > produtoRef.quantidadeEstoque) {
+                        alert(`Quantidade indisponível! Estoque atual: ${produtoRef.quantidadeEstoque}`);
+                        novaQtd = produtoRef.quantidadeEstoque > 0 ? produtoRef.quantidadeEstoque : 1;
                     }
                 }
                 novosItens[index][name] = novaQtd;
@@ -652,28 +650,26 @@ function CadastroPedido (){
                 novosItens[index][name] = cleanedValue;
                 const produtoSelecionado = productsList.find(p => String(p.id).trim() === cleanedValue);
 
-                // === CORREÇÃO AQUI: Soma o preço base com o ajuste ===
                 if (produtoSelecionado) {
                     const base = Number(produtoSelecionado.precoBase);
                     let final = base + ajusteUnitario;
                     if (final < 0) final = 0;
                     novosItens[index].valorUnitario = final;
+
+                    if (produtoSelecionado.quantidadeEstoque <= 0) {
+                        alert("Este produto está sem estoque.");
+                        novosItens[index].quantidade = 0;
+                    } else {
+                        novosItens[index].quantidade = 1;
+                    }
                 } else {
                     novosItens[index].valorUnitario = 0.00;
-                }
-                // =====================================================
-
-                if (produtoSelecionado && produtoSelecionado.quantidadeEstoque <= 0) {
-                    alert("Este produto está sem estoque.");
-                    novosItens[index].quantidade = 0;
-                } else {
-                    novosItens[index].quantidade = 1;
                 }
             }
 
             return novosItens;
         });
-    }, [filteredProdutos, ajusteUnitario]); // Importante: adicionar ajusteUnitario na dependência
+    }, [filteredProdutos, ajusteUnitario]);
 
     const handleAddItem = () => {
         if (!formData.fornecedorId) {
@@ -702,6 +698,7 @@ function CadastroPedido (){
         setLoading(true);
         setMessage(null);
 
+        // Validação de estoque final
         for (const item of itensPedido) {
             const prod = filteredProdutos.find(p => String(p.id) === String(item.produtoId));
             if (prod && item.quantidade > prod.quantidadeEstoque) {
@@ -722,7 +719,6 @@ function CadastroPedido (){
             .map(item => ({
                 produtoId: item.produtoId,
                 quantidade: Number(item.quantidade),
-                // O backend provavelmente vai recalcular o valor, mas enviamos o valor visualizado
                 valorUnitarioMomento: item.valorUnitario
             }));
 
@@ -868,6 +864,14 @@ function CadastroPedido (){
                                 {item.produtoId && (
                                     <div className={styles.stockInfo}>
                                         Estoque disponível: <strong>{getProductStock(item.produtoId)}</strong>
+                                        {ajusteUnitario !== 0 && (
+                                            <span style={{marginLeft: '8px', color: '#e67e22', fontSize: '0.8rem'}}>
+                                                (Base: {(() => {
+                                                const p = filteredProdutos.find(x => String(x.id) === String(item.produtoId));
+                                                return p ? formatCurrency(p.precoBase) : '...';
+                                            })()})
+                                            </span>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -917,13 +921,17 @@ function CadastroPedido (){
                     </div>
 
                     <div className={styles.totalPedidoContainer}>
-                        <p className={styles.totalLabel}>Total Estimado:</p>
-                        <p className={styles.totalValue}>R$ {formatCurrency(calcularTotal())}</p>
-                        {ajusteUnitario !== 0 && (
-                            <p style={{fontSize: '0.8rem', color: '#e67e22', textAlign:'right', marginTop: 5}}>
-                                * Incluindo ajuste de R$ {formatCurrency(ajusteUnitario)} por item (Regra Estadual)
-                            </p>
-                        )}
+                        <div style={{textAlign: 'right'}}>
+                            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-end'}}>
+                                <span className={styles.totalLabel}>Total Estimado:</span>
+                                <span className={styles.totalValue}>R$ {formatCurrency(calcularTotal())}</span>
+                            </div>
+                            {ajusteUnitario !== 0 && (
+                                <p style={{fontSize: '0.85rem', color: '#e67e22', marginTop: 5}}>
+                                    * Incluindo ajuste de R$ {formatCurrency(ajusteUnitario)} por item (Regra Estadual)
+                                </p>
+                            )}
+                        </div>
                     </div>
 
                     <hr className={styles.divider} />
@@ -939,7 +947,7 @@ function CadastroPedido (){
                 </form>
 
                 <div style={{ marginTop: 28 }}>
-                    <BuscaPedidos allFornecedores={fornecedores} allProdutos={produtos} />
+                    <BuscaPedidos allFornecedores={fornecedores} />
                 </div>
             </main>
         </div>
