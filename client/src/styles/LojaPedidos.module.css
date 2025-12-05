@@ -416,10 +416,11 @@
     display: none;
   }
 
-  /* --- AUMENTA APENAS O BOTÃO NO MOBILE --- */
+
   .btnCancelIcon {
     font-size: 32px; /* Aumenta o ícone consideravelmente */
     padding: 15px;   /* Aumenta a área de clique */
     /* Sem cores ou bordas, como solicitado */
   }
+
 }

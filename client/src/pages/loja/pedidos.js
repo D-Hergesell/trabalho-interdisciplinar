@@ -23,7 +23,7 @@ const MeusPedidosLoja = () => {
     const [loading, setLoading] = useState(false);
 
     const [menuOpen, setMenuOpen] = useState(false);
-
+/* */
     const fetchPedidos = useCallback(async () => {
         setLoading(true);
         try {
