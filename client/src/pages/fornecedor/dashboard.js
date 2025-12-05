@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import styles from '../../styles/Geral.module.css';
-import api from '../services/api';
+import api from '@/services/api';
 
 import {
     LayoutDashboard,
