@@ -9,6 +9,8 @@ public record CategoriaRequestDTO(
         @NotBlank(message = "Nome é obrigatório")
         String nome,
         @NotNull(message = "Fornecedor é obrigatório")
-        UUID fornecedorId
+        UUID fornecedorId,
+
+        Boolean ativo
 ) {}
 

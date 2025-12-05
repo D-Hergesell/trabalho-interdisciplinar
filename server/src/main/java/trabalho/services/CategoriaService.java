@@ -25,7 +25,7 @@ public class CategoriaService {
 
     @Transactional
     public CategoriaResponseDTO criarCategoria(CategoriaRequestDTO dto) {
-
+        // Validação de duplicidade (Nome + Fornecedor)
         categoriaRepository
                 .findByFornecedor_IdAndNomeIgnoreCase(dto.fornecedorId(), dto.nome())
                 .ifPresent(cat -> {
@@ -37,13 +37,15 @@ public class CategoriaService {
 
         Categoria categoria = categoriaMapper.toEntity(dto);
         categoria.setFornecedor(fornecedor);
-        categoria.setAtivo(true);
+
+        // Define ativo como true se vier nulo
+        if (categoria.getAtivo() == null) {
+            categoria.setAtivo(true);
+        }
 
         Categoria salva = categoriaRepository.save(categoria);
-
         return categoriaMapper.toResponseDTO(salva);
     }
-
 
     @Transactional
     public List<CategoriaResponseDTO> listarTodas() {
@@ -69,16 +71,29 @@ public class CategoriaService {
 
     @Transactional
     public CategoriaResponseDTO atualizar(UUID id, CategoriaRequestDTO dto) {
-        if (!categoriaRepository.existsById(id)) {
-            throw new RuntimeException("Categoria não encontrada.");
-        }
-
         Categoria cat = categoriaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Categoria não encontrada."));
 
-        if (dto.nome() != null && !dto.nome().isBlank()) {
-            cat.setNome(dto.nome());
+        // Se mudar de nome, valida duplicidade novamente
+        if (!cat.getNome().equalsIgnoreCase(dto.nome())) {
+            categoriaRepository
+                    .findByFornecedor_IdAndNomeIgnoreCase(dto.fornecedorId(), dto.nome())
+                    .ifPresent(existente -> {
+                        if (!existente.getId().equals(id)) {
+                            throw new RuntimeException("Já existe uma categoria com esse nome para esse fornecedor.");
+                        }
+                    });
         }
+
+        // Atualiza Fornecedor se mudar (embora raro mudar categoria de fornecedor)
+        if (!cat.getFornecedor().getId().equals(dto.fornecedorId())) {
+            Fornecedor novoFornecedor = fornecedorRepository.findById(dto.fornecedorId())
+                    .orElseThrow(() -> new RuntimeException("Fornecedor não encontrado."));
+            cat.setFornecedor(novoFornecedor);
+        }
+
+        // MapStruct atualiza campos simples (nome, ativo)
+        categoriaMapper.updateFromDTO(dto, cat);
 
         Categoria atualizada = categoriaRepository.save(cat);
         return categoriaMapper.toResponseDTO(atualizada);
@@ -92,4 +107,3 @@ public class CategoriaService {
         categoriaRepository.deleteById(id);
     }
 }
-

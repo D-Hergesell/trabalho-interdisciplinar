@@ -2,6 +2,7 @@ package trabalho.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import trabalho.dto.CategoriaRequestDTO;
 import trabalho.dto.CategoriaResponseDTO;
 import trabalho.entities.Categoria;
@@ -10,7 +11,6 @@ import trabalho.entities.Categoria;
 public interface CategoriaMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "ativo", ignore = true) // service define padrão
     @Mapping(target = "produtos", ignore = true)
     @Mapping(target = "fornecedor", ignore = true) // service busca
     Categoria toEntity(CategoriaRequestDTO dto);
@@ -18,4 +18,9 @@ public interface CategoriaMapper {
     @Mapping(source = "fornecedor.id", target = "fornecedorId")
     @Mapping(source = "fornecedor.nomeFantasia", target = "fornecedorNome")
     CategoriaResponseDTO toResponseDTO(Categoria entity);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "produtos", ignore = true)
+    @Mapping(target = "fornecedor", ignore = true)
+    void updateFromDTO(CategoriaRequestDTO dto, @MappingTarget Categoria entity);
 }
