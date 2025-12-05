@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import styles from '../../styles/LojaPedidos.module.css';
 import api from '@/services/api';
 
@@ -10,44 +11,82 @@ import {
     FiLogOut,
     FiUsers,
     FiSearch,
-    FiEye
+    FiXCircle // Removi o FiEye pois não será mais usado
 } from 'react-icons/fi';
 
 const MeusPedidosLoja = () => {
+    const router = useRouter();
     const [pedidos, setPedidos] = useState([]);
     const [filtroBusca, setFiltroBusca] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Carregar pedidos da API
-    useEffect(() => {
-        async function fetchPedidos() {
-            setLoading(true);
-            try {
-                // TODO: Pegar o ID da loja do usuário logado (ex: localStorage ou Context)
-                // const lojaId = localStorage.getItem('lojaId');
-                // Se não tiver login implementado, use um ID fixo para teste ou chame /api/v1/pedidos se for listar tudo
-
-                // Exemplo chamando o endpoint de pedidos da loja específica
-                // const res = await api.get(`/api/v1/pedidos/loja/${lojaId}`);
-
-                // Para teste, vou chamar listar todos ou usar um mock se falhar
-                const res = await api.get('/api/v1/pedidos');
-                setPedidos(res.data || []);
-            } catch (error) {
-                console.error('Erro ao carregar pedidos:', error);
-                // Mock para visualização caso a API falhe
-                setPedidos([
-                    { id: '12345', dataCriacao: '2023-10-01', total: 1500.00, status: 'PENDENTE', fornecedorNome: 'Fornecedor A' },
-                    { id: '67890', dataCriacao: '2023-10-05', total: 230.50, status: 'APROVADO', fornecedorNome: 'Fornecedor B' },
-                    { id: '11223', dataCriacao: '2023-10-10', total: 5000.00, status: 'ENVIADO', fornecedorNome: 'Fornecedor C' }
-                ]);
-            } finally {
+    // Função de busca
+    const fetchPedidos = useCallback(async () => {
+        setLoading(true);
+        try {
+            const usuarioStorage = localStorage.getItem('usuario');
+            if (!usuarioStorage) {
+                console.warn("Usuário não logado");
                 setLoading(false);
+                return;
             }
+
+            const usuario = JSON.parse(usuarioStorage);
+            const idParaBuscar = usuario.lojaId || usuario.id;
+
+            if (!idParaBuscar) {
+                console.error("ID da loja não encontrado no usuário.");
+                setLoading(false);
+                return;
+            }
+
+            const res = await api.get(`/api/v1/pedidos/loja/${idParaBuscar}`);
+            setPedidos(res.data || []);
+
+        } catch (error) {
+            console.error('Erro ao carregar pedidos:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // Carregar pedidos na montagem
+    useEffect(() => {
+        fetchPedidos();
+    }, [fetchPedidos]);
+
+    // --- LÓGICA DE CANCELAMENTO ---
+    const handleCancelar = async (pedidoId, statusAtual) => {
+        // 1. Validação com Mensagem Atualizada
+        if (['ENVIADO', 'ENTREGUE', 'CANCELADO'].includes(statusAtual)) {
+            alert('O pedido já foi enviado, entregue ou cancelado e não é mais possível cancelar. Entre em contato com o suporte ou fornecedor.');
+            return;
         }
 
-        fetchPedidos();
-    }, []);
+        // 2. Confirmação
+        if (!window.confirm('Tem certeza que deseja cancelar este pedido?')) {
+            return;
+        }
+
+        try {
+            const usuarioLogado = JSON.parse(localStorage.getItem('usuario'));
+
+            await api.patch(`/api/v1/pedidos/${pedidoId}/status`, null, {
+                params: {
+                    status: 'CANCELADO',
+                    usuarioId: usuarioLogado.id
+                }
+            });
+
+            alert('Pedido cancelado com sucesso!');
+            fetchPedidos();
+
+        } catch (error) {
+            console.error("Erro ao cancelar:", error);
+            const msg = error.response?.data?.erro || "Erro ao processar cancelamento.";
+            alert(msg);
+        }
+    };
 
     // Filtro de busca
     const pedidosFiltrados = useMemo(() => {
@@ -63,14 +102,19 @@ const MeusPedidosLoja = () => {
 
     // Formatadores
     const formatarMoeda = (valor) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
-    const formatarData = (data) => data ? new Date(data).toLocaleDateString('pt-BR') : '-';
 
-    // Função auxiliar para classe de status
+    const formatarData = (data) => {
+        if (!data) return '-';
+        return new Date(data).toLocaleDateString('pt-BR');
+    };
+
+    // Classes de status
     const getStatusClass = (status) => {
         const s = (status || '').toUpperCase();
         if (s === 'PENDENTE' || s === 'PENDING') return styles.statusPendente;
-        if (s === 'APROVADO' || s === 'APPROVED' || s === 'CONFIRMED') return styles.statusAprovado;
+        if (s === 'EM_SEPARACAO') return styles.statusAprovado;
         if (s === 'ENVIADO' || s === 'SHIPPED') return styles.statusEnviado;
+        if (s === 'ENTREGUE') return styles.statusAprovado;
         if (s === 'CANCELADO' || s === 'CANCELED') return styles.statusCancelado;
         return '';
     };
@@ -78,7 +122,6 @@ const MeusPedidosLoja = () => {
     return (
         <div className={styles['dashboard-container']}>
 
-            {/* Sidebar idêntica ao padrão solicitado */}
             <nav className={styles.sidebar}>
                 <ul>
                     <li>
@@ -99,7 +142,6 @@ const MeusPedidosLoja = () => {
                         </Link>
                     </li>
 
-                    {/* ITEM ATIVO */}
                     <li className={styles.active}>
                         <Link href="/loja/pedidos" className={styles.linkReset}>
                             <div className={styles.menuItem}>
@@ -129,13 +171,11 @@ const MeusPedidosLoja = () => {
                 </ul>
             </nav>
 
-            {/* Conteúdo Principal */}
             <main className={styles['main-content']}>
                 <header className={styles.header}>
                     <h1>Meus Pedidos</h1>
                 </header>
 
-                {/* Barra de Ações */}
                 <section className={styles.actionsSection}>
                     <div className={styles.searchWrapper}>
                         <div className={styles.searchIconCircle}>
@@ -157,7 +197,6 @@ const MeusPedidosLoja = () => {
                     </Link>
                 </section>
 
-                {/* Tabela de Pedidos */}
                 <section className={styles.tableSection}>
                     <div className={styles.tableWrapper}>
                         <table className={styles.dataTable}>
@@ -177,24 +216,46 @@ const MeusPedidosLoja = () => {
                                         <td colSpan="6" className={styles.emptyState}>Carregando pedidos...</td>
                                     </tr>
                                 ) : pedidosFiltrados.length > 0 ? (
-                                    pedidosFiltrados.map((pedido) => (
-                                        <tr key={pedido.id}>
-                                            <td>#{pedido.id.toString().substring(0, 8)}...</td>
-                                            <td>{formatarData(pedido.dataCriacao)}</td>
-                                            <td>{pedido.fornecedorNome || '-'}</td>
-                                            <td>{formatarMoeda(pedido.total)}</td>
-                                            <td>
-                                                <span className={`${styles.statusBadge} ${getStatusClass(pedido.status)}`}>
-                                                    {pedido.status}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <button className={styles.actionButton} title="Ver Detalhes">
-                                                    <FiEye />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
+                                    pedidosFiltrados.map((pedido) => {
+                                        // Verifica se pode cancelar
+                                        const isCancelable = pedido.status === 'PENDENTE' || pedido.status === 'EM_SEPARACAO';
+
+                                        return (
+                                            <tr key={pedido.id}>
+                                                <td>#{pedido.id.toString().substring(0, 8)}...</td>
+                                                <td>{formatarData(pedido.dataPedido)}</td>
+                                                <td>{pedido.fornecedorNome || '-'}</td>
+                                                <td>{formatarMoeda(pedido.valorTotal)}</td>
+                                                <td>
+                                                    <span className={`${styles.statusBadge} ${getStatusClass(pedido.status)}`}>
+                                                        {pedido.status}
+                                                    </span>
+                                                </td>
+                                                <td style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+
+                                                    {/* BOTÃO "OLHO" REMOVIDO DAQUI */}
+
+                                                    {/* Botão Cancelar */}
+                                                    <button
+                                                        onClick={() => handleCancelar(pedido.id, pedido.status)}
+                                                        style={{
+                                                            background: 'none',
+                                                            border: 'none',
+                                                            cursor: isCancelable ? 'pointer' : 'not-allowed',
+                                                            color: isCancelable ? '#dc3545' : '#ccc',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            fontSize: '18px',
+                                                            transition: 'color 0.2s'
+                                                        }}
+                                                        title={isCancelable ? "Cancelar Pedido" : "Não é possível cancelar"}
+                                                    >
+                                                        <FiXCircle />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 ) : (
                                     <tr>
                                         <td colSpan="6" className={styles.emptyState}>
@@ -210,5 +271,5 @@ const MeusPedidosLoja = () => {
         </div>
     );
 };
-//teste
+
 export default MeusPedidosLoja;

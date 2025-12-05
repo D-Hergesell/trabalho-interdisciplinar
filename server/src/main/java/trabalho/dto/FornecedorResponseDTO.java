@@ -15,5 +15,6 @@ public record FornecedorResponseDTO(
         String cidade,
         String estado,
         Boolean ativo,
-        OffsetDateTime createdAt
+        OffsetDateTime createdAt,
+        String categoria
 ) {}

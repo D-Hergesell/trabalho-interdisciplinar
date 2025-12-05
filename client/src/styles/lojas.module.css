@@ -170,6 +170,7 @@
   padding: 15px;
   border-bottom: 1px solid #eee;
   color: #444;
+  vertical-align: middle;
 }
 
 .orders-table tr:last-child td {
@@ -448,4 +449,75 @@
     border-top: 1px dashed #eee;
     padding-top: 10px;
   }
+}
+
+/* =======================================================
+   NOVAS CLASSES: STATUS E BOTÃO CANCELAR
+   ======================================================= */
+
+/* Badges de Status (Cores) */
+.statusBadge {
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.statusPendente {
+  color: #f0ad4e; /* Amarelo */
+  background-color: rgba(240, 173, 78, 0.1);
+}
+
+.statusEmSeparacao {
+  color: #007bff; /* Azul */
+  background-color: rgba(0, 123, 255, 0.1);
+}
+
+.statusEnviado {
+  color: #17a2b8; /* Ciano */
+  background-color: rgba(23, 162, 184, 0.1);
+}
+
+.statusEntregue {
+  color: #28a745; /* Verde */
+  background-color: rgba(40, 167, 69, 0.1);
+}
+
+.statusCancelado {
+  color: #dc3545; /* Vermelho */
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* Botão Cancelar */
+.btnCancelAction {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s;
+  color: white;
+  font-weight: 500;
+}
+
+/* Estado Ativo (Pode cancelar - Vermelho) */
+.btnCancelActive {
+  background-color: #dc3545;
+  cursor: pointer;
+  opacity: 1;
+}
+
+.btnCancelActive:hover {
+  background-color: #c82333;
+}
+
+/* Estado Inativo (Não pode cancelar - Cinza) */
+.btnCancelDisabled {
+  background-color: #ccc;
+  cursor: pointer; /* Mantém pointer para clicar e ver o aviso */
+  opacity: 0.7;
 }

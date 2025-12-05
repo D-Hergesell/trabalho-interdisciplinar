@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import styles from '../../styles/lojafornecedor.module.css';
 import api from '@/services/api';
 
@@ -13,25 +14,22 @@ import {
 } from 'react-icons/fi';
 
 const FornecedoresDisponiveis = () => {
+    const router = useRouter();
     const [fornecedores, setFornecedores] = useState([]);
     const [filtroBusca, setFiltroBusca] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Carregar fornecedores
+    // Carregar fornecedores ativos do Backend
     useEffect(() => {
         async function fetchFornecedores() {
             setLoading(true);
             try {
-                const res = await api.get('/api/fornecedor'); // Ajuste o endpoint conforme seu Controller
+                // Busca apenas os fornecedores ativos
+                const res = await api.get('/api/v1/fornecedores/ativos');
                 setFornecedores(res.data || []);
             } catch (error) {
                 console.error('Erro ao buscar fornecedores:', error);
-                // Mock para visualização
-                setFornecedores([
-                    { id: 1, nome: 'Tech Distribuidora', categoria: 'Eletrônicos', email: 'contato@tech.com', cidade: 'São Paulo - SP' },
-                    { id: 2, nome: 'Moda Atacado Sul', categoria: 'Vestuário', email: 'vendas@modasul.com', cidade: 'Curitiba - PR' },
-                    { id: 3, nome: 'Alimentos Boa Safra', categoria: 'Alimentos', email: 'comercial@boasafra.com', cidade: 'Porto Alegre - RS' }
-                ]);
+                setFornecedores([]);
             } finally {
                 setLoading(false);
             }
@@ -39,21 +37,31 @@ const FornecedoresDisponiveis = () => {
         fetchFornecedores();
     }, []);
 
-    // Filtro
+    // Filtro de busca (Frontend)
     const fornecedoresFiltrados = useMemo(() => {
         if (!filtroBusca.trim()) return fornecedores;
         const termo = filtroBusca.toLowerCase();
-        return fornecedores.filter(f =>
-            [f.nome, f.categoria, f.cidade]
-                .filter(Boolean)
-                .some(valor => valor.toString().toLowerCase().includes(termo))
-        );
+
+        return fornecedores.filter(f => {
+            const nome = f.nomeFantasia || '';
+            const cidade = f.cidade || '';
+            const categoria = f.categoria || '';
+
+            return [nome, cidade, categoria]
+                .some(valor => valor.toString().toLowerCase().includes(termo));
+        });
     }, [fornecedores, filtroBusca]);
+
+    // --- FUNÇÃO CORRIGIDA DO CATÁLOGO ---
+    const handleVerCatalogo = (idFornecedor) => {
+        // Redireciona para a página catalogo.js passando o ID pela URL
+        router.push(`/loja/catalogo?id=${idFornecedor}`);
+    };
 
     return (
         <div className={styles['dashboard-container']}>
 
-            {/* Sidebar Padrão */}
+            {/* Sidebar */}
             <nav className={styles.sidebar}>
                 <ul>
                     <li>
@@ -65,7 +73,6 @@ const FornecedoresDisponiveis = () => {
                         </Link>
                     </li>
 
-                    {/* ITEM ATIVO */}
                     <li className={styles.active}>
                         <Link href="/loja/fornecedoresdisponiveis" className={styles.linkReset}>
                             <div className={styles.menuItem}>
@@ -83,6 +90,8 @@ const FornecedoresDisponiveis = () => {
                             </div>
                         </Link>
                     </li>
+
+
 
                     <li>
                         <Link href="/loja/perfil" className={styles.linkReset}>
@@ -110,7 +119,6 @@ const FornecedoresDisponiveis = () => {
                     <h1>Fornecedores Disponíveis</h1>
                 </header>
 
-                {/* Barra de Busca */}
                 <section className={styles.actionsSection}>
                     <div className={styles.searchWrapper}>
                         <div className={styles.searchIconCircle}>
@@ -118,7 +126,7 @@ const FornecedoresDisponiveis = () => {
                         </div>
                         <input
                             type="text"
-                            placeholder="Buscar por Nome, Categoria ou Cidade"
+                            placeholder="Buscar por Nome ou Cidade"
                             className={styles.searchInput}
                             value={filtroBusca}
                             onChange={e => setFiltroBusca(e.target.value)}
@@ -126,7 +134,6 @@ const FornecedoresDisponiveis = () => {
                     </div>
                 </section>
 
-                {/* Tabela de Fornecedores */}
                 <section className={styles.tableSection}>
                     <div className={styles.tableWrapper}>
                         <table className={styles.dataTable}>
@@ -142,21 +149,30 @@ const FornecedoresDisponiveis = () => {
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan="5" className={styles.emptyState}>Carregando fornecedores...</td>
+                                        <td colSpan="5" className={styles.emptyState}>
+                                            Carregando fornecedores...
+                                        </td>
                                     </tr>
                                 ) : fornecedoresFiltrados.length > 0 ? (
                                     fornecedoresFiltrados.map((fornecedor) => (
                                         <tr key={fornecedor.id}>
                                             <td style={{ fontWeight: 600, color: '#333' }}>
-                                                {fornecedor.nome}
+                                                {fornecedor.nomeFantasia}
                                             </td>
-                                            <td>{fornecedor.categoria || '-'}</td>
-                                            <td>{fornecedor.cidade || '-'}</td>
-                                            <td>{fornecedor.email}</td>
+                                            <td>
+                                                {fornecedor.categoria || '-'}
+                                            </td>
+                                            <td>
+                                                {fornecedor.cidade} {fornecedor.estado ? `- ${fornecedor.estado}` : ''}
+                                            </td>
+                                            <td>
+                                                {fornecedor.emailContato}
+                                            </td>
                                             <td>
                                                 <button
                                                     className={styles.btnCatalogo}
-                                                    onClick={() => alert(`Abrir catálogo de ${fornecedor.nome}`)}
+                                                    // Passa o ID para a função de navegação
+                                                    onClick={() => handleVerCatalogo(fornecedor.id)}
                                                 >
                                                     Ver Catálogo
                                                 </button>
@@ -166,7 +182,7 @@ const FornecedoresDisponiveis = () => {
                                 ) : (
                                     <tr>
                                         <td colSpan="5" className={styles.emptyState}>
-                                            Nenhum fornecedor encontrado.
+                                            Nenhum fornecedor disponível no momento.
                                         </td>
                                     </tr>
                                 )}
