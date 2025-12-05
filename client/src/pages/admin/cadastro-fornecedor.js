@@ -19,7 +19,8 @@ const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
         cep: '',
         logradouro: '',
         cidade: '',
-        estado: ''
+        estado: '',
+        ativo: 'true' // Valor padrão (string para controlar o select)
     });
 
     useEffect(() => {
@@ -33,7 +34,9 @@ const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
                 cep: fornecedor.cep || '',
                 logradouro: fornecedor.logradouro || '',
                 cidade: fornecedor.cidade || '',
-                estado: fornecedor.estado || ''
+                estado: fornecedor.estado || '',
+                // Converte o booleano que vem do banco para string 'true'/'false' pro Select funcionar
+                ativo: fornecedor.ativo ? 'true' : 'false'
             });
         }
     }, [fornecedor]);
@@ -45,14 +48,22 @@ const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Preserva o ID original e envia os dados compatíveis com FornecedorRequestDTO
-        onSave({ ...formData, id: fornecedor.id });
+
+        // CONVERSÃO CRUCIAL:
+        // O Backend espera um Boolean (true/false), mas o <select> HTML devolve String ("true"/"false").
+        const payload = {
+            ...formData,
+            id: fornecedor.id,
+            ativo: formData.ativo === 'true' // Converte string para boolean real
+        };
+
+        onSave(payload);
     };
 
     return (
         <div className={styles.modalBackdrop}>
             <div className={styles.modalContent} style={{ maxWidth: '800px' }}>
-                <h3 className={styles.modalTitle}>Editar Fornecedor: {formData.nomeFantasia}</h3>
+                <h3 className={styles.modalTitle}>Editar Fornecedor</h3>
 
                 <form onSubmit={handleSubmit}>
                     <div className={styles.row}>
@@ -60,77 +71,76 @@ const EditFornecedorModal = ({ fornecedor, onSave, onCancel, loading }) => {
                             <label>Nome Fantasia *</label>
                             <input type="text" name="nomeFantasia" value={formData.nomeFantasia} onChange={handleChange} required className={styles.inputModal} />
                         </div>
+                        {/* NOVO CAMPO DE STATUS */}
+                        <div className={styles.fieldGroup} style={{ maxWidth: '150px' }}>
+                            <label>Status</label>
+                            <select
+                                name="ativo"
+                                value={formData.ativo}
+                                onChange={handleChange}
+                                className={styles.inputModal}
+                                style={{
+                                    borderColor: formData.ativo === 'true' ? '#28a745' : '#dc3545',
+                                    color: formData.ativo === 'true' ? '#28a745' : '#dc3545',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                <option value="true">Ativo</option>
+                                <option value="false">Inativo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>CNPJ *</label>
                             <input type="text" name="cnpj" value={formData.cnpj} onChange={handleChange} required className={styles.inputModal} maxLength="14" />
                         </div>
-                    </div>
-
-                    <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>Responsável</label>
                             <input type="text" name="responsavelNome" value={formData.responsavelNome} onChange={handleChange} className={styles.inputModal} />
                         </div>
-                        <div className={styles.fieldGroup}>
-                            <label>Email de Contato</label>
-                            <input type="email" name="emailContato" value={formData.emailContato} onChange={handleChange} className={styles.inputModal} />
-                        </div>
                     </div>
 
+                    {/* ... (O restante dos campos de endereço continua igual) ... */}
                     <div className={styles.row}>
+                        <div className={styles.fieldGroup}>
+                            <label>Email</label>
+                            <input type="email" name="emailContato" value={formData.emailContato} onChange={handleChange} className={styles.inputModal} />
+                        </div>
                         <div className={styles.fieldGroup}>
                             <label>Telefone</label>
                             <input type="text" name="telefone" value={formData.telefone} onChange={handleChange} className={styles.inputModal} />
                         </div>
-                        <div className={styles.fieldGroup}>
-                            <label>CEP</label>
-                            <input type="text" name="cep" value={formData.cep} onChange={handleChange} className={styles.inputModal} maxLength="8" />
-                        </div>
                     </div>
 
-                    <h4 className={styles.sectionTitle} style={{ marginTop: '15px' }}>Endereço</h4>
                     <div className={styles.row}>
+                        <div className={styles.fieldGroup}>
+                            <label>CEP</label>
+                            <input type="text" name="cep" value={formData.cep} onChange={handleChange} className={styles.inputModal} />
+                        </div>
                         <div className={styles.fieldGroup}>
                             <label>Logradouro</label>
                             <input type="text" name="logradouro" value={formData.logradouro} onChange={handleChange} className={styles.inputModal} />
                         </div>
+                    </div>
+
+                    <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>Cidade</label>
                             <input type="text" name="cidade" value={formData.cidade} onChange={handleChange} className={styles.inputModal} />
                         </div>
-                        <div className={styles.fieldGroup} style={{ maxWidth: '80px' }}>
+                        <div className={styles.fieldGroup} style={{maxWidth: '80px'}}>
                             <label>UF</label>
                             <input type="text" name="estado" value={formData.estado} onChange={handleChange} className={styles.inputModal} maxLength="2" />
                         </div>
                     </div>
 
-                    {/* Status */}
-                    <h4 className={styles.sectionTitle} style={{ marginTop: '15px' }}>Status</h4>
-                     <div className={styles.row}>
-                        <div className={styles.fieldGroup}>
-                             <label>Status</label>
-                             <select name="status" value={formData.status || 'on'} onChange={handleChange} className={styles.inputModal}>
-                                 <option value="on">Ativo</option>
-                                 <option value="off">Inativo</option>
-                             </select>
-                         </div>
-                    </div>
-
-
                     <div className={styles.modalActions}>
-                        <button
-                            className={`${styles.submitButton} ${styles.btnCancel}`}
-                            type="button"
-                            onClick={onCancel}
-                            disabled={loading}
-                        >
+                        <button className={`${styles.submitButton} ${styles.btnCancel}`} type="button" onClick={onCancel} disabled={loading}>
                             Cancelar
                         </button>
-                        <button
-                            className={styles.submitButton}
-                            type="submit"
-                            disabled={loading}
-                        >
+                        <button className={styles.submitButton} type="submit" disabled={loading}>
                             {loading ? 'Salvando...' : 'Salvar Alterações'}
                         </button>
                     </div>

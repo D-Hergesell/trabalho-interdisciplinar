@@ -29,6 +29,7 @@ public record LojaRequestDTO(
 
         @NotBlank(message = "Estado é obrigatório")
         @Size(min = 2, max = 2, message = "Use a sigla do estado (ex: SP, SC)")
-        String estado
+        String estado,
 
+        Boolean ativo
 ) {}

@@ -22,5 +22,7 @@ public record FornecedorRequestDTO(
         String cep,
         String logradouro,
         String cidade,
-        String estado
+        String estado,
+
+        Boolean ativo
 ) {}
