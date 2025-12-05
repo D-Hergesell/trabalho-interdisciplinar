@@ -601,7 +601,7 @@ function CadastroFornecedor() {
                     {/* Lógica de Senha - Exibição Condicional */}
                     {!formData.gerarAutomaticamente && (
                         <div className={styles.fieldGroup} style={{ marginTop: '15px' }}>
-                            <label>Senha (opcional se Automático)</label>
+                            <label>Senha <span className={styles.requiredAsterisk}>*</span></label>
                             <input
                                 type="password"
                                 name="senhaManual"
