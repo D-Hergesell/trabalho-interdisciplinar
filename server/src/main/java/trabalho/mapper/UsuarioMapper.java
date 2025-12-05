@@ -26,5 +26,7 @@ public interface UsuarioMapper {
      * Converte nossa Entidade para o DTO de resposta.
      * (Entity -> DTO)
      */
+    @Mapping(source = "loja.id", target = "lojaId")
+    @Mapping(source = "fornecedor.id", target = "fornecedorId")
     UsuarioResponseDTO toResponseDTO(Usuario entity);
 }

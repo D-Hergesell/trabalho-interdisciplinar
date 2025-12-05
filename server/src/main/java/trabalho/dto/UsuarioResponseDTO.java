@@ -8,5 +8,7 @@ public record UsuarioResponseDTO(
         String nome,
         String email,
         TipoUsuario tipoUsuario,
-        Boolean ativo
+        Boolean ativo,
+        UUID lojaId,
+        UUID fornecedorId
 ) {}
