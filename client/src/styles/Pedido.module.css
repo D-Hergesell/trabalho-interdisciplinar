@@ -586,7 +586,7 @@
     align-items: flex-end;
   }
 
-  /* 5. Inputs maiores e correção 'pure selector' */
+
   .fieldGroup input,
   .fieldGroup select,
   .dropdownInput,
