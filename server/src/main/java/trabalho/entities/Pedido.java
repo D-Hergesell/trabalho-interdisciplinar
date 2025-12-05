@@ -62,6 +62,18 @@ public class Pedido {
     @ColumnDefault("now()")
     private OffsetDateTime dataPedido;
 
+    @Column(name = "data_separacao")
+    private OffsetDateTime dataSeparacao;
+
+    @Column(name = "data_enviado")
+    private OffsetDateTime dataEnviado;
+
+    @Column(name = "data_entregue")
+    private OffsetDateTime dataEntregue;
+
+    @Column(name = "data_cancelado")
+    private OffsetDateTime dataCancelado;
+
     @OneToMany(
             mappedBy = "pedido",
             fetch = FetchType.LAZY,

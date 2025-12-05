@@ -48,9 +48,7 @@ public class PedidoService {
         Usuario usuario = usuarioRepository.findById(dto.criadoPorUsuarioId())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
 
-        // =================================================================================
-        // LÓGICA DE CONDIÇÕES REGIONAIS (ESTADO)
-        // =================================================================================
+        // Lógica de Condições Regionais
         Optional<CondicoesEstado> condicaoEstadoOpt = condicoesEstadoRepository
                 .findByFornecedor_IdAndEstado(fornecedor.getId(), loja.getEstado());
 
@@ -59,13 +57,9 @@ public class PedidoService {
 
         if (condicaoEstadoOpt.isPresent() && Boolean.TRUE.equals(condicaoEstadoOpt.get().getAtivo())) {
             CondicoesEstado cond = condicaoEstadoOpt.get();
-
-            // 1. Captura o ajuste de preço (ex: +R$ 2,00)
             if (cond.getAjusteUnitarioAplicado() != null) {
                 ajustePorUnidade = cond.getAjusteUnitarioAplicado();
             }
-
-            // 2. Captura o percentual de cashback (ex: 10%)
             if (cond.getCashbackPercentual() != null) {
                 cashbackPercentualEstado = cond.getCashbackPercentual();
             }
@@ -80,7 +74,7 @@ public class PedidoService {
         BigDecimal valorTotalCalculado = BigDecimal.ZERO;
         int quantidadeTotalItens = 0;
 
-        // Processa os itens do pedido
+        // Processa Itens e Baixa Estoque
         for (var itemDto : dto.itens()) {
             Produto produto = produtoRepository.findById(itemDto.produtoId())
                     .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + itemDto.produtoId()));
@@ -89,7 +83,7 @@ public class PedidoService {
                 throw new RuntimeException("Estoque insuficiente para o produto: " + produto.getNome());
             }
 
-            // Baixa de estoque
+            // BAIXA DE ESTOQUE
             produto.setQuantidadeEstoque(produto.getQuantidadeEstoque() - itemDto.quantidade());
             produtoRepository.save(produto);
 
@@ -98,16 +92,14 @@ public class PedidoService {
             item.setProduto(produto);
             item.setQuantidade(itemDto.quantidade());
 
-            // APLICAÇÃO DO AJUSTE REGIONAL NO PREÇO
             BigDecimal precoBase = produto.getPrecoBase();
-            BigDecimal precoFinal = precoBase.add(ajustePorUnidade); // Soma o ajuste (pode ser negativo)
-
+            BigDecimal precoFinal = precoBase.add(ajustePorUnidade);
             if (precoFinal.compareTo(BigDecimal.ZERO) < 0) {
                 precoFinal = BigDecimal.ZERO;
             }
 
             item.setPrecoUnitarioMomento(precoFinal);
-            item.setAjusteUnitarioAplicado(ajustePorUnidade); // Registra histórico do ajuste
+            item.setAjusteUnitarioAplicado(ajustePorUnidade);
 
             pedido.getItens().add(item);
 
@@ -120,20 +112,16 @@ public class PedidoService {
 
         pedido.setValorTotal(valorTotalCalculado);
 
-        // =================================================================================
-        // CÁLCULO DE CASHBACK (CAMPANHAS + ESTADO)
-        // =================================================================================
+        // Lógica de Cashback
         BigDecimal totalCashback = BigDecimal.ZERO;
 
-        // 1. Cashback por Estado (CORRIGIDO: Adicionado RoundingMode)
         if (cashbackPercentualEstado.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal cashbackDoEstado = valorTotalCalculado
                     .multiply(cashbackPercentualEstado)
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP); // <--- CORREÇÃO AQUI
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             totalCashback = totalCashback.add(cashbackDoEstado);
         }
 
-        // 2. Cashback por Campanhas
         List<Campanha> campanhasAtivas = campanhaRepository.findByFornecedor_IdAndAtivoTrue(fornecedor.getId());
         LocalDate hoje = LocalDate.now();
 
@@ -141,7 +129,6 @@ public class PedidoService {
             if (campanha.getDataInicio() != null && hoje.isBefore(campanha.getDataInicio())) continue;
             if (campanha.getDataFim() != null && hoje.isAfter(campanha.getDataFim())) continue;
 
-            // Campanha de Valor
             if (campanha.getTipo() == TipoCampanha.valor_compra && campanha.getValorMinimoCompra() != null) {
                 if (valorTotalCalculado.compareTo(campanha.getValorMinimoCompra()) >= 0) {
                     if (campanha.getCashbackValor() != null) {
@@ -150,7 +137,7 @@ public class PedidoService {
                 }
             }
 
-            // Lógica de Brinde
+            // Lógica de Brinde (Também baixa estoque do brinde)
             if (campanha.getTipo() == TipoCampanha.quantidade_produto && campanha.getQuantidadeMinimaProduto() != null) {
                 if (quantidadeTotalItens >= campanha.getQuantidadeMinimaProduto()) {
                     Produto brinde = campanha.getProdutoIdBrinde();
@@ -162,6 +149,7 @@ public class PedidoService {
                         itemBrinde.setPrecoUnitarioMomento(BigDecimal.ZERO);
                         itemBrinde.setAjusteUnitarioAplicado(BigDecimal.ZERO);
 
+                        // Baixa estoque do brinde
                         brinde.setQuantidadeEstoque(brinde.getQuantidadeEstoque() - 1);
                         produtoRepository.save(brinde);
                         pedido.getItens().add(itemBrinde);
@@ -176,144 +164,119 @@ public class PedidoService {
         return pedidoMapper.toResponseDTO(salvo);
     }
 
-    // -----------------------------------------
-    // GET - Buscar por ID
-    // -----------------------------------------
     @Transactional(readOnly = true)
     public PedidoResponseDTO buscarPorId(UUID id) {
-        Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pedido não encontrado."));
+        Pedido pedido = pedidoRepository.findById(id).orElseThrow(() -> new RuntimeException("Pedido não encontrado."));
         return pedidoMapper.toResponseDTO(pedido);
     }
 
-    // -----------------------------------------
-    // GET - Listar todos
-    // -----------------------------------------
     @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarTodos() {
-        return pedidoRepository.findAll().stream()
-                .map(pedidoMapper::toResponseDTO)
-                .collect(Collectors.toList());
+        return pedidoRepository.findAll().stream().map(pedidoMapper::toResponseDTO).collect(Collectors.toList());
     }
 
-    // -----------------------------------------
-    // GET - Listar por Loja
-    // -----------------------------------------
     @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarPorLoja(UUID lojaId) {
-        Loja loja = lojaRepository.findById(lojaId)
-                .orElseThrow(() -> new RuntimeException("Loja não encontrada."));
-
-        return pedidoRepository.findByLoja(loja).stream()
-                .map(pedidoMapper::toResponseDTO)
-                .collect(Collectors.toList());
+        Loja loja = lojaRepository.findById(lojaId).orElseThrow(() -> new RuntimeException("Loja não encontrada."));
+        return pedidoRepository.findByLoja(loja).stream().map(pedidoMapper::toResponseDTO).collect(Collectors.toList());
     }
 
-    // -----------------------------------------
-    // GET - Listar por Fornecedor
-    // -----------------------------------------
     @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarPorFornecedor(UUID fornecedorId) {
-        Fornecedor fornecedor = fornecedorRepository.findById(fornecedorId)
-                .orElseThrow(() -> new RuntimeException("Fornecedor não encontrado."));
-
-        return pedidoRepository.findByFornecedor(fornecedor).stream()
-                .map(pedidoMapper::toResponseDTO)
-                .collect(Collectors.toList());
+        Fornecedor fornecedor = fornecedorRepository.findById(fornecedorId).orElseThrow(() -> new RuntimeException("Fornecedor não encontrado."));
+        return pedidoRepository.findByFornecedor(fornecedor).stream().map(pedidoMapper::toResponseDTO).collect(Collectors.toList());
     }
 
-    // -----------------------------------------
-    // UPDATE - Alterar status do pedido
-    // -----------------------------------------
     @Transactional
     public PedidoResponseDTO atualizarStatus(UUID pedidoId, StatusPedido novoStatus, UUID usuarioId) {
+        Pedido pedido = pedidoRepository.findById(pedidoId).orElseThrow(() -> new RuntimeException("Pedido não encontrado."));
+        Usuario usuario = usuarioRepository.findById(usuarioId).orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
 
-        Pedido pedido = pedidoRepository.findById(pedidoId)
-                .orElseThrow(() -> new RuntimeException("Pedido não encontrado."));
-
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
-
-        // 1. Verificar se é ADMIN
         boolean isAdmin = usuario.getTipoUsuario() == TipoUsuario.ADMIN;
-
-        // 2. Se NÃO for Admin, verifica se o usuário pertence à Loja ou Fornecedor do pedido
         boolean isUsuarioDaLoja = false;
         boolean isUsuarioDoFornecedor = false;
 
         if (!isAdmin) {
-            isUsuarioDaLoja = pedido.getLoja().getUsuarios().stream()
-                    .anyMatch(u -> u.getId().equals(usuarioId));
-
-            isUsuarioDoFornecedor = pedido.getFornecedor().getUsuarios().stream()
-                    .anyMatch(u -> u.getId().equals(usuarioId));
+            if (pedido.getLoja().getUsuarios() != null) {
+                isUsuarioDaLoja = pedido.getLoja().getUsuarios().stream().anyMatch(u -> u.getId().equals(usuarioId));
+            }
+            if (pedido.getFornecedor().getUsuarios() != null) {
+                isUsuarioDoFornecedor = pedido.getFornecedor().getUsuarios().stream().anyMatch(u -> u.getId().equals(usuarioId));
+            }
 
             if (!isUsuarioDaLoja && !isUsuarioDoFornecedor) {
                 throw new RuntimeException("Apenas os envolvidos (ou Administradores) podem alterar este pedido.");
             }
         }
 
-        // 3. Se NÃO for Admin, aplica a Máquina de Estados estrita
-        // (Admins pulam essa validação para poderem corrigir erros manuais)
         if (!isAdmin) {
             validarTransicao(pedido.getStatus(), novoStatus, isUsuarioDaLoja, isUsuarioDoFornecedor);
         }
 
-        // 4. Efetivar mudança
+        // --- LÓGICA DE ESTORNO DE ESTOQUE AO CANCELAR ---
+        if (novoStatus == StatusPedido.CANCELADO && pedido.getStatus() != StatusPedido.CANCELADO) {
+            restaurarEstoque(pedido);
+        }
+        // -------------------------------------------------
+
         pedido.setStatus(novoStatus);
         Pedido atualizado = pedidoRepository.save(pedido);
-
         return pedidoMapper.toResponseDTO(atualizado);
     }
 
-    /**
-     * Valida se a mudança de 'atual' para 'novo' é válida para usuários comuns.
-     */
-    private void validarTransicao(StatusPedido atual, StatusPedido novo, boolean isLoja, boolean isFornecedor) {
+    @Transactional
+    public void deletarPedido(UUID id) {
+        Pedido pedido = pedidoRepository.findById(id).orElseThrow(() -> new RuntimeException("Pedido não encontrado."));
 
-        // Regra Geral: Usuário comum não mexe em pedido finalizado
+        // --- LÓGICA DE ESTORNO DE ESTOQUE AO DELETAR ---
+        // Se o pedido NÃO estava cancelado, o estoque ainda está preso nele. Devolvemos.
+        if (pedido.getStatus() != StatusPedido.CANCELADO) {
+            restaurarEstoque(pedido);
+        }
+        // -----------------------------------------------
+
+        pedidoRepository.delete(pedido);
+    }
+
+    /**
+     * Devolve a quantidade dos itens para o estoque do produto.
+     */
+    private void restaurarEstoque(Pedido pedido) {
+        for (PedidoItem item : pedido.getItens()) {
+            Produto produto = item.getProduto();
+            // Recupera o produto do banco para garantir saldo atualizado (opcional, mas seguro)
+            // Como já temos o objeto, podemos somar direto se estiver gerenciado pelo EntityManager
+            produto.setQuantidadeEstoque(produto.getQuantidadeEstoque() + item.getQuantidade());
+            produtoRepository.save(produto);
+        }
+    }
+
+    private void validarTransicao(StatusPedido atual, StatusPedido novo, boolean isLoja, boolean isFornecedor) {
         if (atual == StatusPedido.ENTREGUE || atual == StatusPedido.CANCELADO) {
             throw new RuntimeException("O pedido já foi finalizado. Contate o suporte para alterações.");
         }
-
         switch (novo) {
             case EM_SEPARACAO:
                 if (!isFornecedor) throw new RuntimeException("Apenas o fornecedor pode iniciar a separação.");
                 if (atual != StatusPedido.PENDENTE) throw new RuntimeException("Fluxo inválido: Deve estar PENDENTE.");
                 break;
-
             case ENVIADO:
                 if (!isFornecedor) throw new RuntimeException("Apenas o fornecedor pode marcar como enviado.");
                 if (atual != StatusPedido.EM_SEPARACAO) throw new RuntimeException("Fluxo inválido: Deve estar EM SEPARAÇÃO.");
                 break;
-
             case ENTREGUE:
                 if (!isFornecedor) throw new RuntimeException("Apenas o fornecedor pode confirmar a entrega.");
                 if (atual != StatusPedido.ENVIADO) throw new RuntimeException("Fluxo inválido: Deve estar ENVIADO.");
                 break;
-
             case CANCELADO:
                 if (isLoja) {
-                    // Loja só cancela se ainda não saiu para entrega
                     if (atual == StatusPedido.ENVIADO || atual == StatusPedido.EM_SEPARACAO) {
                         throw new RuntimeException("Pedido já em processo. Contate o fornecedor para cancelar.");
                     }
                 }
                 break;
-
             default:
-                // Se tentar voltar status (ex: de ENVIADO para PENDENTE) sem ser admin
                 throw new RuntimeException("Mudança de status não permitida ou inválida.");
         }
-    }
-
-    // -----------------------------------------
-    // DELETE - Remover pedido
-    // -----------------------------------------
-    @Transactional
-    public void deletarPedido(UUID id) {
-        Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pedido não encontrado."));
-        pedidoRepository.delete(pedido);
     }
 }
