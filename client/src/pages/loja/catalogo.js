@@ -142,4 +142,4 @@ function CatalogoFornecedor () {
 };
 
 
-export default withAuth(CatalogoFornecedor;, "lojista", "/");
+export default withAuth(CatalogoFornecedor, "lojista", "/");
