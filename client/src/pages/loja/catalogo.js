@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import withAuth from '../../components/withAuth';
 import styles from '../../styles/lojascatalogo.module.css';
 import api from '@/services/api';
 
@@ -9,7 +10,7 @@ import {
     FiMoreVertical, FiX // Novos ícones
 } from 'react-icons/fi';
 
-const CatalogoFornecedor = () => {
+function CatalogoFornecedor () {
     const router = useRouter();
     const { id } = router.query;
 
