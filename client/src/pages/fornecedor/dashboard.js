@@ -12,7 +12,7 @@ import {
     FiTag,
     FiSettings,
     FiUser,
-    FiLogOut
+    FiLogOut, FiCreditCard
 } from 'react-icons/fi';
 import { FaUserCircle } from 'react-icons/fa';
 
@@ -129,11 +129,12 @@ function Dashboard  ()  {
             {/* SIDEBAR */}
             <aside className={styles.sidebar}>
                 <ul>
-                    <NavItem icon={<FiGrid size={20} />} label="Painel" href="/fornecedor/dashboard" active />
+                    <NavItem icon={<FiGrid size={20} />} label="Dashboard" href="/fornecedor/dashboard" active />
                     <NavItem icon={<FiShoppingBag size={20} />} label="Pedidos Recebidos" href="/fornecedor/pedidos-recebidos" />
                     <NavItem icon={<FiPackage size={20} />} label="Meus Produtos" href="/fornecedor/meus-produtos" />
                     <NavItem icon={<FiTag size={20} />} label="Campanhas" href="/fornecedor/campanhas" />
                     <NavItem icon={<FiSettings size={20} />} label="Condições Comerciais" href="/fornecedor/condicoes-comerciais" />
+                    <NavItem icon={<FiCreditCard size={20} />} label"Formas de Pagamento" href="/fornecedor/condicoes-pagamento" />
                     <NavItem icon={<FiUser size={20} />} label="Perfil" href="/fornecedor/perfil" />
                     <NavItem icon={<FiLogOut size={20} />} label="Sair" href="/" />
                 </ul>

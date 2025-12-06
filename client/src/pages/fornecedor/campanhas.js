@@ -5,7 +5,7 @@ import withAuth from '../../components/withAuth';
 import api from '@/services/api';
 
 import {
-    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiTag, FiPlus, FiTrash2
+    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiTag, FiPlus, FiTrash2, FiCreditCard
 } from 'react-icons/fi';
 
 const Campanhas = () => {
@@ -101,6 +101,7 @@ const Campanhas = () => {
                     <li className={styles.active}><Link href="/fornecedor/campanhas" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Campanhas</span></div></Link></li>
                     <li><Link href="/fornecedor/condicoes-comerciais" className={styles.linkReset}><div className={styles.menuItem}><FiUsers size={20} /><span>Condições Comerciais</span></div></Link></li>
                     <li><Link href="/fornecedor/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li>
+                    <li><Link href="/fornecedor/condicoes-pagamento" className={styles.linkReset}><div className={styles.menuItem}><FiCreditCard size={20} /><span>Formas de Pagamento</span></div></Link></li>
                     <li><Link href="/" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
                 </ul>
             </nav>
