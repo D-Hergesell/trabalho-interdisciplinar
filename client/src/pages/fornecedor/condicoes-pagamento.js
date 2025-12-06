@@ -6,7 +6,7 @@ import styles from '../../styles/FornecedorCampanhas.module.css';
 import api from '@/services/api';
 import {
     FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings,
-    FiPlus, FiTrash2, FiCreditCard, FiMoreVertical, FiX, FiCreditCard
+    FiPlus, FiTrash2, FiCreditCard, FiMoreVertical, FiX
 } from 'react-icons/fi';
 
 function CondicoesPagamento() {
