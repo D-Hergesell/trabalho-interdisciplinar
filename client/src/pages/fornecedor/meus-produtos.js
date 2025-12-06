@@ -5,14 +5,18 @@ import withAuth from '../../components/withAuth';
 import api from '@/services/api';
 
 import {
-    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings, FiPlus, FiEdit, FiTrash2
+    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings,
+    FiPlus, FiEdit, FiTrash2, FiMoreVertical, FiX
 } from 'react-icons/fi';
 
 const MeusProdutos = () => {
     const [produtos, setProdutos] = useState([]);
-    const [categorias, setCategorias] = useState([]); // Nova lista para o select
+    const [categorias, setCategorias] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Estado para o Menu Mobile
+    const [menuOpen, setMenuOpen] = useState(false);
 
     const [formData, setFormData] = useState({
         id: null,
@@ -36,7 +40,7 @@ const MeusProdutos = () => {
             const meus = (resProd.data || []).filter(p => String(p.fornecedorId) === String(usuario.fornecedorId));
             setProdutos(meus);
 
-            // Busca Categorias (para o Select)
+            // Busca Categorias
             const resCat = await api.get('/api/v1/categorias');
             setCategorias(resCat.data || []);
 
@@ -79,7 +83,7 @@ const MeusProdutos = () => {
             quantidadeEstoque: parseInt(formData.quantidadeEstoque),
             unidadeMedida: formData.unidadeMedida,
             categoriaId: formData.categoriaId || null,
-            fornecedorId: usuario.fornecedorId // ID AUTOMÁTICO
+            fornecedorId: usuario.fornecedorId
         };
 
         try {
@@ -108,10 +112,24 @@ const MeusProdutos = () => {
 
     const formatarPreco = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
+    // Totais para o resumo
+    const totalProdutos = produtos.length;
+    const baixoEstoque = produtos.filter(p => p.quantidadeEstoque < 10).length;
+    const totalCategorias = new Set(produtos.map(p => p.categoriaId)).size;
+
     return (
         <div className={styles['dashboard-container']}>
+
+            {/* SIDEBAR COM MENU MOBILE */}
             <nav className={styles.sidebar}>
-                <ul>
+                <div className={styles.mobileHeader}>
+                    <span className={styles.mobileLogo}>Menu Fornecedor</span>
+                    <button className={styles.menuToggle} onClick={() => setMenuOpen(!menuOpen)}>
+                        {menuOpen ? <FiX size={24} /> : <FiMoreVertical size={24} />}
+                    </button>
+                </div>
+
+                <ul className={menuOpen ? styles.open : ''}>
                     <li><Link href="/fornecedor/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
                     <li><Link href="/fornecedor/pedidos-recebidos" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Pedidos Recebidos</span></div></Link></li>
                     <li className={styles.active}><Link href="/fornecedor/meus-produtos" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Meus Produtos</span></div></Link></li>
@@ -126,6 +144,23 @@ const MeusProdutos = () => {
                 <header className={styles.header}>
                     <h1>Meus Produtos</h1>
                 </header>
+
+                 <section className={styles.summarySection}>
+                    <div className={styles.summaryBox}>
+                        <div className={styles.summaryColumn}>
+                            <span className={styles.summaryLabel}>Total Produtos</span>
+                            <span className={styles.summaryValue}>{totalProdutos}</span>
+                        </div>
+                        <div className={styles.summaryColumn}>
+                            <span className={styles.summaryLabel}>Baixo Estoque</span>
+                            <span className={styles.summaryValue} style={{color: baixoEstoque > 0 ? '#dc3545' : '#0c2b4e'}}>{baixoEstoque}</span>
+                        </div>
+                        <div className={styles.summaryColumn}>
+                            <span className={styles.summaryLabel}>Categorias</span>
+                            <span className={styles.summaryValue}>{totalCategorias}</span>
+                        </div>
+                    </div>
+                </section>
 
                 <div className={styles.productsHeaderSection}>
                     <h2>Gerenciar Catálogo</h2>
@@ -147,47 +182,96 @@ const MeusProdutos = () => {
                             </tr>
                             </thead>
                             <tbody>
-                            {produtos.map((p) => (
-                                <tr key={p.id}>
-                                    <td>{p.nome}</td>
-                                    <td>{p.nomeCategoria || '-'}</td>
-                                    <td>{formatarPreco(p.precoBase)}</td>
-                                    <td style={{color: p.quantidadeEstoque < 10 ? 'red' : 'black'}}>{p.quantidadeEstoque}</td>
-                                    <td>
-                                        <button onClick={() => openModal(p)} style={{marginRight: 10, background:'none', border:'none', cursor:'pointer', color:'#007bff'}}><FiEdit /></button>
-                                        <button onClick={() => handleDelete(p.id)} style={{background:'none', border:'none', cursor:'pointer', color:'#dc3545'}}><FiTrash2 /></button>
-                                    </td>
-                                </tr>
-                            ))}
+                            {loading ? (
+                                <tr><td colSpan="5" style={{textAlign:'center', padding:'20px'}}>Carregando...</td></tr>
+                            ) : produtos.length === 0 ? (
+                                <tr><td colSpan="5" className={styles.emptyState}>Nenhum produto encontrado.</td></tr>
+                            ) : (
+                                produtos.map((p) => (
+                                    <tr key={p.id}>
+                                        <td data-label="Produto">{p.nome}</td>
+                                        <td data-label="Categoria">{p.nomeCategoria || '-'}</td>
+                                        <td data-label="Preço Base">{formatarPreco(p.precoBase)}</td>
+                                        <td data-label="Estoque" style={{color: p.quantidadeEstoque < 10 ? 'red' : 'inherit', fontWeight: p.quantidadeEstoque < 10 ? 'bold' : 'normal'}}>
+                                            {p.quantidadeEstoque}
+                                        </td>
+                                        <td data-label="Ações" style={{display: 'flex', gap: '10px', justifyContent: 'flex-end'}}>
+                                            <button onClick={() => openModal(p)} style={{marginRight: 10, background:'none', border:'none', cursor:'pointer', color:'#007bff', fontSize:'18px'}}><FiEdit /></button>
+                                            <button onClick={() => handleDelete(p.id)} style={{background:'none', border:'none', cursor:'pointer', color:'#dc3545', fontSize:'18px'}}><FiTrash2 /></button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                             </tbody>
                         </table>
                     </div>
                 </section>
 
-                {/* MODAL */}
+                {/* MODAL RESPONSIVO */}
                 {isModalOpen && (
-                    <div style={{
-                        position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
-                    }}>
-                        <div style={{ background: 'white', padding: 30, borderRadius: 8, width: 500, maxHeight: '90vh', overflowY: 'auto' }}>
-                            <h2>{formData.id ? 'Editar Produto' : 'Novo Produto'}</h2>
-                            <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap: 15}}>
-                                <input style={{padding: 10, border: '1px solid #ccc', borderRadius: 4}} placeholder="Nome" value={formData.nome} onChange={e => setFormData({...formData, nome: e.target.value})} required />
-                                <textarea style={{padding: 10, border: '1px solid #ccc', borderRadius: 4}} placeholder="Descrição" value={formData.descricao} onChange={e => setFormData({...formData, descricao: e.target.value})} />
-                                <div style={{display:'flex', gap: 10}}>
-                                    <input style={{padding: 10, border: '1px solid #ccc', borderRadius: 4, flex: 1}} type="number" step="0.01" placeholder="Preço (R$)" value={formData.precoBase} onChange={e => setFormData({...formData, precoBase: e.target.value})} required />
-                                    <input style={{padding: 10, border: '1px solid #ccc', borderRadius: 4, flex: 1}} type="number" placeholder="Estoque" value={formData.quantidadeEstoque} onChange={e => setFormData({...formData, quantidadeEstoque: e.target.value})} required />
+                    <div className={styles.modalOverlay}>
+                        <div className={styles.modalContent}>
+                            <h2 className={styles.modalTitle}>{formData.id ? 'Editar Produto' : 'Novo Produto'}</h2>
+                            <form onSubmit={handleSubmit} className={styles.modalForm}>
+                                <div className={styles.inputGroup}>
+                                    <input
+                                        className={styles.modalInput}
+                                        placeholder="Nome do Produto"
+                                        value={formData.nome}
+                                        onChange={e => setFormData({...formData, nome: e.target.value})}
+                                        required
+                                    />
                                 </div>
-                                <div style={{display:'flex', gap: 10}}>
-                                    <input style={{padding: 10, border: '1px solid #ccc', borderRadius: 4, flex: 1}} placeholder="Unidade (Ex: UN, KG)" value={formData.unidadeMedida} onChange={e => setFormData({...formData, unidadeMedida: e.target.value})} />
-                                    <select style={{padding: 10, border: '1px solid #ccc', borderRadius: 4, flex: 1}} value={formData.categoriaId} onChange={e => setFormData({...formData, categoriaId: e.target.value})}>
+
+                                <div className={styles.inputGroup}>
+                                    <textarea
+                                        className={styles.modalTextarea}
+                                        placeholder="Descrição"
+                                        value={formData.descricao}
+                                        onChange={e => setFormData({...formData, descricao: e.target.value})}
+                                    />
+                                </div>
+
+                                <div className={styles.rowGroup}>
+                                    <input
+                                        className={styles.modalInput}
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="Preço (R$)"
+                                        value={formData.precoBase}
+                                        onChange={e => setFormData({...formData, precoBase: e.target.value})}
+                                        required
+                                    />
+                                    <input
+                                        className={styles.modalInput}
+                                        type="number"
+                                        placeholder="Estoque"
+                                        value={formData.quantidadeEstoque}
+                                        onChange={e => setFormData({...formData, quantidadeEstoque: e.target.value})}
+                                        required
+                                    />
+                                </div>
+
+                                <div className={styles.rowGroup}>
+                                    <input
+                                        className={styles.modalInput}
+                                        placeholder="Unidade (Ex: UN, KG)"
+                                        value={formData.unidadeMedida}
+                                        onChange={e => setFormData({...formData, unidadeMedida: e.target.value})}
+                                    />
+                                    <select
+                                        className={styles.modalSelect}
+                                        value={formData.categoriaId}
+                                        onChange={e => setFormData({...formData, categoriaId: e.target.value})}
+                                    >
                                         <option value="">Sem Categoria</option>
                                         {categorias.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                                     </select>
                                 </div>
-                                <div style={{display:'flex', justifyContent:'flex-end', gap: 10}}>
-                                    <button type="button" onClick={() => setIsModalOpen(false)} style={{padding: '10px 20px'}}>Cancelar</button>
-                                    <button type="submit" style={{padding: '10px 20px', background: '#0c2b4e', color: 'white', border: 'none'}}>Salvar</button>
+
+                                <div className={styles.modalActions}>
+                                    <button type="button" onClick={() => setIsModalOpen(false)} className={styles.btnCancel}>Cancelar</button>
+                                    <button type="submit" className={styles.btnSave}>Salvar</button>
                                 </div>
                             </form>
                         </div>

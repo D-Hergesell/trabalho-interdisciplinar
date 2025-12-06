@@ -17,13 +17,14 @@ import {
     FiX
 } from 'react-icons/fi';
 
-function PerfilFornecedor ()  {
+function PerfilFornecedor() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
+
+    // Estado para o Menu Mobile
     const [menuOpen, setMenuOpen] = useState(false);
 
-    // Estado do formulário
     const [formData, setFormData] = useState({
         id: '',
         nomeFantasia: '',
@@ -35,14 +36,13 @@ function PerfilFornecedor ()  {
         logradouro: '',
         cidade: '',
         estado: '',
-        ativo: true // Mantém o status atual
+        ativo: true
     });
 
     useEffect(() => {
         async function loadData() {
             setLoading(true);
             try {
-                // 1. Pega usuário do LocalStorage
                 const usuarioStored = localStorage.getItem("usuario");
                 if (!usuarioStored) {
                     router.push('/');
@@ -50,18 +50,15 @@ function PerfilFornecedor ()  {
                 }
 
                 const usuario = JSON.parse(usuarioStored);
-                // Verifica se é um fornecedor
                 if (!usuario.fornecedorId) {
                     setMessage({ type: 'error', text: 'Usuário não vinculado a um fornecedor.' });
                     setLoading(false);
                     return;
                 }
 
-                // 2. Busca dados atualizados do backend
                 const response = await api.get(`/api/v1/fornecedores/${usuario.fornecedorId}`);
                 const fornecedor = response.data;
 
-                // 3. Preenche o formulário
                 setFormData({
                     id: fornecedor.id,
                     nomeFantasia: fornecedor.nomeFantasia || '',
@@ -78,7 +75,7 @@ function PerfilFornecedor ()  {
 
             } catch (error) {
                 console.error("Erro ao carregar perfil:", error);
-                setMessage({ type: 'error', text: 'Erro ao carregar dados do perfil. Tente novamente.' });
+                setMessage({ type: 'error', text: 'Erro ao carregar dados do perfil.' });
             } finally {
                 setLoading(false);
             }
@@ -98,15 +95,9 @@ function PerfilFornecedor ()  {
 
         try {
             if (!formData.id) throw new Error("ID do fornecedor não identificado.");
-
-            // Envia PUT para atualizar
             await api.put(`/api/v1/fornecedores/${formData.id}`, formData);
-
             setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });
-
-            // Opcional: Atualizar scroll para o topo para ver a mensagem
             window.scrollTo({ top: 0, behavior: 'smooth' });
-
         } catch (error) {
             console.error("Erro ao atualizar:", error);
             const msg = error.response?.data?.erro || error.message || "Erro ao salvar alterações.";
@@ -119,9 +110,8 @@ function PerfilFornecedor ()  {
     return (
         <div className={styles['dashboard-container']}>
 
-            {/* SIDEBAR */}
+            {/* SIDEBAR COM MENU MOBILE */}
             <nav className={styles.sidebar}>
-                {/* Header Mobile */}
                 <div className={styles.mobileHeader}>
                     <span className={styles.mobileLogo}>Menu Fornecedor</span>
                     <button className={styles.menuToggle} onClick={() => setMenuOpen(!menuOpen)}>
@@ -129,7 +119,6 @@ function PerfilFornecedor ()  {
                     </button>
                 </div>
 
-                {/* Menu Itens */}
                 <ul className={menuOpen ? styles.open : ''}>
                     <li>
                         <Link href="/fornecedor/dashboard" className={styles.linkReset}>
@@ -185,119 +174,59 @@ function PerfilFornecedor ()  {
                     <h2 className={styles.sectionTitle}>Dados da Empresa</h2>
 
                     <form onSubmit={handleSubmit}>
-                        {/* Linha 1: Nome Fantasia e CNPJ */}
                         <div className={styles.row}>
                             <div className={`${styles.fieldGroup} ${styles['col-2']}`}>
                                 <label>Nome Fantasia <span className={styles.requiredAsterisk}>*</span></label>
-                                <input
-                                    type="text"
-                                    name="nomeFantasia"
-                                    value={formData.nomeFantasia}
-                                    onChange={handleChange}
-                                    required
-                                />
+                                <input type="text" name="nomeFantasia" value={formData.nomeFantasia} onChange={handleChange} required className={styles.inputLong} />
                             </div>
                             <div className={`${styles.fieldGroup} ${styles['col-1']}`}>
                                 <label>CNPJ <span className={styles.requiredAsterisk}>*</span></label>
-                                <input
-                                    type="text"
-                                    name="cnpj"
-                                    value={formData.cnpj}
-                                    onChange={handleChange}
-                                    maxLength={18}
-                                    required
-                                />
+                                <input type="text" name="cnpj" value={formData.cnpj} onChange={handleChange} maxLength={18} required className={styles.inputLong} />
                             </div>
                         </div>
 
-                        {/* Linha 2: Responsável e Email */}
                         <div className={styles.row}>
                             <div className={`${styles.fieldGroup} ${styles['col-1']}`}>
                                 <label>Nome do Responsável</label>
-                                <input
-                                    type="text"
-                                    name="responsavelNome"
-                                    value={formData.responsavelNome}
-                                    onChange={handleChange}
-                                />
+                                <input type="text" name="responsavelNome" value={formData.responsavelNome} onChange={handleChange} className={styles.inputLong} />
                             </div>
                             <div className={`${styles.fieldGroup} ${styles['col-1']}`}>
                                 <label>Email de Contato (Login) <span className={styles.requiredAsterisk}>*</span></label>
-                                <input
-                                    type="email"
-                                    name="emailContato"
-                                    value={formData.emailContato}
-                                    onChange={handleChange}
-                                    required
-                                />
+                                <input type="email" name="emailContato" value={formData.emailContato} onChange={handleChange} required className={styles.inputLong} />
                             </div>
                         </div>
 
                         <h2 className={styles.sectionTitle}>Endereço e Contato</h2>
 
-                        {/* Linha 3: Telefone e CEP */}
                         <div className={styles.row}>
                             <div className={`${styles.fieldGroup} ${styles['col-1']}`}>
                                 <label>Telefone / WhatsApp</label>
-                                <input
-                                    type="text"
-                                    name="telefone"
-                                    value={formData.telefone}
-                                    onChange={handleChange}
-                                    placeholder="(XX) XXXXX-XXXX"
-                                />
+                                <input type="text" name="telefone" value={formData.telefone} onChange={handleChange} placeholder="(XX) XXXXX-XXXX" className={styles.inputLong} />
                             </div>
                             <div className={`${styles.fieldGroup} ${styles['col-1']}`}>
                                 <label>CEP</label>
-                                <input
-                                    type="text"
-                                    name="cep"
-                                    value={formData.cep}
-                                    onChange={handleChange}
-                                    maxLength={9}
-                                />
+                                <input type="text" name="cep" value={formData.cep} onChange={handleChange} maxLength={9} className={styles.inputLong} />
                             </div>
                         </div>
 
-                        {/* Linha 4: Logradouro */}
                         <div className={styles.row}>
                             <div className={`${styles.fieldGroup} ${styles['col-3']}`}>
                                 <label>Logradouro</label>
-                                <input
-                                    type="text"
-                                    name="logradouro"
-                                    value={formData.logradouro}
-                                    onChange={handleChange}
-                                />
+                                <input type="text" name="logradouro" value={formData.logradouro} onChange={handleChange} className={styles.inputLong} />
                             </div>
                         </div>
 
-                        {/* Linha 5: Cidade e Estado */}
                         <div className={styles.row}>
                             <div className={`${styles.fieldGroup} ${styles['col-2']}`}>
                                 <label>Cidade</label>
-                                <input
-                                    type="text"
-                                    name="cidade"
-                                    value={formData.cidade}
-                                    onChange={handleChange}
-                                />
+                                <input type="text" name="cidade" value={formData.cidade} onChange={handleChange} className={styles.inputLong} />
                             </div>
                             <div className={`${styles.fieldGroup} ${styles['col-1']}`}>
                                 <label>Estado (UF)</label>
-                                <input
-                                    type="text"
-                                    name="estado"
-                                    value={formData.estado}
-                                    onChange={handleChange}
-                                    maxLength={2}
-                                    style={{ textTransform: 'uppercase' }}
-                                    placeholder="EX: SP"
-                                />
+                                <input type="text" name="estado" value={formData.estado} onChange={handleChange} maxLength={2} style={{ textTransform: 'uppercase' }} placeholder="EX: SP" className={styles.inputLong} />
                             </div>
                         </div>
 
-                        {/* Botão de Ação */}
                         <div className={styles.footer}>
                             <button type="submit" className={styles.submitButton} disabled={loading}>
                                 {loading ? 'Salvando...' : 'Salvar Alterações'}
@@ -311,4 +240,4 @@ function PerfilFornecedor ()  {
 };
 
 
-export default withAuth(PerfilFornecedor, "fornecedor", "/");
+export default withAuth(PerfilFornecedor, 'fornecedor');
