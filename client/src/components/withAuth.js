@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Swal from 'sweetalert2';
 
-const withAuth = (WrappedComponent) => {
+/**
+ * HOC de Segurança
+ * @param {Component} WrappedComponent - O componente da página
+ * @param {string} requiredRole - O nível de usuário exigido (ex: "admin", "cliente")
+ * @param {string} loginRoute - A rota para onde mandar se não estiver logado (ex: "/admin/login", "/")
+ */
+const withAuth = (WrappedComponent, requiredRole = "admin", loginRoute = "/admin/login") => {
     const Wrapper = (props) => {
         const router = useRouter();
         const [verified, setVerified] = useState(false);
@@ -10,25 +16,25 @@ const withAuth = (WrappedComponent) => {
         useEffect(() => {
             const usuarioString = localStorage.getItem("usuario");
 
-            // 1. Se ninguém está logado, manda pro login
+            // 1. Se ninguém está logado, manda para a rota de login configurada no parâmetro
             if (!usuarioString) {
-                router.replace("/admin/Login");
+                router.replace(loginRoute);
                 return;
             }
 
             try {
                 const usuario = JSON.parse(usuarioString);
 
-                // 2. Se está logado, mas NÃO é admin
-                if (usuario.level !== "admin") {
+                // 2. Verifica se o nível do usuário bate com o nível exigido
+                if (usuario.level !== requiredRole) {
 
                     Swal.fire({
-                        icon: 'warning', // Mudei para warning (amarelo) para indicar atenção
-                        title: 'Acesso Exclusivo',
-                        // Explica que ele precisa trocar de conta
-                        text: `Você está logado como ${usuario.name || 'usuário comum'}, mas esta página requer acesso de Administrador.`,
+                        icon: 'warning',
+                        title: 'Acesso Restrito',
+                        // Mostra qual nível ele tem e qual ele precisa
+                        text: `Você está logado como "${usuario.level || 'usuário'}", mas esta página requer perfil de "${requiredRole}".`,
                         showCancelButton: true,
-                        confirmButtonText: 'Ir para Login Admin',
+                        confirmButtonText: 'Trocar de Conta',
                         confirmButtonColor: '#3085d6',
                         cancelButtonText: 'Voltar para Home',
                         cancelButtonColor: '#d33',
@@ -36,13 +42,12 @@ const withAuth = (WrappedComponent) => {
                         allowEscapeKey: false
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            // --- O PULO DO GATO ---
-                            // Remove o usuário comum da memória para ele poder logar como admin
+                            // Remove o usuário atual para permitir novo login
                             localStorage.removeItem("usuario");
-                            // Leva para a tela de login
-                            router.replace("/admin/Login");
+                            // Leva para a tela de login correta (a que foi passada por parâmetro)
+                            router.replace(loginRoute);
                         } else {
-                            // Se ele clicar em cancelar, volta pra Home
+                            // Se cancelar, volta para a raiz do site
                             router.replace("/");
                         }
                     });
@@ -50,13 +55,13 @@ const withAuth = (WrappedComponent) => {
                     return;
                 }
 
-                // 3. É admin, libera o acesso
+                // 3. É o nível correto, libera o acesso
                 setVerified(true);
 
             } catch (error) {
                 console.error("Erro auth:", error);
                 localStorage.removeItem("usuario");
-                router.replace("/admin/Login");
+                router.replace(loginRoute);
             }
         }, [router]);
 

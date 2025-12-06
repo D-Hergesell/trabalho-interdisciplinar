@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import withAuth from '../../components/withAuth';
 import styles from '../../styles/LojaPedidos.module.css';
 import api from '@/services/api';
 
@@ -15,8 +16,7 @@ import {
     FiMoreVertical,
     FiX
 } from 'react-icons/fi';
-
-const MeusPedidosLoja = () => {
+function MeusPedidosLoja = () => {
     const router = useRouter();
     const [pedidos, setPedidos] = useState([]);
     const [filtroBusca, setFiltroBusca] = useState('');
@@ -195,4 +195,5 @@ const MeusPedidosLoja = () => {
     );
 };
 
-export default MeusPedidosLoja;
+
+export default withAuth( MeusPedidosLoja);

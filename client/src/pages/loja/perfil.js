@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import styles from '../../styles/Geral.module.css'; // Certifique-se que o caminho está correto
 import api from '../../services/api';
-
+import withAuth from '../../components/withAuth';
 import {
   FiGrid, FiUsers, FiPackage, FiUser, FiLogOut, FiMoreVertical, FiX
 } from 'react-icons/fi';
 
-const PerfilLoja = () => {
+function PerfilLoja  ()  {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
@@ -287,4 +287,5 @@ const PerfilLoja = () => {
   );
 };
 
-export default PerfilLoja;
+
+export default withAuth( PerfilLoja);

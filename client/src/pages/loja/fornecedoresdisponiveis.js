@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import withAuth from '../../components/withAuth';
 import styles from '../../styles/lojafornecedor.module.css';
 import api from '@/services/api';
 
@@ -15,7 +16,7 @@ import {
     FiX             // Novo ícone
 } from 'react-icons/fi';
 
-const FornecedoresDisponiveis = () => {
+function FornecedoresDisponiveis () {
     const router = useRouter();
     const [fornecedores, setFornecedores] = useState([]);
     const [filtroBusca, setFiltroBusca] = useState('');
@@ -204,5 +205,4 @@ const FornecedoresDisponiveis = () => {
         </div>
     );
 };
-
-export default FornecedoresDisponiveis;
+export default withAuth(FornecedoresDisponiveis);

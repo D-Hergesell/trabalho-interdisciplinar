@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import withAuth from '../../components/withAuth';
 import styles from '@/styles/lojas.module.css';
 import api from '@/services/api';
 import {
@@ -8,7 +9,7 @@ import {
   FiMoreVertical, FiX // Novos ícones importados
 } from 'react-icons/fi';
 
-const DashboardLoja = () => {
+function DashboardLoja ()  {
   const router = useRouter();
 
   // Estado para o menu mobile
@@ -201,4 +202,5 @@ const DashboardLoja = () => {
   );
 };
 
-export default DashboardLoja;
+export default withAuth(DashboardLoja, "lojista", "/");
+
