@@ -3,7 +3,7 @@ import Link from 'next/link';
 import withAuth from '../../components/withAuth';
 import {
     FiGrid, FiUsers, FiPackage, FiUser, FiLogOut, FiBox, FiShoppingBag, FiTag,
-    FiArrowRight, FiSearch, FiEdit, FiTrash2, FiChevronLeft, FiChevronRight
+    FiArrowRight, FiSearch, FiEdit, FiTrash2, FiChevronLeft, FiChevronRight, FiMapPin
 } from 'react-icons/fi';
 import { FaShieldAlt } from 'react-icons/fa';
 import api from '../../services/api';
@@ -429,7 +429,7 @@ function Dashboard() {
                     <li><Link href="/admin/cadastro-pedidos" className={styles.linkReset}><div className={styles.menuItem}><FiShoppingBag size={20} /><span>Pedidos</span></div></Link></li>
                     <li><Link href="/admin/cadastro-campanha" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Campanhas</span></div></Link></li>
                     <li><Link href="/admin/cadastro-categoria" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Categorias</span></div></Link></li>
-                    {/* <li><Link href="/admin/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li> */}
+                    <li><Link href="/admin/cadastro-condicoes" className={styles.linkReset}><div className={styles.menuItem}><FiMapPin size={20} /><span>Regras por Estado</span></div></Link></li>
                     <li><Link href="/admin/login" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
                 </ul>
             </nav>
