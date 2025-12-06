@@ -107,6 +107,13 @@ public class CondicoesPagamentoService {
         return condicoesPagamentoMapper.toResponseDTO(salvo);
     }
 
+    @Transactional(readOnly = true)
+    public List<CondicoesPagamentoResponseDTO> listarPorFornecedor(UUID fornecedorId) {
+        return condicoesPagamentoRepository.findByFornecedor_IdAndAtivoTrue(fornecedorId).stream()
+                .map(condicoesPagamentoMapper::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
     // -----------------------------------------
     // DELETE por ID — Apagar condição
     // -----------------------------------------

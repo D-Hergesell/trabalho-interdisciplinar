@@ -34,6 +34,7 @@ public class PedidoService {
     private final CondicoesEstadoRepository condicoesEstadoRepository;
     private final CampanhaRepository campanhaRepository;
     private final PedidoMapper pedidoMapper;
+    private final CondicoesPagamentoRepository condicoesPagamentoRepository;
 
     @Transactional
     public PedidoResponseDTO criarPedido(PedidoRequestDTO dto) {
@@ -48,6 +49,19 @@ public class PedidoService {
 
         Usuario usuario = usuarioRepository.findById(dto.criadoPorUsuarioId())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+
+        if (dto.condicaoPagamentoId() != null) {
+            CondicoesPagamento condicao = condicoesPagamentoRepository.findById(dto.condicaoPagamentoId())
+                    .orElseThrow(() -> new RuntimeException("Condição de pagamento não encontrada."));
+
+            // Valida se a condição pertence ao fornecedor do pedido
+            if (!condicao.getFornecedor().getId().equals(fornecedor.getId())) {
+                throw new RuntimeException("A condição de pagamento não pertence a este fornecedor.");
+            }
+            pedido.setCondicaoPagamento(condicao);
+        } else {
+            throw new RuntimeException("É obrigatório selecionar uma condição de pagamento.");
+        }
 
         // Lógica de Condições Regionais
         Optional<CondicoesEstado> condicaoEstadoOpt = condicoesEstadoRepository

@@ -14,4 +14,7 @@ public interface CondicoesPagamentoRepository extends JpaRepository<CondicoesPag
     List<CondicoesPagamento> findByAtivoTrue();
 
     Optional<CondicoesPagamento> findByFornecedor_IdAndDescricaoIgnoreCase(UUID fornecedorId, String descricao);
+
+    List<CondicoesPagamento> findByFornecedor_IdAndAtivoTrue(UUID fornecedorId);
+
 }
