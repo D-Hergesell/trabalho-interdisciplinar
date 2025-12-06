@@ -6,7 +6,7 @@ import styles from '../../styles/AdminGeral.module.css';
 import {
     FiGrid, FiUsers, FiPackage, FiLogOut, FiBox,
     FiSearch, FiTrash2, FiChevronLeft, FiChevronRight,
-    FiArrowRight, FiEdit, FiShoppingBag, FiTag
+    FiArrowRight, FiEdit, FiShoppingBag, FiTag, FiMapPin
 } from 'react-icons/fi';
 
 // Função auxiliar para gerar senha aleatória
@@ -529,7 +529,7 @@ function CadastroFornecedor() {
           <li><Link href="/admin/cadastro-pedidos" className={styles.linkReset}><div className={styles.menuItem}><FiShoppingBag size={20} /><span>Pedidos</span></div></Link></li>
           <li><Link href="/admin/cadastro-campanha" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Campanhas</span></div></Link></li>
             <li><Link href="/admin/cadastro-categoria" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Categorias</span></div></Link></li>
-            {/* <li><Link href="/admin/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li> */}
+            <li><Link href="/admin/cadastro-condicoes" className={styles.linkReset}><div className={styles.menuItem}><FiMapPin size={20} /><span>Regras por Estado</span></div></Link></li>
           <li><Link href="/admin/login" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
         </ul>
       </nav>

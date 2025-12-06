@@ -6,7 +6,7 @@ import api from '../../services/api';
 
 import {
     FiGrid, FiUsers, FiPackage, FiUser, FiLogOut, FiBox,
-    FiSearch, FiEdit, FiTrash2, FiChevronLeft, FiChevronRight, FiTag, FiShoppingBag
+    FiSearch, FiEdit, FiTrash2, FiChevronLeft, FiChevronRight, FiTag, FiShoppingBag, FiMapPin
 } from 'react-icons/fi';
 
 const EditCategoriaModal = ({ categoria, onSave, onCancel, loading, fornecedores }) => {
@@ -272,6 +272,7 @@ function CadastroCategoria() {
                     <li><Link href="/admin/cadastro-pedidos" className={styles.linkReset}><div className={styles.menuItem}><FiShoppingBag size={20} /><span>Pedidos</span></div></Link></li>
                     <li><Link href="/admin/cadastro-campanha" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Campanhas</span></div></Link></li>
                     <li className={styles.active}><Link href="/admin/cadastro-categoria" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Categorias</span></div></Link></li>
+                    <li><Link href="/admin/cadastro-condicoes" className={styles.linkReset}><div className={styles.menuItem}><FiMapPin size={20} /><span>Regras por Estado</span></div></Link></li>
                     <li><Link href="/admin/login" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
                 </ul>
             </nav>
