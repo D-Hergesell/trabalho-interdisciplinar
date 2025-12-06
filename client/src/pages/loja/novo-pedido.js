@@ -61,7 +61,6 @@ const CustomProductDropdown = ({ options = [], value = '', onChange, placeholder
 };
 
 function NovoPedidoLoja  ()  {
-    // ... (Estados e useEffects de loadData permanecem iguais) ...
     const router = useRouter();
     const { fornecedorId: queryFornecedorId } = router.query;
 
@@ -71,6 +70,10 @@ function NovoPedidoLoja  ()  {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
     const [menuOpen, setMenuOpen] = useState(false);
+
+    // --- NOVOS ESTADOS PARA PAGAMENTO ---
+    const [condicoesPagamento, setCondicoesPagamento] = useState([]);
+    const [condicaoSelecionada, setCondicaoSelecionada] = useState('');
 
     const [formData, setFormData] = useState({
         lojaId: '',
@@ -101,15 +104,25 @@ function NovoPedidoLoja  ()  {
         loadData();
     }, [queryFornecedorId, router]);
 
+    // --- USE EFFECT PARA FILTRAR PRODUTOS E BUSCAR CONDIÇÕES ---
     useEffect(() => {
         if (formData.fornecedorId) {
             const prods = produtos.filter(p => String(p.fornecedorId) === String(formData.fornecedorId) && p.ativo);
             setFilteredProdutos(prods);
+
             if (itensPedido.some(i => i.produtoId && !prods.find(p => p.id === i.produtoId))) {
-               setItensPedido([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
+                setItensPedido([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
             }
+
+            // NOVO: Buscar condições de pagamento deste fornecedor
+            api.get(`/api/v1/condicoes-pagamento/fornecedor/${formData.fornecedorId}`)
+                .then(res => setCondicoesPagamento(res.data || []))
+                .catch(err => console.error("Erro ao buscar condições", err));
+
         } else {
             setFilteredProdutos([]);
+            setCondicoesPagamento([]); // Limpa se mudar fornecedor
+            setCondicaoSelecionada('');
         }
     }, [formData.fornecedorId, produtos]);
 
@@ -118,7 +131,6 @@ function NovoPedidoLoja  ()  {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // --- FUNÇÃO ATUALIZADA PARA VALIDAR A DIGITAÇÃO ---
     const handleItemChange = (index, e) => {
         const { name, value } = e.target;
         const novosItens = [...itensPedido];
@@ -135,7 +147,6 @@ function NovoPedidoLoja  ()  {
             }
         }
         else if (name === 'quantidade') {
-            // Se o usuário apagar tudo, deixa vazio temporariamente para ele poder digitar
             if (value === '') {
                 novosItens[index].quantidade = '';
                 setItensPedido(novosItens);
@@ -144,19 +155,17 @@ function NovoPedidoLoja  ()  {
 
             let novaQtd = parseInt(value, 10);
 
-            // Validação 1: Não pode ser menor que 1 (se for 0 ou negativo, vira 1)
             if (isNaN(novaQtd) || novaQtd < 1) {
                 novaQtd = 1;
             }
 
-            // Validação 2: Checar Estoque
             const itemAtual = novosItens[index];
             if (itemAtual.produtoId) {
                 const prod = filteredProdutos.find(p => String(p.id) === String(itemAtual.produtoId));
                 if (prod) {
                     if (novaQtd > prod.quantidadeEstoque) {
                         alert(`Estoque insuficiente! Máximo disponível: ${prod.quantidadeEstoque}`);
-                        novaQtd = prod.quantidadeEstoque; // Trava no máximo
+                        novaQtd = prod.quantidadeEstoque;
                     }
                 }
             }
@@ -167,7 +176,6 @@ function NovoPedidoLoja  ()  {
         setItensPedido(novosItens);
     };
 
-    // Handler para quando o campo perde o foco (se ficou vazio, volta pra 1)
     const handleBlurQuantidade = (index) => {
         const novosItens = [...itensPedido];
         if (novosItens[index].quantidade === '' || novosItens[index].quantidade === 0) {
@@ -204,11 +212,19 @@ function NovoPedidoLoja  ()  {
             setLoading(false); return;
         }
 
+        if (!condicaoSelecionada) {
+            setMessage({ type: 'error', text: 'Selecione uma condição de pagamento.' });
+            setLoading(false); return;
+        }
+
         const usuarioLogado = JSON.parse(localStorage.getItem('usuario'));
+
+        // --- PAYLOAD ATUALIZADO ---
         const payload = {
             lojaId: formData.lojaId,
             fornecedorId: formData.fornecedorId,
             criadoPorUsuarioId: usuarioLogado.id,
+            condicaoPagamentoId: condicaoSelecionada || null, // Envia o ID selecionado
             itens: itensValidos.map(i => ({ produtoId: i.produtoId, quantidade: Number(i.quantidade) }))
         };
 
@@ -265,6 +281,28 @@ function NovoPedidoLoja  ()  {
                         </div>
                     </div>
 
+                    {/* --- NOVO CAMPO DE CONDIÇÃO DE PAGAMENTO --- */}
+                    {formData.fornecedorId && (
+                        <div className={styles.row}>
+                            <div className={styles.fieldGroup}>
+                                <label>Condição de Pagamento <span className={styles.requiredAsterisk}>*</span></label>
+                                <select
+                                    value={condicaoSelecionada}
+                                    onChange={e => setCondicaoSelecionada(e.target.value)}
+                                    className={styles.inputLong}
+                                    required
+                                >
+                                    <option value="">Selecione uma condição...</option>
+                                    {condicoesPagamento.map(c => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.descricao} ({c.prazoDias} dias)
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    )}
+
                     {formData.fornecedorId && (
                         <>
                             <h2 className={styles.sectionTitle} style={{marginTop: '30px'}}>2. Itens do Pedido</h2>
@@ -295,13 +333,13 @@ function NovoPedidoLoja  ()  {
                                         <span className={styles.mobileLabel}>Qtd:</span>
                                         <input
                                             type="number"
-                                            inputMode="numeric" // Abre teclado numérico no celular
+                                            inputMode="numeric"
                                             name="quantidade"
                                             min="1"
                                             value={item.quantidade}
                                             onChange={(e) => handleItemChange(index, e)}
                                             onBlur={() => handleBlurQuantidade(index)}
-                                            className={`${styles.inputItem} ${styles.inputNoSpin}`} // Classe CSS nova para esconder setas
+                                            className={`${styles.inputItem} ${styles.inputNoSpin}`}
                                             style={{textAlign: 'right'}}
                                         />
                                     </div>
@@ -351,7 +389,5 @@ function NovoPedidoLoja  ()  {
         </div>
     );
 };
-
-
 
 export default withAuth(NovoPedidoLoja, "lojista", "/");
