@@ -10,13 +10,12 @@ export default function Login() {
     const [erro, setErro] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // A função não precisa mais receber o nível, pois o backend decide quem é o usuário
     async function handleLogin() {
         setErro("");
         setLoading(true);
 
         try {
-            // 1. Envia os campos corretos para o Backend Java
+            // 1. Envia os campos para o Backend
             const response = await api.post('/auth/login', {
                 email: email,
                 senha: senha
@@ -24,21 +23,29 @@ export default function Login() {
 
             const usuario = response.data;
 
-            // 2. Verifica se é Admin (que deve usar a outra tela)
+            // 2. Verifica se é Admin (bloqueia aqui, pois admin tem login próprio)
             if (usuario.tipoUsuario === "ADMIN") {
                 setErro("Administradores devem usar o login administrativo.");
                 setLoading(false);
                 return;
             }
 
-            // 3. Salva no localStorage
-            localStorage.setItem("usuario", JSON.stringify(usuario));
+            // --- CORREÇÃO AQUI ---
+            // Cria o objeto para salvar no localStorage com o campo 'level' que o withAuth exige.
+            // Se for 'LOJA' vira 'lojista', se for 'FORNECEDOR' vira 'fornecedor'.
+            const usuarioParaSalvar = {
+                ...usuario,
+                level: usuario.tipoUsuario === "LOJA" ? "lojista" : usuario.tipoUsuario.toLowerCase()
+            };
 
-            // 4. Redireciona baseado no tipo retornado pelo banco
+            // 3. Salva o objeto CORRIGIDO no localStorage
+            localStorage.setItem("usuario", JSON.stringify(usuarioParaSalvar));
+
+            // 4. Redireciona para o dashboard correto
             if (usuario.tipoUsuario === "LOJA") {
-                router.push("/loja/dashboard"); // Caminho corrigido
+                router.push("/loja/dashboard");
             } else if (usuario.tipoUsuario === "FORNECEDOR") {
-                router.push("/fornecedor/dashboard"); // Caminho corrigido
+                router.push("/fornecedor/dashboard");
             } else {
                 setErro("Tipo de usuário desconhecido.");
             }
@@ -81,7 +88,6 @@ export default function Login() {
                 </div>
 
                 <div className={styles.buttonContainer}>
-                    {/* Ambos os botões chamam a mesma função, pois o login é único pelo email */}
                     <button
                         type="button"
                         className={styles.greenButton}

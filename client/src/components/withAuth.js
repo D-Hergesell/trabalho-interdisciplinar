@@ -3,10 +3,7 @@ import { useRouter } from "next/router";
 import Swal from 'sweetalert2';
 
 /**
- * HOC de Segurança
- * @param {Component} WrappedComponent - O componente da página
- * @param {string} requiredRole - O nível de usuário exigido (ex: "admin", "cliente")
- * @param {string} loginRoute - A rota para onde mandar se não estiver logado (ex: "/admin/login", "/")
+ * HOC de Segurança (Case Insensitive)
  */
 const withAuth = (WrappedComponent, requiredRole = "admin", loginRoute = "/admin/login") => {
     const Wrapper = (props) => {
@@ -16,7 +13,6 @@ const withAuth = (WrappedComponent, requiredRole = "admin", loginRoute = "/admin
         useEffect(() => {
             const usuarioString = localStorage.getItem("usuario");
 
-            // 1. Se ninguém está logado, manda para a rota de login configurada no parâmetro
             if (!usuarioString) {
                 router.replace(loginRoute);
                 return;
@@ -25,37 +21,42 @@ const withAuth = (WrappedComponent, requiredRole = "admin", loginRoute = "/admin
             try {
                 const usuario = JSON.parse(usuarioString);
 
-                // 2. Verifica se o nível do usuário bate com o nível exigido
-                if (usuario.level !== requiredRole) {
+                // --- AQUI ESTÁ A CORREÇÃO ---
+                // Pegamos o nível do usuário e forçamos para minúsculo
+                // Se usuario.level for null/undefined, vira string vazia para não quebrar
+                const userLevel = (usuario.level || "").toLowerCase();
 
+                // Prepara a lista de permissões também em minúsculo
+                const requiredRoles = Array.isArray(requiredRole)
+                    ? requiredRole.map(r => r.toLowerCase())
+                    : [requiredRole.toLowerCase()]; // Transforma string única em array minúsculo
+
+                // Verifica se o nível do usuário está na lista permitida
+                const hasPermission = requiredRoles.includes(userLevel);
+
+                if (!hasPermission) {
                     Swal.fire({
                         icon: 'warning',
                         title: 'Acesso Restrito',
-                        // Mostra qual nível ele tem e qual ele precisa
-                        text: `Você está logado como "${usuario.level || 'usuário'}", mas esta página requer perfil de "${requiredRole}".`,
+                        // Mostra o nível original para você saber o que está vindo
+                        text: `Você está logado como "${usuario.level || 'Desconhecido'}", mas esta página requer perfil de "${requiredRole}".`,
                         showCancelButton: true,
                         confirmButtonText: 'Trocar de Conta',
                         confirmButtonColor: '#3085d6',
-                        cancelButtonText: 'Voltar para Home',
+                        cancelButtonText: 'Voltar',
                         cancelButtonColor: '#d33',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false
+                        allowOutsideClick: false
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            // Remove o usuário atual para permitir novo login
                             localStorage.removeItem("usuario");
-                            // Leva para a tela de login correta (a que foi passada por parâmetro)
                             router.replace(loginRoute);
                         } else {
-                            // Se cancelar, volta para a raiz do site
                             router.replace("/");
                         }
                     });
-
                     return;
                 }
 
-                // 3. É o nível correto, libera o acesso
                 setVerified(true);
 
             } catch (error) {
@@ -70,12 +71,8 @@ const withAuth = (WrappedComponent, requiredRole = "admin", loginRoute = "/admin
         return <WrappedComponent {...props} />;
     };
 
-    Wrapper.displayName = `WithAuth(${getDisplayName(WrappedComponent)})`;
+    Wrapper.displayName = `WithAuth(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
     return Wrapper;
 };
-
-function getDisplayName(WrappedComponent) {
-    return WrappedComponent.displayName || WrappedComponent.name || 'Component';
-}
 
 export default withAuth;
