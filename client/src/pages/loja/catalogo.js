@@ -140,4 +140,5 @@ const CatalogoFornecedor = () => {
     );
 };
 
-export default CatalogoFornecedor;
+
+export default withAuth(CatalogoFornecedor;, "lojista", "/");

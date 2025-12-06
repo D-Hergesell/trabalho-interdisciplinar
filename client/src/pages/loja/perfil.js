@@ -287,5 +287,4 @@ function PerfilLoja  ()  {
   );
 };
 
-
-export default withAuth( PerfilLoja);
+export default withAuth(PerfilLoja, "lojista", "/");

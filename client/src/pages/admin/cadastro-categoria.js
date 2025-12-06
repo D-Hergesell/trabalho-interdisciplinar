@@ -315,4 +315,5 @@ function CadastroCategoria() {
     );
 }
 
-export default withAuth(CadastroCategoria);
+
+export default withAuth(CadastroCategoria, "admin", "/admin/login");

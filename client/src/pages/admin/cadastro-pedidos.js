@@ -954,4 +954,5 @@ function CadastroPedido (){
     );
 }
 
-export default withAuth (CadastroPedido);
+
+export default withAuth(CadastroPedido, "admin", "/admin/login");

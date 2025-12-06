@@ -602,4 +602,5 @@ function CadastroProdutos() {
     );
 }
 
-export default withAuth(CadastroProdutos);
+
+export default withAuth(CadastroProdutos, "admin", "/admin/login");

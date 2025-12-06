@@ -353,4 +353,5 @@ function NovoPedidoLoja  ()  {
 };
 
 
-export default withAuth( NovoPedidoLoja);
+
+export default withAuth(NovoPedidoLoja, "lojista", "/");

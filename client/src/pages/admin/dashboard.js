@@ -466,4 +466,5 @@ function Dashboard() {
     );
 }
 
-export default withAuth(Dashboard);
+
+export default withAuth(Dashboard, "admin", "/admin/login");

@@ -205,4 +205,5 @@ function FornecedoresDisponiveis () {
         </div>
     );
 };
-export default withAuth(FornecedoresDisponiveis);
+
+export default withAuth(FornecedoresDisponiveis, "lojista", "/");

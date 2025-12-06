@@ -633,4 +633,4 @@ function CadastroFornecedor() {
     );
 }
 
-export default withAuth(CadastroFornecedor);
+export default withAuth(CadastroFornecedor, "admin", "/admin/login");

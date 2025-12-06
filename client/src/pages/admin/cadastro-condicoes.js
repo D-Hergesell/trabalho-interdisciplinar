@@ -452,4 +452,5 @@ function CadastroCondicoes() {
     );
 }
 
-export default withAuth(CadastroCondicoes);
+
+export default withAuth(CadastroCondicoes, "admin", "/admin/login");

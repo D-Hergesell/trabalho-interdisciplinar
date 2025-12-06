@@ -196,4 +196,5 @@ function MeusPedidosLoja = () => {
 };
 
 
-export default withAuth( MeusPedidosLoja);
+
+export default withAuth(MeusPedidosLoja, "lojista", "/");

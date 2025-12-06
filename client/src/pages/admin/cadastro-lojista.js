@@ -641,4 +641,5 @@ function CadastroLojista() {
     );
 }
 
-export default withAuth(CadastroLojista);
+
+export default withAuth(CadastroLojista, "admin", "/admin/login");
