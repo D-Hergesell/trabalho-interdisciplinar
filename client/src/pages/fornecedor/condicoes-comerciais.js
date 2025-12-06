@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import withAuth from '../../components/withAuth'; // Importação corrigida
+import withAuth from '../../components/withAuth';
 import styles from '../../styles/Condicao.module.css';
 import api from '@/services/api';
 
 import {
-    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings, FiPlus, FiEdit, FiTrash2
+    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings,
+    FiPlus, FiEdit, FiTrash2, FiMoreVertical, FiX
 } from 'react-icons/fi';
 
 const CondicoesComerciais = () => {
@@ -14,7 +15,9 @@ const CondicoesComerciais = () => {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Estado do Formulário
+    // Estado para o Menu Mobile
+    const [menuOpen, setMenuOpen] = useState(false);
+
     const [formData, setFormData] = useState({
         id: null,
         estado: '',
@@ -24,19 +27,15 @@ const CondicoesComerciais = () => {
         ativo: true
     });
 
-    // Buscar dados
     const fetchData = async () => {
         setLoading(true);
         try {
             const usuarioStorage = localStorage.getItem('usuario');
             const usuario = usuarioStorage ? JSON.parse(usuarioStorage) : null;
-
             if (!usuario || !usuario.fornecedorId) return;
 
             const res = await api.get('/api/v1/condicoes-estado');
             const todas = res.data || [];
-
-            // Filtra apenas as deste fornecedor
             const minhas = todas.filter(c => String(c.fornecedorId) === String(usuario.fornecedorId));
             setCondicoes(minhas);
         } catch (error) {
@@ -50,7 +49,6 @@ const CondicoesComerciais = () => {
         fetchData();
     }, []);
 
-    // Ações do Modal
     const openModal = (condicao = null) => {
         if (condicao) {
             setFormData({
@@ -77,12 +75,10 @@ const CondicoesComerciais = () => {
         }));
     };
 
-    // Salvar (POST ou PUT)
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             const usuario = JSON.parse(localStorage.getItem('usuario'));
-
             const payload = {
                 fornecedorId: usuario.fornecedorId,
                 estado: formData.estado.toUpperCase(),
@@ -107,7 +103,6 @@ const CondicoesComerciais = () => {
         }
     };
 
-    // Excluir
     const handleDelete = async (id) => {
         if(!window.confirm("Deseja realmente excluir esta regra?")) return;
         try {
@@ -125,8 +120,17 @@ const CondicoesComerciais = () => {
 
     return (
         <div className={styles['dashboard-container']}>
+
+            {/* SIDEBAR COM MENU MOBILE */}
             <nav className={styles.sidebar}>
-                <ul>
+                <div className={styles.mobileHeader}>
+                    <span className={styles.mobileLogo}>Menu Fornecedor</span>
+                    <button className={styles.menuToggle} onClick={() => setMenuOpen(!menuOpen)}>
+                        {menuOpen ? <FiX size={24} /> : <FiMoreVertical size={24} />}
+                    </button>
+                </div>
+
+                <ul className={menuOpen ? styles.open : ''}>
                     <li><Link href="/fornecedor/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
                     <li><Link href="/fornecedor/pedidos-recebidos" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Pedidos Recebidos</span></div></Link></li>
                     <li><Link href="/fornecedor/meus-produtos" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Meus Produtos</span></div></Link></li>
@@ -142,18 +146,24 @@ const CondicoesComerciais = () => {
                     <h1>Condições Comerciais Regionais</h1>
                 </header>
 
-                <section className={styles.actionsSection} style={{display:'flex', justifyContent:'space-between', marginBottom: 20}}>
+                <section className={styles.actionsSection}>
                     <div className={styles.searchWrapper}>
-                        <input type="text" placeholder="Buscar Estado (UF)" className={styles.searchInput} value={filtroBusca} onChange={e => setFiltroBusca(e.target.value)} />
+                        <input
+                            type="text"
+                            placeholder="Buscar Estado (UF)"
+                            className={styles.searchInput}
+                            value={filtroBusca}
+                            onChange={e => setFiltroBusca(e.target.value)}
+                        />
                     </div>
-                    <button className={styles.submitButton} onClick={() => openModal()} style={{width: 'auto', padding: '10px 20px', display:'flex', gap: 10, alignItems:'center'}}>
+                    <button className={styles.newCampaignButton} onClick={() => openModal()}>
                         <FiPlus /> Nova Regra
                     </button>
                 </section>
 
                 <section className={styles.tableSection}>
                     <div className={styles.tableWrapper}>
-                        <table className={styles.dataTable}>
+                        <table className={styles.table}>
                             <thead>
                             <tr>
                                 <th>Estado</th>
@@ -167,16 +177,16 @@ const CondicoesComerciais = () => {
                             <tbody>
                             {condicoesFiltradas.map((c) => (
                                 <tr key={c.id}>
-                                    <td><b>{c.estado}</b></td>
-                                    <td>{c.prazoPagamentoDias}</td>
-                                    <td>{c.cashbackPercentual}%</td>
-                                    <td style={{ color: c.ajusteUnitarioAplicado > 0 ? 'red' : 'green' }}>
+                                    <td data-label="Estado"><b>{c.estado}</b></td>
+                                    <td data-label="Prazo">{c.prazoPagamentoDias}</td>
+                                    <td data-label="Cashback">{c.cashbackPercentual}%</td>
+                                    <td data-label="Ajuste" style={{ color: c.ajusteUnitarioAplicado > 0 ? 'red' : 'green' }}>
                                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(c.ajusteUnitarioAplicado)}
                                     </td>
-                                    <td>{c.ativo ? 'Ativo' : 'Inativo'}</td>
-                                    <td>
-                                        <button onClick={() => openModal(c)} style={{marginRight: 10, border:'none', background:'transparent', cursor:'pointer', color:'#007bff'}}><FiEdit size={18}/></button>
-                                        <button onClick={() => handleDelete(c.id)} style={{border:'none', background:'transparent', cursor:'pointer', color:'#dc3545'}}><FiTrash2 size={18}/></button>
+                                    <td data-label="Status">{c.ativo ? 'Ativo' : 'Inativo'}</td>
+                                    <td data-label="Ações" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                                        <button onClick={() => openModal(c)} className={styles.btnEdit} title="Editar"><FiEdit size={18}/></button>
+                                        <button onClick={() => handleDelete(c.id)} className={styles.btnDelete} title="Excluir"><FiTrash2 size={18}/></button>
                                     </td>
                                 </tr>
                             ))}
@@ -185,39 +195,83 @@ const CondicoesComerciais = () => {
                     </div>
                 </section>
 
-                {/* MODAL SIMPLES (Inline Styles para garantir funcionamento sem CSS extra) */}
+                {/* MODAL RESPONSIVO */}
                 {isModalOpen && (
-                    <div style={{
-                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
-                    }}>
-                        <div style={{ backgroundColor: 'white', padding: 30, borderRadius: 8, width: 400 }}>
-                            <h2 style={{marginTop:0}}>{formData.id ? 'Editar Regra' : 'Nova Regra'}</h2>
-                            <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap: 15}}>
-                                <div>
-                                    <label>Estado (UF)</label>
-                                    <input className={styles.input} style={{width:'100%', padding: 8}} type="text" name="estado" maxLength="2" value={formData.estado} onChange={handleChange} required />
+                    <div className={styles.modalOverlay}>
+                        <div className={styles.modalContent}>
+                            <div className={styles.modalHeader}>
+                                <h2 className={styles.modalTitle}>{formData.id ? 'Editar Regra' : 'Nova Regra'}</h2>
+                                <button onClick={closeModal} className={styles.closeModalBtn}><FiX size={24} /></button>
+                            </div>
+
+                            <form onSubmit={handleSubmit} className={styles.modalForm}>
+                                <div className={styles.rowGroup}>
+                                    <div className={styles.inputGroup}>
+                                        <label>Estado (UF)</label>
+                                        <input
+                                            className={styles.modalInput}
+                                            type="text"
+                                            name="estado"
+                                            maxLength="2"
+                                            value={formData.estado}
+                                            onChange={handleChange}
+                                            required
+                                            placeholder="SP"
+                                        />
+                                    </div>
+                                    <div className={styles.inputGroup}>
+                                        <label>Prazo (Dias)</label>
+                                        <input
+                                            className={styles.modalInput}
+                                            type="number"
+                                            name="prazoPagamentoDias"
+                                            value={formData.prazoPagamentoDias}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label>Prazo Pagamento (Dias)</label>
-                                    <input style={{width:'100%', padding: 8}} type="number" name="prazoPagamentoDias" value={formData.prazoPagamentoDias} onChange={handleChange} required />
+
+                                <div className={styles.rowGroup}>
+                                    <div className={styles.inputGroup}>
+                                        <label>Cashback (%)</label>
+                                        <input
+                                            className={styles.modalInput}
+                                            type="number"
+                                            step="0.01"
+                                            name="cashbackPercentual"
+                                            value={formData.cashbackPercentual}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
+                                    <div className={styles.inputGroup}>
+                                        <label>Ajuste Preço (R$)</label>
+                                        <input
+                                            className={styles.modalInput}
+                                            type="number"
+                                            step="0.01"
+                                            name="ajusteUnitarioAplicado"
+                                            value={formData.ajusteUnitarioAplicado}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label>Cashback (%)</label>
-                                    <input style={{width:'100%', padding: 8}} type="number" step="0.01" name="cashbackPercentual" value={formData.cashbackPercentual} onChange={handleChange} />
+
+                                <div className={styles.checkboxGroup}>
+                                    <input
+                                        type="checkbox"
+                                        id="ativoCheck"
+                                        name="ativo"
+                                        checked={formData.ativo}
+                                        onChange={handleChange}
+                                        style={{width: '20px', height: '20px'}}
+                                    />
+                                    <label htmlFor="ativoCheck">Regra Ativa</label>
                                 </div>
-                                <div>
-                                    <label>Ajuste Preço (R$)</label>
-                                    <input style={{width:'100%', padding: 8}} type="number" step="0.01" name="ajusteUnitarioAplicado" value={formData.ajusteUnitarioAplicado} onChange={handleChange} />
-                                    <small>Use negativo para desconto.</small>
-                                </div>
-                                <div style={{display:'flex', gap: 10}}>
-                                    <input type="checkbox" name="ativo" checked={formData.ativo} onChange={handleChange} />
-                                    <label>Ativo</label>
-                                </div>
-                                <div style={{display:'flex', justifyContent:'flex-end', gap: 10, marginTop: 10}}>
-                                    <button type="button" onClick={closeModal} style={{padding:'8px 15px', cursor:'pointer'}}>Cancelar</button>
-                                    <button type="submit" style={{padding:'8px 15px', backgroundColor:'#0c2b4e', color:'white', border:'none', cursor:'pointer'}}>Salvar</button>
+
+                                <div className={styles.modalActions}>
+                                    <button type="button" onClick={closeModal} className={styles.btnCancel}>Cancelar</button>
+                                    <button type="submit" className={styles.btnSave}>Salvar</button>
                                 </div>
                             </form>
                         </div>

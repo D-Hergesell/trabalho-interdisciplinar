@@ -12,11 +12,13 @@ import {
     FiTag,
     FiSettings,
     FiUser,
-    FiLogOut
+    FiLogOut,
+    FiMoreVertical,
+    FiX
 } from 'react-icons/fi';
 import { FaUserCircle } from 'react-icons/fa';
 
-function Dashboard  ()  {
+function Dashboard() {
     const router = useRouter();
     const [dashboardData, setDashboardData] = useState({
         totalRecebidos: 0,
@@ -28,51 +30,33 @@ function Dashboard  ()  {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Estado para o Menu Mobile
+    const [menuOpen, setMenuOpen] = useState(false);
+
     useEffect(() => {
         async function fetchData() {
             try {
-                // 1. Recupera o usuário do LocalStorage
                 const usuarioStorage = localStorage.getItem('usuario');
                 const usuario = usuarioStorage ? JSON.parse(usuarioStorage) : null;
 
-                // 2. Se não tiver fornecedorId, manda pro login ou avisa
                 if (!usuario || !usuario.fornecedorId) {
                     console.warn("Usuário sem vínculo de fornecedor.");
                     setLoading(false);
                     return;
                 }
 
-                // 3. Buscas em paralelo para agilizar
                 const [resPedidos, resCampanhas] = await Promise.all([
-                    // Busca pedidos específicos deste fornecedor
                     api.get(`/api/v1/pedidos/fornecedor/${usuario.fornecedorId}`),
-                    // Busca todas as campanhas (o filtro será manual pois não há endpoint específico ainda)
                     api.get('/api/v1/campanhas')
                 ]);
 
                 const pedidosApi = resPedidos.data || [];
                 const campanhasApi = resCampanhas.data || [];
 
-                // --- Cálculos ---
-
-                // Total de Pedidos
                 const totalRecebidos = pedidosApi.length;
-
-                // Valor Total Vendido
-                const valorTotal = pedidosApi.reduce(
-                    (acc, item) => acc + (item.valorTotal || 0),
-                    0
-                );
-
-                // Total Enviados ou Entregues
-                const totalEnviados = pedidosApi.filter(
-                    p => p.status === 'ENVIADO' || p.status === 'ENTREGUE'
-                ).length;
-
-                // Campanhas Ativas deste Fornecedor
-                const totalCampanhasAtivas = campanhasApi.filter(c =>
-                    String(c.fornecedorId) === String(usuario.fornecedorId) && c.ativo === true
-                ).length;
+                const valorTotal = pedidosApi.reduce((acc, item) => acc + (item.valorTotal || 0), 0);
+                const totalEnviados = pedidosApi.filter(p => p.status === 'ENVIADO' || p.status === 'ENTREGUE').length;
+                const totalCampanhasAtivas = campanhasApi.filter(c => String(c.fornecedorId) === String(usuario.fornecedorId) && c.ativo === true).length;
 
                 setDashboardData({
                     totalRecebidos,
@@ -81,9 +65,9 @@ function Dashboard  ()  {
                     totalCampanhasAtivas,
                 });
 
-                // Prepara a tabela (Pega os 5 últimos pedidos)
                 const pedidosRecentes = pedidosApi
-                    .slice(0, 5) // Pega apenas os 5 primeiros
+                    .sort((a, b) => new Date(b.dataPedido) - new Date(a.dataPedido)) // Ordena do mais recente
+                    .slice(0, 5)
                     .map((p) => ({
                         id: p.id,
                         entity: p.lojaNome || 'Loja não informada',
@@ -112,32 +96,56 @@ function Dashboard  ()  {
         { label: 'Campanhas Ativas', value: dashboardData.totalCampanhasAtivas },
     ];
 
-    // Componente auxiliar para item do menu
-    const NavItem = ({ icon, label, href, active }) => (
-        <li className={active ? styles.active : ''}>
-            <Link href={href} className={styles.linkReset}>
-                <div className={styles.menuItem}>
-                    {icon}
-                    <span>{label}</span>
-                </div>
-            </Link>
-        </li>
-    );
-
     return (
         <div className={styles['dashboard-container']}>
-            {/* SIDEBAR */}
-            <aside className={styles.sidebar}>
-                <ul>
-                    <NavItem icon={<FiGrid size={20} />} label="Painel" href="/fornecedor/dashboard" active />
-                    <NavItem icon={<FiShoppingBag size={20} />} label="Pedidos Recebidos" href="/fornecedor/pedidos-recebidos" />
-                    <NavItem icon={<FiPackage size={20} />} label="Meus Produtos" href="/fornecedor/meus-produtos" />
-                    <NavItem icon={<FiTag size={20} />} label="Campanhas" href="/fornecedor/campanhas" />
-                    <NavItem icon={<FiSettings size={20} />} label="Condições Comerciais" href="/fornecedor/condicoes-comerciais" />
-                    <NavItem icon={<FiUser size={20} />} label="Perfil" href="/fornecedor/perfil" />
-                    <NavItem icon={<FiLogOut size={20} />} label="Sair" href="/" />
+
+            {/* SIDEBAR COM MENU MOBILE */}
+            <nav className={styles.sidebar}>
+                <div className={styles.mobileHeader}>
+                    <span className={styles.mobileLogo}>Menu Fornecedor</span>
+                    <button className={styles.menuToggle} onClick={() => setMenuOpen(!menuOpen)}>
+                        {menuOpen ? <FiX size={24} /> : <FiMoreVertical size={24} />}
+                    </button>
+                </div>
+
+                <ul className={menuOpen ? styles.open : ''}>
+                    <li className={styles.active}>
+                        <Link href="/fornecedor/dashboard" className={styles.linkReset}>
+                            <div className={styles.menuItem}><FiGrid size={20} /><span>Painel</span></div>
+                        </Link>
+                    </li>
+                    <li>
+                        <Link href="/fornecedor/pedidos-recebidos" className={styles.linkReset}>
+                            <div className={styles.menuItem}><FiShoppingBag size={20} /><span>Pedidos Recebidos</span></div>
+                        </Link>
+                    </li>
+                    <li>
+                        <Link href="/fornecedor/meus-produtos" className={styles.linkReset}>
+                            <div className={styles.menuItem}><FiPackage size={20} /><span>Meus Produtos</span></div>
+                        </Link>
+                    </li>
+                    <li>
+                        <Link href="/fornecedor/campanhas" className={styles.linkReset}>
+                            <div className={styles.menuItem}><FiTag size={20} /><span>Campanhas</span></div>
+                        </Link>
+                    </li>
+                    <li>
+                        <Link href="/fornecedor/condicoes-comerciais" className={styles.linkReset}>
+                            <div className={styles.menuItem}><FiSettings size={20} /><span>Condições Comerciais</span></div>
+                        </Link>
+                    </li>
+                    <li>
+                        <Link href="/fornecedor/perfil" className={styles.linkReset}>
+                            <div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div>
+                        </Link>
+                    </li>
+                    <li>
+                        <Link href="/" className={styles.linkReset}>
+                            <div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div>
+                        </Link>
+                    </li>
                 </ul>
-            </aside>
+            </nav>
 
             {/* MAIN */}
             <main className={styles['main-content']}>
@@ -175,14 +183,14 @@ function Dashboard  ()  {
                             </thead>
                             <tbody>
                             {loading ? (
-                                <tr><td colSpan="4" style={{textAlign:'center'}}>Carregando...</td></tr>
+                                <tr><td colSpan="4" style={{textAlign:'center', padding:'20px'}}>Carregando...</td></tr>
                             ) : orders.length > 0 ? (
                                 orders.map((order, index) => (
                                     <tr key={index}>
-                                        <td>{String(order.id).substring(0, 8)}</td>
-                                        <td>{order.entity}</td>
-                                        <td>{formatCurrency(order.value)}</td>
-                                        <td>{order.status}</td>
+                                        <td data-label="Nº do Pedido">{String(order.id).substring(0, 8)}</td>
+                                        <td data-label="Loja">{order.entity}</td>
+                                        <td data-label="Valor">{formatCurrency(order.value)}</td>
+                                        <td data-label="Status">{order.status}</td>
                                     </tr>
                                 ))
                             ) : (
@@ -200,6 +208,5 @@ function Dashboard  ()  {
         </div>
     );
 };
-
 
 export default withAuth(Dashboard, "fornecedor", "/");
