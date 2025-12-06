@@ -1,145 +1,92 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-// IMPORTANTE: Confirme se o arquivo CSS foi criado com EXATAMENTE este nome
 import styles from '../../styles/Condicao.module.css';
 import api from '@/services/api';
 
 import {
-    FiGrid,
-    FiPackage,
-    FiUser,
-    FiLogOut,
-    FiUsers,
-    FiSettings
+    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings
 } from 'react-icons/fi';
 
 const CondicoesComerciais = () => {
     const [condicoes, setCondicoes] = useState([]);
     const [filtroBusca, setFiltroBusca] = useState('');
+    const [loading, setLoading] = useState(true);
 
-    // Carregar condições da API
     useEffect(() => {
         async function fetchData() {
             try {
-                const res = await api.get('/api/condicoes-comerciais');
-                setCondicoes(res.data || []);
+                const usuarioStorage = localStorage.getItem('usuario');
+                const usuario = usuarioStorage ? JSON.parse(usuarioStorage) : null;
+
+                if (!usuario || !usuario.fornecedorId) {
+                    setLoading(false);
+                    return;
+                }
+
+                const res = await api.get('/api/v1/condicoes-estado');
+                const todas = res.data || [];
+
+                // Filtra pelo ID do fornecedor logado
+                const minhasCondicoes = todas.filter(c =>
+                    String(c.fornecedorId) === String(usuario.fornecedorId)
+                );
+
+                setCondicoes(minhasCondicoes);
             } catch (error) {
                 console.error('Erro ao carregar condições comerciais:', error);
-                // Mock de dados para teste visual
-                setCondicoes([
-                    { estado: 'SC', cashback: 10, prazo: 45, desconto: '-' },
-                    { estado: 'PR', cashback: 5, prazo: 30, desconto: '3%' },
-                    { estado: 'RS', cashback: 0, prazo: 20, desconto: '-' }
-                ]);
+            } finally {
+                setLoading(false);
             }
         }
         fetchData();
     }, []);
 
-    // Cálculo dos totais
     const { totalEstados, cashbackMedio, prazoMedio } = useMemo(() => {
         if (!condicoes.length) return { totalEstados: 0, cashbackMedio: 0, prazoMedio: 0 };
 
-        const estadosSet = new Set(condicoes.map(c => (c.estado || c.state || '').toString().trim()).filter(Boolean));
+        const estadosSet = new Set(condicoes.map(c => c.estado).filter(Boolean));
 
-        const apenasNumericos = condicoes.filter(c => typeof c.cashback === 'number' && !Number.isNaN(c.cashback));
-        const somaCashback = apenasNumericos.reduce((acc, c) => acc + (c.cashback || 0), 0);
-        const cashbackMedio = apenasNumericos.length > 0 ? somaCashback / apenasNumericos.length : 0;
+        // Média Cashback
+        const comCashback = condicoes.filter(c => c.cashbackPercentual > 0);
+        const somaCashback = comCashback.reduce((acc, c) => acc + (c.cashbackPercentual || 0), 0);
+        const cashbackMedio = comCashback.length > 0 ? somaCashback / comCashback.length : 0;
 
-        const comPrazo = condicoes.filter(c => typeof c.prazo === 'number' && !Number.isNaN(c.prazo));
-        const somaPrazo = comPrazo.reduce((acc, c) => acc + (c.prazo || 0), 0);
+        // Média Prazo
+        const comPrazo = condicoes.filter(c => c.prazoPagamentoDias > 0);
+        const somaPrazo = comPrazo.reduce((acc, c) => acc + (c.prazoPagamentoDias || 0), 0);
         const prazoMedio = comPrazo.length > 0 ? somaPrazo / comPrazo.length : 0;
 
         return { totalEstados: estadosSet.size, cashbackMedio, prazoMedio };
     }, [condicoes]);
 
-    // Filtro
     const condicoesFiltradas = useMemo(() => {
         if (!filtroBusca.trim()) return condicoes;
         const termo = filtroBusca.toLowerCase();
         return condicoes.filter(c =>
-            [c.estado, c.state, c.condicao, c.desconto, `${c.cashback ?? ''}`, `${c.prazo ?? ''}`]
-                .filter(Boolean)
-                .some(valor => valor.toString().toLowerCase().includes(termo))
+            c.estado.toLowerCase().includes(termo)
         );
     }, [condicoes, filtroBusca]);
 
-    const formatarCashback = valor => `${Number(valor || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`;
-    const formatarPrazo = valor => `${Number(valor || 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} Dias`;
+    const formatarCashback = valor => `${Number(valor || 0).toFixed(2)}%`;
+    const formatarMoeda = valor => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
 
     return (
-        /* Usa colchetes pois a classe tem hífen no CSS */
         <div className={styles['dashboard-container']}>
-
-            {/* Sidebar estruturada igual ao Admin */}
             <nav className={styles.sidebar}>
                 <ul>
-                    <li>
-                        <Link href="/fornecedor/dashboard" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiGrid size={20} />
-                                <span>Dashboard</span>
-                            </div>
-                        </Link>
-                    </li>
-                    <li>
-                        <Link href="/fornecedor/pedidos-recebidos" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiPackage size={20} />
-                                <span>Pedidos Recebidos</span>
-                            </div>
-                        </Link>
-                    </li>
-                    <li>
-                        <Link href="/fornecedor/meus-produtos" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiPackage size={20} />
-                                <span>Meus Produtos</span>
-                            </div>
-                        </Link>
-                    </li>
-                    <li>
-                        <Link href="/fornecedor/campanhas" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiUsers size={20} />
-                                <span>Campanhas</span>
-                            </div>
-                        </Link>
-                    </li>
-
-                    {/* ITEM ATIVO: deve ficar branco com texto azul */}
-                    <li className={styles.active}>
-                        <Link href="/fornecedor/condicoes-comerciais" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiSettings size={20} />
-                                <span>Condições Comerciais</span>
-                            </div>
-                        </Link>
-                    </li>
-
-                    <li>
-                        <Link href="/fornecedor/perfil" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiUser size={20} />
-                                <span>Perfil</span>
-                            </div>
-                        </Link>
-                    </li>
-                    <li>
-                        <Link href="/" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiLogOut size={20} />
-                                <span>Sair</span>
-                            </div>
-                        </Link>
-                    </li>
+                    <li><Link href="/fornecedor/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
+                    <li><Link href="/fornecedor/pedidos-recebidos" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Pedidos Recebidos</span></div></Link></li>
+                    <li><Link href="/fornecedor/meus-produtos" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Meus Produtos</span></div></Link></li>
+                    <li><Link href="/fornecedor/campanhas" className={styles.linkReset}><div className={styles.menuItem}><FiUsers size={20} /><span>Campanhas</span></div></Link></li>
+                    <li className={styles.active}><Link href="/fornecedor/condicoes-comerciais" className={styles.linkReset}><div className={styles.menuItem}><FiSettings size={20} /><span>Condições Comerciais</span></div></Link></li>
+                    <li><Link href="/fornecedor/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li>
+                    <li><Link href="/" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
                 </ul>
             </nav>
 
-            {/* Conteúdo Principal */}
             <main className={styles['main-content']}>
                 <header className={styles.header}>
-                    <h1>Condições Comerciais</h1>
+                    <h1>Condições Comerciais Regionais</h1>
                 </header>
 
                 <section className={styles.actionsSection}>
@@ -147,69 +94,59 @@ const CondicoesComerciais = () => {
                         <div className={styles.searchIconCircle}>🔍</div>
                         <input
                             type="text"
-                            placeholder="Buscar Estado ou condição"
+                            placeholder="Buscar Estado (UF)"
                             className={styles.searchInput}
                             value={filtroBusca}
                             onChange={e => setFiltroBusca(e.target.value)}
                         />
                     </div>
-                    <button
-                        type="button"
-                        className={styles.newCampaignButton}
-                        onClick={() => alert('Nova condição')}
-                    >
-                        + Nova Condição
-                    </button>
                 </section>
 
                 <section className={styles.summarySection}>
                     <div className={styles.summaryBox}>
                         <div className={styles.summaryColumn}>
-                            <span className={styles.summaryLabel}>Estados por Condição</span>
+                            <span className={styles.summaryLabel}>Estados Atendidos</span>
                             <span className={styles.summaryValue}>{totalEstados}</span>
                         </div>
                         <div className={styles.summaryColumn}>
-                            <span className={styles.summaryLabel}>Cashback médio</span>
+                            <span className={styles.summaryLabel}>Média Cashback</span>
                             <span className={styles.summaryValue}>{formatarCashback(cashbackMedio)}</span>
                         </div>
                         <div className={styles.summaryColumn}>
-                            <span className={styles.summaryLabel}>Prazo Médio</span>
-                            <span className={styles.summaryValue}>{formatarPrazo(prazoMedio)}</span>
+                            <span className={styles.summaryLabel}>Média Prazo</span>
+                            <span className={styles.summaryValue}>{Math.round(prazoMedio)} Dias</span>
                         </div>
                     </div>
                 </section>
 
                 <section className={styles.tableSection}>
                     <div className={styles.tableWrapper}>
-                        <div className={styles.spreadsheetHeader}>
-                            <div className={styles.colIndex}></div>
-                            <div className={styles.col}>A</div>
-                            <div className={styles.col}>B</div>
-                            <div className={styles.col}>C</div>
-                            <div className={styles.col}>D</div>
-                        </div>
-
                         <table className={styles.dataTable}>
                             <thead>
                             <tr>
-                                <th className={styles.rowNum}>1</th>
                                 <th>Estado</th>
+                                <th>Prazo Pagamento</th>
                                 <th>Cashback</th>
-                                <th>Prazo</th>
-                                <th>Desconto</th>
+                                <th>Ajuste Unitário</th>
+                                <th>Status</th>
                             </tr>
                             </thead>
                             <tbody>
-                            {condicoesFiltradas.map((c, index) => (
-                                <tr key={index}>
-                                    <td className={styles.rowNum}>{index + 2}</td>
-                                    <td>{c.estado || c.state || '—'}</td>
-                                    <td>{c.cashback != null ? formatarCashback(c.cashback) : '—'}</td>
-                                    <td>{c.prazo != null ? `${c.prazo}` : '—'}</td>
-                                    <td>{c.desconto ?? '-'}</td>
-                                </tr>
-                            ))}
-                            {condicoesFiltradas.length === 0 && (
+                            {loading ? (
+                                <tr><td colSpan={5} className={styles.emptyState}>Carregando...</td></tr>
+                            ) : condicoesFiltradas.length > 0 ? (
+                                condicoesFiltradas.map((c) => (
+                                    <tr key={c.id}>
+                                        <td style={{fontWeight:'bold'}}>{c.estado}</td>
+                                        <td>{c.prazoPagamentoDias} dias</td>
+                                        <td>{c.cashbackPercentual ? `${c.cashbackPercentual}%` : '-'}</td>
+                                        <td style={{ color: c.ajusteUnitarioAplicado > 0 ? 'red' : 'green' }}>
+                                            {c.ajusteUnitarioAplicado ? formatarMoeda(c.ajusteUnitarioAplicado) : '-'}
+                                        </td>
+                                        <td>{c.ativo ? 'Ativo' : 'Inativo'}</td>
+                                    </tr>
+                                ))
+                            ) : (
                                 <tr>
                                     <td colSpan={5} className={styles.emptyState}>
                                         Nenhuma condição comercial encontrada.
