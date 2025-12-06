@@ -1,0 +1,41 @@
+/* Layout Global */
+.dashboard-container { display: flex; min-height: 100vh; background-color: #f4f7fa; font-family: 'Inter', sans-serif; }
+.main-content { flex: 1; padding: 30px 40px; overflow-y: auto; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+.header h1 { font-size: 32px; color: #333; margin: 0; font-weight: 700; }
+.profile-area { display: flex; align-items: center; gap: 10px; color: #555; font-weight: 600; }
+
+/* Sidebar */
+.sidebar { width: 240px; background-color: #0c2b4e; color: white; display: flex; flex-direction: column; padding-top: 20px; }
+.sidebar ul { list-style: none; padding: 0; margin: 0; }
+.sidebar ul li { padding: 18px 30px; cursor: pointer; transition: background 0.2s; border-right: 4px solid transparent; }
+.sidebar ul li:hover:not(.active) { background-color: #1a4a7d; }
+.sidebar ul li.active { background-color: #ffffff; color: #0c2b4e; font-weight: bold; border-radius: 8px 0 0 8px; margin-right: -1px; }
+.menuItem { display: flex; align-items: center; gap: 15px; width: 100%; font-size: 16px; }
+.linkReset { text-decoration: none; color: inherit; display: block; width: 100%; }
+.mobileHeader { display: none; }
+
+/* Cards de Métricas */
+.dashboard-cards { display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; }
+.card { flex: 1; min-width: 220px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid #0c2b4e; }
+.card h3 { font-size: 14px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.card p { font-size: 28px; font-weight: bold; color: #333; margin: 0; }
+
+/* Tabela de Pedidos Recentes */
+.table-section { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.custom-table { width: 100%; border-collapse: collapse; }
+.custom-table th { text-align: left; padding: 15px; border-bottom: 2px solid #eee; color: #555; font-size: 14px; }
+.custom-table td { padding: 15px; border-bottom: 1px solid #eee; color: #333; font-size: 14px; }
+.custom-table tbody tr:last-child td { border-bottom: none; }
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .dashboard-container { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: relative; z-index: 100; }
+    .mobileHeader { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background-color: #0c2b4e; }
+    .mobileLogo { font-weight: bold; font-size: 18px; }
+    .menuToggle { background: none; border: none; color: white; cursor: pointer; }
+    .sidebar ul { display: none; }
+    .sidebar ul.open { display: block; }
+    .dashboard-cards { flex-direction: column; }
+}

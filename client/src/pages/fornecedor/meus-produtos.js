@@ -1,78 +1,51 @@
-// src/pages/meus-produtos.js
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import styles from '../../styles/fornecedorGeral.module.css';
+import styles from '../../styles/FornecedorProdutos.module.css';
 import api from '@/services/api';
 
 import {
-    FiGrid,
-    FiPackage,
-    FiUser,
-    FiLogOut,
-    FiUsers,
-    FiSettings
+    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings
 } from 'react-icons/fi';
 
 const MeusProdutos = () => {
     const [produtos, setProdutos] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // Carregar produtos da API
     useEffect(() => {
         async function fetchData() {
             try {
-                const res = await api.get('/api/produtos'); // ajuste se precisar
-                setProdutos(res.data || []);
+                const usuarioStorage = localStorage.getItem('usuario');
+                const usuario = usuarioStorage ? JSON.parse(usuarioStorage) : null;
+
+                if (!usuario || !usuario.fornecedorId) {
+                    setLoading(false);
+                    return;
+                }
+
+                const res = await api.get('/api/v1/produtos');
+                const todos = res.data || [];
+
+                // Filtrar produtos deste fornecedor
+                const meus = todos.filter(p => String(p.fornecedorId) === String(usuario.fornecedorId));
+
+                setProdutos(meus);
             } catch (error) {
                 console.error('Erro ao carregar produtos:', error);
-
-                // MOCK pra visualizar a tela
-                setProdutos([
-                    {
-                        _id: '1',
-                        nome: 'Refrigerante Lata 350ml',
-                        categoria: 'Bebidas',
-                        preco: 3.5,
-                        estoque: 250
-                    },
-                    {
-                        _id: '2',
-                        nome: 'Água mineral 500ml',
-                        categoria: 'Bebidas',
-                        preco: 2.0,
-                        estoque: 80
-                    },
-                    {
-                        _id: '3',
-                        nome: 'Sabonete 90g',
-                        categoria: 'Higiene',
-                        preco: 1.8,
-                        estoque: 30
-                    },
-                    {
-                        _id: '4',
-                        nome: 'Arroz',
-                        categoria: 'Comida',
-                        preco: 5.0,
-                        estoque: 20
-                    }
-                ]);
+            } finally {
+                setLoading(false);
             }
         }
 
         fetchData();
     }, []);
 
-    // Totais (bem no estilo do mock)
     const { totalProdutos, totalEstoqueBaixo, totalCategorias } = useMemo(() => {
         const total = produtos.length;
-
-        // critério de "baixo estoque"
-        const estoqueBaixo = produtos.filter(p => (p.estoque ?? 0) <= 50).length;
+        // Considera estoque baixo se < 10
+        const estoqueBaixo = produtos.filter(p => (p.quantidadeEstoque || 0) <= 10).length;
 
         const categoriasSet = new Set(
-            produtos
-                .map(p => p.categoria || p.category)
-                .filter(Boolean)
+            produtos.map(p => p.nomeCategoria).filter(Boolean)
         );
 
         return {
@@ -83,94 +56,31 @@ const MeusProdutos = () => {
     }, [produtos]);
 
     const formatarPreco = (valor = 0) =>
-        new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(valor);
+        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
 
     return (
         <div className={styles['dashboard-container']}>
-            {/* Sidebar */}
             <nav className={styles.sidebar}>
                 <ul>
-                    <li>
-                        <Link href="/fornecedor/dashboard" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiGrid size={20} />
-                                <span>Dashboard</span>
-                            </div>
-                        </Link>
-                    </li>
-
-                    <li>
-                        <Link href="/fornecedor/pedidos-recebidos" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiPackage size={20} />
-                                <span>Pedidos Recebidos</span>
-                            </div>
-                        </Link>
-                    </li>
-
-                    <li className={styles.active}>
-                        <Link href="/fornecedor/meus-produtos" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiPackage size={20} />
-                                <span>Meus Produtos</span>
-                            </div>
-                        </Link>
-                    </li>
-
-                    <li>
-                        <Link href="/fornecedor/campanhas" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiUsers size={20} />
-                                <span>Campanhas</span>
-                            </div>
-                        </Link>
-                    </li>
-
-                    <li>
-                        <Link href="/fornecedor/condicoes-comerciais" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiSettings size={20} />
-                                <span>Condições Comerciais</span>
-                            </div>
-                        </Link>
-                    </li>
-
-                    <li>
-                        <Link href="/fornecedor/perfil" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiUser size={20} />
-                                <span>Perfil</span>
-                            </div>
-                        </Link>
-                    </li>
-
-                    <li>
-                        <Link href="/" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiLogOut size={20} />
-                                <span>Sair</span>
-                            </div>
-                        </Link>
-                    </li>
+                    <li><Link href="/fornecedor/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
+                    <li><Link href="/fornecedor/pedidos-recebidos" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Pedidos Recebidos</span></div></Link></li>
+                    <li className={styles.active}><Link href="/fornecedor/meus-produtos" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Meus Produtos</span></div></Link></li>
+                    <li><Link href="/fornecedor/campanhas" className={styles.linkReset}><div className={styles.menuItem}><FiUsers size={20} /><span>Campanhas</span></div></Link></li>
+                    <li><Link href="/fornecedor/condicoes-comerciais" className={styles.linkReset}><div className={styles.menuItem}><FiSettings size={20} /><span>Condições Comerciais</span></div></Link></li>
+                    <li><Link href="/fornecedor/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li>
+                    <li><Link href="/" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
                 </ul>
             </nav>
 
-            {/* Conteúdo principal */}
             <main className={styles['main-content']}>
-                {/* Título */}
                 <header className={styles.header}>
                     <h1>Meus Produtos</h1>
                 </header>
 
-                {/* Card com Totais / Estoque Baixo / Categorias
-            (reaproveita summarySection/summaryBox/etc do Loja.module.css) */}
                 <section className={styles.summarySection}>
                     <div className={styles.summaryBox}>
                         <div className={styles.summaryColumn}>
-                            <span className={styles.summaryLabel}>Totais de Produto</span>
+                            <span className={styles.summaryLabel}>Total Cadastrado</span>
                             <span className={styles.summaryValue}>{totalProdutos}</span>
                         </div>
                         <div className={styles.summaryColumn}>
@@ -184,22 +94,6 @@ const MeusProdutos = () => {
                     </div>
                 </section>
 
-                {/* Título + Botão Novo Produto */}
-                <section className={styles.productsHeaderSection}>
-                    <h2>Meus Produtos</h2>
-                    <button
-                        type="button"
-                        /* aqui eu já reaproveito o MESMO estilo do botão de nova campanha */
-                        className={styles.newCampaignButton}
-                        onClick={() =>
-                            alert('Aqui entra a ação de cadastrar novo produto')
-                        }
-                    >
-                        + Novo Produto
-                    </button>
-                </section>
-
-                {/* Tabela de produtos (reaproveita tableSection/table/tableWrapper) */}
                 <section className={styles.tableSection}>
                     <div className={styles.tableWrapper}>
                         <table className={styles.table}>
@@ -207,25 +101,29 @@ const MeusProdutos = () => {
                             <tr>
                                 <th>Produto</th>
                                 <th>Categoria</th>
-                                <th>Preço</th>
+                                <th>Preço Base</th>
                                 <th>Estoque</th>
+                                <th>Status</th>
                             </tr>
                             </thead>
                             <tbody>
-                            {produtos.map((p, index) => (
-                                <tr key={p._id || index}>
-                                    <td>{p.nome || p.name || '—'}</td>
-                                    <td>{p.categoria || p.category || '—'}</td>
-                                    <td>{formatarPreco(p.preco ?? p.price ?? 0)}</td>
-                                    <td>{p.estoque ?? p.stock ?? 0}</td>
-                                </tr>
-                            ))}
-
-                            {produtos.length === 0 && (
+                            {loading ? (
+                                <tr><td colSpan={5} className={styles.emptyState}>Carregando...</td></tr>
+                            ) : produtos.length > 0 ? (
+                                produtos.map((p) => (
+                                    <tr key={p.id}>
+                                        <td>{p.nome}</td>
+                                        <td>{p.nomeCategoria || 'Geral'}</td>
+                                        <td>{formatarPreco(p.precoBase)}</td>
+                                        <td style={{ color: p.quantidadeEstoque <= 10 ? 'red' : 'inherit', fontWeight: p.quantidadeEstoque <= 10 ? 'bold' : 'normal'}}>
+                                            {p.quantidadeEstoque}
+                                        </td>
+                                        <td>{p.ativo ? 'Ativo' : 'Inativo'}</td>
+                                    </tr>
+                                ))
+                            ) : (
                                 <tr>
-                                    <td colSpan={4} className={styles.emptyState}>
-                                        Nenhum produto cadastrado.
-                                    </td>
+                                    <td colSpan={5} className={styles.emptyState}>Nenhum produto encontrado.</td>
                                 </tr>
                             )}
                             </tbody>

@@ -1,54 +1,44 @@
-// src/pages/campanhas.js
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import styles from '../../styles/fornecedorGeral.module.css';
+import styles from '../../styles/FornecedorCampanhas.module.css';
 import api from '@/services/api';
 
 import {
-    FiGrid,
-    FiPackage,
-    FiUser,
-    FiLogOut,
-    FiUsers,
-    FiTag
+    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiTag
 } from 'react-icons/fi';
 
 const Campanhas = () => {
     const [campanhas, setCampanhas] = useState([]);
     const [filtroBusca, setFiltroBusca] = useState('');
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         async function fetchData() {
             try {
-                const res = await api.get('/api/campanhas'); // ajuste o endpoint se precisar
-                setCampanhas(res.data || []);
+                // 1. Identificar Fornecedor Logado
+                const usuarioStorage = localStorage.getItem('usuario');
+                const usuario = usuarioStorage ? JSON.parse(usuarioStorage) : null;
+
+                if (!usuario || !usuario.fornecedorId) {
+                    console.warn("Usuário não é fornecedor ou não está logado.");
+                    setLoading(false);
+                    return;
+                }
+
+                // 2. Buscar Campanhas (Backend não tem endpoint específico de filtro, buscamos todas e filtramos aqui)
+                const res = await api.get('/api/v1/campanhas');
+                const todasCampanhas = res.data || [];
+
+                // 3. Filtrar apenas deste fornecedor
+                const minhasCampanhas = todasCampanhas.filter(c =>
+                    String(c.fornecedorId) === String(usuario.fornecedorId)
+                );
+
+                setCampanhas(minhasCampanhas);
             } catch (error) {
                 console.error('Erro ao carregar campanhas:', error);
-
-                // MOCK pra visualizar a tela
-                setCampanhas([
-                    {
-                        _id: '1',
-                        nome: 'Cashback 10% SC',
-                        tipo: 'Valor',
-                        condicao: 'Compra acima de',
-                        status: 'Ativa'
-                    },
-                    {
-                        _id: '2',
-                        nome: 'Brinde 10 Unid',
-                        tipo: 'Quantidade',
-                        condicao: 'Acima de 10 Unid',
-                        status: 'Inativa'
-                    },
-                    {
-                        _id: '3',
-                        nome: 'Desconto R$',
-                        tipo: 'Valor',
-                        condicao: 'Acima de R$1000',
-                        status: 'Ativa'
-                    }
-                ]);
+            } finally {
+                setLoading(false);
             }
         }
 
@@ -57,109 +47,57 @@ const Campanhas = () => {
 
     const { totalCampanhas, totalInativas, totalAtivas } = useMemo(() => {
         const total = campanhas.length;
-        const inativas = campanhas.filter(
-            c => (c.status || '').toLowerCase() === 'inativa'
-        ).length;
-        const ativas = campanhas.filter(
-            c => (c.status || '').toLowerCase() === 'ativa'
-        ).length;
+        const inativas = campanhas.filter(c => c.ativo === false).length;
+        const ativas = campanhas.filter(c => c.ativo === true).length;
 
-        return {
-            totalCampanhas: total,
-            totalInativas: inativas,
-            totalAtivas: ativas
-        };
+        return { totalCampanhas: total, totalInativas: inativas, totalAtivas: ativas };
     }, [campanhas]);
 
     const campanhasFiltradas = useMemo(() => {
         if (!filtroBusca.trim()) return campanhas;
-
         const termo = filtroBusca.toLowerCase();
         return campanhas.filter(c =>
-            [c.nome, c.condicao, c.tipo, c.status]
-                .filter(Boolean)
-                .some(v => v.toLowerCase().includes(termo))
+            [c.nome, c.tipo].filter(Boolean).some(v => v.toLowerCase().includes(termo))
         );
     }, [campanhas, filtroBusca]);
 
+    // Helper para formatar o tipo de campanha vindo do Java
+    const formatarTipo = (tipo) => {
+        const mapa = {
+            'valor_compra': 'Valor Mínimo',
+            'quantidade_produto': 'Qtd. Produto',
+            'percentual_produto': 'Desconto %'
+        };
+        return mapa[tipo] || tipo;
+    };
+
+    // Helper para descrever a condição
+    const formatarCondicao = (c) => {
+        if (c.tipo === 'valor_compra') return `Min: R$ ${c.valorMinimoCompra}`;
+        if (c.tipo === 'quantidade_produto') return `Min: ${c.quantidadeMinimaProduto} un.`;
+        if (c.tipo === 'percentual_produto') return `${c.percentualDesconto}% OFF`;
+        return '-';
+    };
+
     return (
         <div className={styles['dashboard-container']}>
-            {/* Sidebar reaproveitando o estilo da Loja */}
             <nav className={styles.sidebar}>
                 <ul>
-                    <li>
-                        <Link href="/fornecedor/dashboard" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiGrid size={20} />
-                                <span>Dashboard</span>
-                            </div>
-                        </Link>
-                    </li>
-
-                    <li>
-                        <Link href="/fornecedor/pedidos-recebidos" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiPackage size={20} />
-                                <span>Pedidos Recebidos</span>
-                            </div>
-                        </Link>
-                    </li>
-
-                    <li>
-                        <Link href="/fornecedor/meus-produtos" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiPackage size={20} />
-                                <span>Meus Produtos</span>
-                            </div>
-                        </Link>
-                    </li>
-
-                    <li className={styles.active}>
-                        <Link href="/fornecedor/campanhas" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiTag size={20} />
-                                <span>Campanhas</span>
-                            </div>
-                        </Link>
-                    </li>
-
-                    <li>
-                        <Link href="/fornecedor/condicoes-comerciais" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiUsers size={20} />
-                                <span>Condições Comerciais</span>
-                            </div>
-                        </Link>
-                    </li>
-
-                    <li>
-                        <Link href="/fornecedor/perfil" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiUser size={20} />
-                                <span>Perfil</span>
-                            </div>
-                        </Link>
-                    </li>
-
-                    <li>
-                        <Link href="/" className={styles.linkReset}>
-                            <div className={styles.menuItem}>
-                                <FiLogOut size={20} />
-                                <span>Sair</span>
-                            </div>
-                        </Link>
-                    </li>
+                    <li><Link href="/fornecedor/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
+                    <li><Link href="/fornecedor/pedidos-recebidos" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Pedidos Recebidos</span></div></Link></li>
+                    <li><Link href="/fornecedor/meus-produtos" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Meus Produtos</span></div></Link></li>
+                    <li className={styles.active}><Link href="/fornecedor/campanhas" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Campanhas</span></div></Link></li>
+                    <li><Link href="/fornecedor/condicoes-comerciais" className={styles.linkReset}><div className={styles.menuItem}><FiUsers size={20} /><span>Condições Comerciais</span></div></Link></li>
+                    <li><Link href="/fornecedor/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li>
+                    <li><Link href="/" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
                 </ul>
             </nav>
 
-            {/* Conteúdo principal */}
             <main className={styles['main-content']}>
-                {/* Título principal */}
                 <header className={styles.header}>
                     <h1>Campanhas Promocionais</h1>
                 </header>
 
-                {/* Card com totais de campanhas */}
                 <section className={styles.summarySection}>
                     <div className={styles.summaryBox}>
                         <div className={styles.summaryColumn}>
@@ -177,31 +115,19 @@ const Campanhas = () => {
                     </div>
                 </section>
 
-                {/* Barra de busca + botão Nova Campanha */}
                 <section className={styles.actionsSection}>
                     <div className={styles.searchWrapper}>
                         <div className={styles.searchIconCircle}>🔍</div>
                         <input
                             type="text"
-                            placeholder="Buscar produto ou loja"
+                            placeholder="Buscar campanha..."
                             className={styles.searchInput}
                             value={filtroBusca}
                             onChange={e => setFiltroBusca(e.target.value)}
                         />
                     </div>
-
-                    <button
-                        type="button"
-                        className={styles.newCampaignButton}
-                        onClick={() =>
-                            alert('Aqui entra o fluxo de criar nova campanha')
-                        }
-                    >
-                        + Nova Campanha
-                    </button>
                 </section>
 
-                {/* Tabela de campanhas */}
                 <section className={styles.tableSection}>
                     <div className={styles.tableWrapper}>
                         <table className={styles.table}>
@@ -214,16 +140,22 @@ const Campanhas = () => {
                             </tr>
                             </thead>
                             <tbody>
-                            {campanhasFiltradas.map((c, index) => (
-                                <tr key={c._id || index}>
-                                    <td>{c.nome || '—'}</td>
-                                    <td>{c.tipo || '—'}</td>
-                                    <td>{c.condicao || '—'}</td>
-                                    <td>{c.status || '—'}</td>
-                                </tr>
-                            ))}
-
-                            {campanhasFiltradas.length === 0 && (
+                            {loading ? (
+                                <tr><td colSpan={4} className={styles.emptyState}>Carregando...</td></tr>
+                            ) : campanhasFiltradas.length > 0 ? (
+                                campanhasFiltradas.map((c) => (
+                                    <tr key={c.id}>
+                                        <td>{c.nome}</td>
+                                        <td>{formatarTipo(c.tipo)}</td>
+                                        <td>{formatarCondicao(c)}</td>
+                                        <td>
+                                            <span style={{ color: c.ativo ? 'green' : 'red', fontWeight: 'bold' }}>
+                                                {c.ativo ? 'Ativa' : 'Inativa'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
                                 <tr>
                                     <td colSpan={4} className={styles.emptyState}>
                                         Nenhuma campanha encontrada.
