@@ -35,7 +35,104 @@
 .table td { padding: 15px; border-bottom: 1px solid #eee; color: #444; font-size: 14px; }
 .emptyState { text-align: center; padding: 30px; color: #888; }
 
-/* Responsividade */
+/* =======================================================
+   ESTILOS DO MODAL (NOVO)
+   ======================================================= */
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    padding: 20px; /* Garante espaço nas bordas no mobile */
+}
+
+.modalContent {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    width: 550px; /* Largura padrão Desktop */
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modalTitle {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 22px;
+}
+
+.modalForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.rowGroup {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+}
+
+.modalInput, .modalSelect, .modalTextarea {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 15px;
+    width: 100%;
+    background-color: #fff;
+}
+
+.modalTextarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btnCancel {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background: white;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btnSave {
+    padding: 10px 20px;
+    border-radius: 6px;
+    background: #0c2b4e;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* =======================================================
+   RESPONSIVIDADE
+   ======================================================= */
 @media (max-width: 768px) {
     .dashboard-container { flex-direction: column; }
     .sidebar { width: 100%; height: auto; }
@@ -43,4 +140,30 @@
     .sidebar ul { display: none; }
     .sidebar ul.open { display: block; }
     .summaryBox { flex-direction: column; gap: 15px; }
+
+    /* Ajustes do Modal no Mobile */
+    .modalContent {
+        width: 100%; /* Ocupa largura total disponível */
+        padding: 20px;
+        max-height: 95vh;
+    }
+
+    /* Empilha os campos que estavam lado a lado */
+    .rowGroup {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .modalInput, .modalSelect {
+        font-size: 16px; /* Evita zoom no iOS */
+        height: 48px; /* Área de toque maior */
+    }
+
+    .btnSave, .btnCancel {
+        flex: 1; /* Botões dividem o espaço */
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 }

@@ -10,9 +10,9 @@
     background-color: #f4f7fa;
 }
 
-/* --- Sidebar --- */
+/* --- Sidebar (Desktop) --- */
 .sidebar {
-    width: 240px;
+    width: 260px;
     background-color: #0c2b4e;
     color: white;
     display: flex;
@@ -28,34 +28,34 @@
 }
 
 .sidebar ul li {
-    padding: 18px 30px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    font-size: 16px;
-    font-weight: 500;
-    border-right: 4px solid transparent;
-    transition: background-color 0.2s, color 0.2s;
+    transition: all 0.2s ease;
 }
 
 .menuItem {
     display: flex;
     align-items: center;
     gap: 15px;
+    padding: 18px 30px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #b0c4de;
+    transition: all 0.2s;
     width: 100%;
 }
 
-.sidebar ul li:hover:not(.active) {
-    background-color: #1a4a7d;
+.sidebar ul li:hover .menuItem {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
 }
 
-.sidebar ul li.active {
+.active .menuItem {
     background-color: #ffffff;
     color: #0c2b4e;
     font-weight: bold;
+    border-left: 5px solid #1890ff;
     border-radius: 8px 0 0 8px;
     margin-right: -1px;
-    position: relative;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
@@ -66,6 +66,7 @@
     display: block;
 }
 
+/* Esconde header mobile no desktop */
 .mobileHeader {
     display: none;
 }
@@ -221,18 +222,25 @@
    RESPONSIVIDADE (Mobile)
    ======================================================= */
 @media (max-width: 768px) {
+    /* 1. Layout em Coluna */
     .dashboard-container {
         flex-direction: column;
     }
 
+    /* 2. Sidebar vira Menu Superior Fixo */
     .sidebar {
         width: 100%;
         height: auto;
         padding: 0;
-        position: relative;
+        background-color: #0c2b4e;
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 0;
         z-index: 1000;
     }
 
+    /* Header Mobile com Toggle */
     .mobileHeader {
         display: flex;
         justify-content: space-between;
@@ -255,14 +263,20 @@
         color: white;
         cursor: pointer;
         padding: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    /* Menu Dropdown Logic */
+    /* Menu Dropdown (Escondido por padrão) */
     .sidebar ul {
         display: none;
         flex-direction: column;
         width: 100%;
         background-color: #0a2340;
+        padding: 0;
+        margin: 0;
+        animation: slideDown 0.3s ease-out;
     }
 
     .sidebar ul.open {
@@ -270,27 +284,70 @@
     }
 
     .sidebar ul li {
-        border-radius: 0;
+        width: 100%;
         border-right: none;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 0;
     }
 
-    .sidebar ul li.active {
-        border-left: 4px solid #4CAF50;
+    /* Item Ativo no Mobile */
+    .active .menuItem {
         border-radius: 0;
-        background-color: rgba(255,255,255,0.1);
+        margin: 0;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-left: 4px solid #4CAF50;
+        box-shadow: none;
     }
 
+    .menuItem {
+        width: 100%;
+        padding: 15px 20px;
+        justify-content: flex-start;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 3. Conteúdo Principal e Formulário */
     .main-content {
+        padding: 20px 15px;
+    }
+
+    .header h1 {
+        font-size: 24px;
+    }
+
+    .formCard {
         padding: 20px 15px;
     }
 
     .row {
         flex-direction: column;
-        gap: 0;
+        gap: 15px;
+    }
+
+    .fieldGroup {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    /* 4. Áreas de Toque */
+    .fieldGroup input,
+    .fieldGroup select {
+        height: 48px;
+        font-size: 16px; /* Evita zoom no iOS */
     }
 
     .submitButton {
+        width: 100%;
+        height: 50px;
+    }
+
+    /* Ajustes de Colunas Grid */
+    .col-1, .col-2, .col-3 {
+        flex: 1;
         width: 100%;
     }
 }

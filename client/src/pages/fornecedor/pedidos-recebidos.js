@@ -5,13 +5,17 @@ import withAuth from '../../components/withAuth';
 import api from '@/services/api';
 
 import {
-    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings, FiCheckCircle, FiTruck
+    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings,
+    FiCheckCircle, FiTruck, FiMoreVertical, FiX
 } from 'react-icons/fi';
 
 const PedidosRecebidos = () => {
     const [pedidos, setPedidos] = useState([]);
     const [filtro, setFiltro] = useState('todos');
     const [loading, setLoading] = useState(true);
+
+    // Estado para o Menu Mobile
+    const [menuOpen, setMenuOpen] = useState(false);
 
     const fetchData = async () => {
         setLoading(true);
@@ -39,7 +43,7 @@ const PedidosRecebidos = () => {
 
         if (pedido.status === 'PENDENTE') novoStatus = 'EM_SEPARACAO';
         else if (pedido.status === 'EM_SEPARACAO') novoStatus = 'ENVIADO';
-        else if (pedido.status === 'ENVIADO') novoStatus = 'ENTREGUE'; // Opcional, se o fornecedor confirmar entrega
+        else if (pedido.status === 'ENVIADO') novoStatus = 'ENTREGUE';
         else return;
 
         if(!confirm(`Deseja alterar o status para ${novoStatus}?`)) return;
@@ -69,8 +73,20 @@ const PedidosRecebidos = () => {
 
     return (
         <div className={styles['dashboard-container']}>
+
+            {/* SIDEBAR COM MENU MOBILE */}
             <nav className={styles.sidebar}>
-                <ul>
+                <div className={styles.mobileHeader}>
+                    <span className={styles.mobileLogo}>Menu Fornecedor</span>
+                    <button
+                        className={styles.menuToggle}
+                        onClick={() => setMenuOpen(!menuOpen)}
+                    >
+                        {menuOpen ? <FiX size={24} /> : <FiMoreVertical size={24} />}
+                    </button>
+                </div>
+
+                <ul className={menuOpen ? styles.open : ''}>
                     <li><Link href="/fornecedor/dashboard" className={styles.linkReset}><div className={styles.menuItem}><FiGrid size={20} /><span>Dashboard</span></div></Link></li>
                     <li className={styles.active}><Link href="/fornecedor/pedidos-recebidos" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Pedidos Recebidos</span></div></Link></li>
                     <li><Link href="/fornecedor/meus-produtos" className={styles.linkReset}><div className={styles.menuItem}><FiPackage size={20} /><span>Meus Produtos</span></div></Link></li>
@@ -108,38 +124,45 @@ const PedidosRecebidos = () => {
                             </tr>
                             </thead>
                             <tbody>
-                            {pedidosFiltrados.map((p) => (
-                                <tr key={p.id}>
-                                    <td>{String(p.id).substring(0, 8)}</td>
-                                    <td>{p.lojaNome}</td>
-                                    <td>{formatarValor(p.valorTotal)}</td>
-                                    <td>{formatarData(p.dataPedido)}</td>
-                                    <td>
-                                        <span style={{
-                                            padding: '4px 10px', borderRadius: 12, fontSize: 12, fontWeight: 'bold',
-                                            backgroundColor: p.status === 'PENDENTE' ? '#fff3cd' : p.status === 'ENVIADO' ? '#d1ecf1' : '#d4edda',
-                                            color: p.status === 'PENDENTE' ? '#856404' : p.status === 'ENVIADO' ? '#0c5460' : '#155724'
-                                        }}>
-                                            {p.status}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {p.status === 'PENDENTE' && (
-                                            <button onClick={() => avancarStatus(p)} style={{ cursor: 'pointer', padding: '6px 12px', background: '#007bff', color: 'white', border: 'none', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
-                                                <FiCheckCircle /> Separar
-                                            </button>
-                                        )}
-                                        {p.status === 'EM_SEPARACAO' && (
-                                            <button onClick={() => avancarStatus(p)} style={{ cursor: 'pointer', padding: '6px 12px', background: '#28a745', color: 'white', border: 'none', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
-                                                <FiTruck /> Enviar
-                                            </button>
-                                        )}
-                                        {['ENVIADO', 'ENTREGUE', 'CANCELADO'].includes(p.status) && (
-                                            <span style={{ color: '#aaa', fontSize: 12 }}>---</span>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
+                            {loading ? (
+                                <tr><td colSpan="6" style={{textAlign: 'center', padding: '20px'}}>Carregando...</td></tr>
+                            ) : pedidosFiltrados.length === 0 ? (
+                                <tr><td colSpan="6" className={styles.emptyState}>Nenhum pedido encontrado.</td></tr>
+                            ) : (
+                                pedidosFiltrados.map((p) => (
+                                    <tr key={p.id}>
+                                        <td data-label="#ID">{String(p.id).substring(0, 8)}</td>
+                                        <td data-label="Loja">{p.lojaNome}</td>
+                                        <td data-label="Valor">{formatarValor(p.valorTotal)}</td>
+                                        <td data-label="Data">{formatarData(p.dataPedido)}</td>
+                                        <td data-label="Status">
+                                            <span style={{
+                                                padding: '4px 10px', borderRadius: 12, fontSize: 12, fontWeight: 'bold',
+                                                backgroundColor: p.status === 'PENDENTE' ? '#fff3cd' : p.status === 'ENVIADO' ? '#d1ecf1' : '#d4edda',
+                                                color: p.status === 'PENDENTE' ? '#856404' : p.status === 'ENVIADO' ? '#0c5460' : '#155724',
+                                                display: 'inline-block'
+                                            }}>
+                                                {p.status}
+                                            </span>
+                                        </td>
+                                        <td data-label="Ação" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                            {p.status === 'PENDENTE' && (
+                                                <button onClick={() => avancarStatus(p)} className={styles.actionBtn}>
+                                                    <FiCheckCircle /> Separar
+                                                </button>
+                                            )}
+                                            {p.status === 'EM_SEPARACAO' && (
+                                                <button onClick={() => avancarStatus(p)} className={`${styles.actionBtn} ${styles.btnSend}`}>
+                                                    <FiTruck /> Enviar
+                                                </button>
+                                            )}
+                                            {['ENVIADO', 'ENTREGUE', 'CANCELADO'].includes(p.status) && (
+                                                <span style={{ color: '#aaa', fontSize: 12 }}>---</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                             </tbody>
                         </table>
                     </div>
