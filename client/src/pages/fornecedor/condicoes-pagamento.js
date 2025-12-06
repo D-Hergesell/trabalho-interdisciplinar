@@ -78,7 +78,7 @@ function CondicoesPagamento() {
 
             <main className={styles['main-content']}>
                 <header className={styles.header}>
-                    <h1>Formas de Pagamento (Genéricas)</h1>
+                    <h1>Formas de Pagamento</h1>
                 </header>
 
                 <div style={{marginBottom: 20}}>
