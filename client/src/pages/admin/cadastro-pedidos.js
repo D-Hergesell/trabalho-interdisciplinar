@@ -441,17 +441,32 @@ const BuscaPedidos = ({ allFornecedores = [] }) => {
 
                                     {isExpanded && (
                                         <div className={styles['expanded-details-row']}>
-                                            <p><strong>ID Completo:</strong> {pedido.id}</p>
-                                            <p><strong>Criado por:</strong> {pedido.criadoPorUsuarioNome}</p>
-                                            <p><strong>Data:</strong> {pedido.dataPedido ? new Date(pedido.dataPedido).toLocaleDateString() : 'N/A'}</p>
-                                            <p><strong>Itens:</strong></p>
-                                            <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
-                                                {pedido.itens && pedido.itens.map((it, idx) => (
-                                                    <li key={idx}>
-                                                        {it.quantidade}x {it.produtoNome} - (R$ {formatCurrency(it.precoUnitarioMomento)})
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                                <div>
+                                                    <p><strong>ID Completo:</strong> {pedido.id}</p>
+                                                    <p><strong>Criado por:</strong> {pedido.criadoPorUsuarioNome}</p>
+                                                    <h4 style={{marginTop: '10px', marginBottom: '5px', color: '#0c2b4e'}}>Cronograma:</h4>
+                                                    <ul style={{ listStyle: 'none', padding: 0, fontSize: '13px', color: '#555' }}>
+                                                        <li>📅 <strong>Solicitado:</strong> {pedido.dataPedido ? new Date(pedido.dataPedido).toLocaleString('pt-BR') : '-'}</li>
+                                                        <li>📦 <strong>Separação:</strong> {pedido.dataSeparacao ? new Date(pedido.dataSeparacao).toLocaleString('pt-BR') : '-'}</li>
+                                                        <li>🚚 <strong>Enviado:</strong> {pedido.dataEnviado ? new Date(pedido.dataEnviado).toLocaleString('pt-BR') : '-'}</li>
+                                                        <li>✅ <strong>Entregue:</strong> {pedido.dataEntregue ? new Date(pedido.dataEntregue).toLocaleString('pt-BR') : '-'}</li>
+                                                        {pedido.dataCancelado && (
+                                                            <li style={{color: 'red'}}>Vg <strong>Cancelado:</strong> {new Date(pedido.dataCancelado).toLocaleString('pt-BR')}</li>
+                                                        )}
+                                                    </ul>
+                                                </div>
+                                                <div>
+                                                    <p><strong>Itens do Pedido:</strong></p>
+                                                    <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                                                        {pedido.itens && pedido.itens.map((it, idx) => (
+                                                            <li key={idx}>
+                                                                {it.quantidade}x {it.produtoNome} - (R$ {formatCurrency(it.precoUnitarioMomento)})
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </React.Fragment>

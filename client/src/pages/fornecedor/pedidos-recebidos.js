@@ -6,13 +6,17 @@ import api from '@/services/api';
 
 import {
     FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings,
-    FiCheckCircle, FiTruck, FiMoreVertical, FiX, FiCreditCard
+    FiCheckCircle, FiTruck, FiMoreVertical, FiX, FiCreditCard,
+    FiChevronDown, FiChevronUp
 } from 'react-icons/fi';
 
 const PedidosRecebidos = () => {
     const [pedidos, setPedidos] = useState([]);
     const [filtro, setFiltro] = useState('todos');
     const [loading, setLoading] = useState(true);
+
+    const [expandedPedidoId, setExpandedPedidoId] = useState(null);
+    const toggleDetails = (id) => setExpandedPedidoId(prev => prev === id ? null : id);
 
     // Estado para o Menu Mobile
     const [menuOpen, setMenuOpen] = useState(false);
@@ -130,39 +134,72 @@ const PedidosRecebidos = () => {
                             ) : pedidosFiltrados.length === 0 ? (
                                 <tr><td colSpan="6" className={styles.emptyState}>Nenhum pedido encontrado.</td></tr>
                             ) : (
-                                pedidosFiltrados.map((p) => (
-                                    <tr key={p.id}>
-                                        <td data-label="#ID">{String(p.id).substring(0, 8)}</td>
-                                        <td data-label="Loja">{p.lojaNome}</td>
-                                        <td data-label="Valor">{formatarValor(p.valorTotal)}</td>
-                                        <td data-label="Data">{formatarData(p.dataPedido)}</td>
-                                        <td data-label="Status">
-                                            <span style={{
-                                                padding: '4px 10px', borderRadius: 12, fontSize: 12, fontWeight: 'bold',
-                                                backgroundColor: p.status === 'PENDENTE' ? '#fff3cd' : p.status === 'ENVIADO' ? '#d1ecf1' : '#d4edda',
-                                                color: p.status === 'PENDENTE' ? '#856404' : p.status === 'ENVIADO' ? '#0c5460' : '#155724',
-                                                display: 'inline-block'
-                                            }}>
-                                                {p.status}
-                                            </span>
-                                        </td>
-                                        <td data-label="Ação" style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                            {p.status === 'PENDENTE' && (
-                                                <button onClick={() => avancarStatus(p)} className={styles.actionBtn}>
-                                                    <FiCheckCircle /> Separar
-                                                </button>
+                                pedidosFiltrados.map((p) => {
+                                    const isExpanded = expandedPedidoId === p.id;
+                                    return (
+                                        <React.Fragment key={p.id}>
+                                            <tr>
+                                                <td data-label="#ID">
+                                                    <button onClick={() => toggleDetails(p.id)} style={{background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:5, fontWeight:'bold', color:'#333'}}>
+                                                        {isExpanded ? <FiChevronUp/> : <FiChevronDown/>}
+                                                        {String(p.id).substring(0, 8)}
+                                                    </button>
+                                                </td>
+                                                <td data-label="Loja">{p.lojaNome}</td>
+                                                <td data-label="Valor">{formatarValor(p.valorTotal)}</td>
+                                                <td data-label="Data">{formatarData(p.dataPedido)}</td>
+                                                <td data-label="Status">
+                            <span style={{
+                                padding: '4px 10px', borderRadius: 12, fontSize: 12, fontWeight: 'bold',
+                                backgroundColor: p.status === 'PENDENTE' ? '#fff3cd' : p.status === 'ENVIADO' ? '#d1ecf1' : '#d4edda',
+                                color: p.status === 'PENDENTE' ? '#856404' : p.status === 'ENVIADO' ? '#0c5460' : '#155724',
+                                display: 'inline-block'
+                            }}>
+                                {p.status}
+                            </span>
+                                                </td>
+                                                <td data-label="Ação" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                                    {p.status === 'PENDENTE' && (
+                                                        <button onClick={() => avancarStatus(p)} className={styles.actionBtn}>
+                                                            <FiCheckCircle /> Separar
+                                                        </button>
+                                                    )}
+                                                    {p.status === 'EM_SEPARACAO' && (
+                                                        <button onClick={() => avancarStatus(p)} className={`${styles.actionBtn} ${styles.btnSend}`}>
+                                                            <FiTruck /> Enviar
+                                                        </button>
+                                                    )}
+                                                    {['ENVIADO', 'ENTREGUE', 'CANCELADO'].includes(p.status) && (
+                                                        <span style={{ color: '#aaa', fontSize: 12 }}>---</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                            {isExpanded && (
+                                                <tr style={{backgroundColor: '#f9f9f9'}}>
+                                                    <td colSpan="6">
+                                                        <div style={{padding: '15px', borderTop:'1px dashed #ddd'}}>
+                                                            <h4 style={{margin:'0 0 10px 0', fontSize:'14px', color:'#0c2b4e'}}>Linha do Tempo</h4>
+                                                            <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap', fontSize: '13px'}}>
+                                                                <div>📅 <b>Pedido:</b> {p.dataPedido ? new Date(p.dataPedido).toLocaleString('pt-BR') : '-'}</div>
+                                                                <div>📦 <b>Separação:</b> {p.dataSeparacao ? new Date(p.dataSeparacao).toLocaleString('pt-BR') : '-'}</div>
+                                                                <div>🚚 <b>Enviado:</b> {p.dataEnviado ? new Date(p.dataEnviado).toLocaleString('pt-BR') : '-'}</div>
+                                                                <div>✅ <b>Entregue:</b> {p.dataEntregue ? new Date(p.dataEntregue).toLocaleString('pt-BR') : '-'}</div>
+                                                                {p.dataCancelado && <div style={{color:'red'}}>🚫 <b>Cancelado:</b> {new Date(p.dataCancelado).toLocaleString('pt-BR')}</div>}
+                                                            </div>
+
+                                                            <h4 style={{margin:'15px 0 5px 0', fontSize:'14px', color:'#0c2b4e'}}>Itens Solicitados</h4>
+                                                            <ul style={{margin:0, paddingLeft:20, fontSize:'13px'}}>
+                                                                {p.itens && p.itens.map((it, i) => (
+                                                                    <li key={i}>{it.quantidade}x {it.produtoNome}</li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    </td>
+                                                </tr>
                                             )}
-                                            {p.status === 'EM_SEPARACAO' && (
-                                                <button onClick={() => avancarStatus(p)} className={`${styles.actionBtn} ${styles.btnSend}`}>
-                                                    <FiTruck /> Enviar
-                                                </button>
-                                            )}
-                                            {['ENVIADO', 'ENTREGUE', 'CANCELADO'].includes(p.status) && (
-                                                <span style={{ color: '#aaa', fontSize: 12 }}>---</span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))
+                                        </React.Fragment>
+                                    );
+                                })
                             )}
                             </tbody>
                         </table>
