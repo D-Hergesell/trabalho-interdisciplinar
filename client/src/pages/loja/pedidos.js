@@ -4,23 +4,22 @@ import { useRouter } from 'next/router';
 import withAuth from '../../components/withAuth';
 import styles from '../../styles/LojaPedidos.module.css';
 import api from '@/services/api';
-
 import {
-    FiGrid,
-    FiPackage,
-    FiUser,
-    FiLogOut,
-    FiUsers,
-    FiSearch,
-    FiXCircle,
-    FiMoreVertical,
-    FiX
+    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSearch,
+    FiXCircle, FiMoreVertical, FiX, FiChevronDown, FiChevronUp
 } from 'react-icons/fi';
+
 function MeusPedidosLoja () {
     const router = useRouter();
     const [pedidos, setPedidos] = useState([]);
     const [filtroBusca, setFiltroBusca] = useState('');
     const [loading, setLoading] = useState(false);
+
+    const [expandedPedidoId, setExpandedPedidoId] = useState(null);
+
+    const toggleDetails = (id) => {
+        setExpandedPedidoId(prev => prev === id ? null : id);
+    };
 
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -158,14 +157,22 @@ function MeusPedidosLoja () {
                                 </tr>
                             </thead>
                             <tbody>
-                                {loading ? (
-                                    <tr><td colSpan="6" className={styles.emptyState}>Carregando pedidos...</td></tr>
-                                ) : pedidosFiltrados.length > 0 ? (
-                                    pedidosFiltrados.map((pedido) => {
-                                        const isCancelable = pedido.status === 'PENDENTE' || pedido.status === 'EM_SEPARACAO';
-                                        return (
-                                            <tr key={pedido.id}>
-                                                <td data-label="ID">#{pedido.id.toString().substring(0, 8)}...</td>
+                            {loading ? (
+                                <tr><td colSpan="6" className={styles.emptyState}>Carregando pedidos...</td></tr>
+                            ) : pedidosFiltrados.length > 0 ? (
+                                pedidosFiltrados.map((pedido) => {
+                                    const isCancelable = pedido.status === 'PENDENTE' || pedido.status === 'EM_SEPARACAO';
+                                    const isExpanded = expandedPedidoId === pedido.id;
+
+                                    return (
+                                        <React.Fragment key={pedido.id}>
+                                            <tr>
+                                                <td data-label="ID">
+                                                    <button onClick={() => toggleDetails(pedido.id)} style={{background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:5, fontWeight:'bold', color:'#0c2b4e'}}>
+                                                        {isExpanded ? <FiChevronUp/> : <FiChevronDown/>}
+                                                        #{pedido.id.toString().substring(0, 8)}...
+                                                    </button>
+                                                </td>
                                                 <td data-label="Data">{formatarData(pedido.dataPedido)}</td>
                                                 <td data-label="Fornecedor">{pedido.fornecedorNome || '-'}</td>
                                                 <td data-label="Valor">{formatarMoeda(pedido.valorTotal)}</td>
@@ -173,7 +180,6 @@ function MeusPedidosLoja () {
                                                 <td data-label="Ações" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                                     <button
                                                         onClick={() => handleCancelar(pedido.id, pedido.status)}
-                                                        // 2. Aplica classe 'btnDisabled' se não for cancelável, mas REMOVE o atributo 'disabled' para permitir o clique
                                                         className={`${styles.btnCancelIcon} ${!isCancelable ? styles.btnDisabled : ''}`}
                                                         title={isCancelable ? "Cancelar Pedido" : "Ver detalhes do cancelamento"}
                                                     >
@@ -181,11 +187,30 @@ function MeusPedidosLoja () {
                                                     </button>
                                                 </td>
                                             </tr>
-                                        );
-                                    })
-                                ) : (
-                                    <tr><td colSpan="6" className={styles.emptyState}>Nenhum pedido encontrado.</td></tr>
-                                )}
+                                            {isExpanded && (
+                                                <tr style={{backgroundColor: '#f8f9fa'}}>
+                                                    <td colSpan="6">
+                                                        <div style={{padding: '15px', fontSize: '14px', color: '#555'}}>
+                                                            <strong>Histórico do Pedido:</strong>
+                                                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px', marginTop: '10px'}}>
+                                                                <div>📅 Solicitado: <br/>{pedido.dataPedido ? new Date(pedido.dataPedido).toLocaleString('pt-BR') : '-'}</div>
+                                                                <div>📦 Separação: <br/>{pedido.dataSeparacao ? new Date(pedido.dataSeparacao).toLocaleString('pt-BR') : '-'}</div>
+                                                                <div>🚚 Enviado: <br/>{pedido.dataEnviado ? new Date(pedido.dataEnviado).toLocaleString('pt-BR') : '-'}</div>
+                                                                <div>✅ Entregue: <br/>{pedido.dataEntregue ? new Date(pedido.dataEntregue).toLocaleString('pt-BR') : '-'}</div>
+                                                                {pedido.dataCancelado && (
+                                                                    <div style={{color: '#dc3545'}}>Vg Cancelado: <br/>{new Date(pedido.dataCancelado).toLocaleString('pt-BR')}</div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                })
+                            ) : (
+                                <tr><td colSpan="6" className={styles.emptyState}>Nenhum pedido encontrado.</td></tr>
+                            )}
                             </tbody>
                         </table>
                     </div>

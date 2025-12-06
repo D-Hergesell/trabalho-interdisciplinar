@@ -7,10 +7,10 @@ import api from '../../services/api';
 import {
     FiGrid, FiUsers, FiPackage, FiUser, FiLogOut,
     FiChevronLeft, FiPlus, FiTrash2, FiChevronDown,
-    FiMoreVertical, FiX
+    FiMoreVertical, FiX, FiInfo, FiTag
 } from 'react-icons/fi';
 
-// ... (O Componente CustomProductDropdown permanece igual) ...
+// Componente de Dropdown Personalizado (Mantido igual)
 const CustomProductDropdown = ({ options = [], value = '', onChange, placeholder = 'Selecione', disabled = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
@@ -60,7 +60,7 @@ const CustomProductDropdown = ({ options = [], value = '', onChange, placeholder
     );
 };
 
-function NovoPedidoLoja  ()  {
+function NovoPedidoLoja() {
     const router = useRouter();
     const { fornecedorId: queryFornecedorId } = router.query;
 
@@ -71,9 +71,13 @@ function NovoPedidoLoja  ()  {
     const [message, setMessage] = useState(null);
     const [menuOpen, setMenuOpen] = useState(false);
 
-    // --- NOVOS ESTADOS PARA PAGAMENTO ---
+    // --- NOVOS ESTADOS PARA LÓGICA DE NEGÓCIO ---
     const [condicoesPagamento, setCondicoesPagamento] = useState([]);
     const [condicaoSelecionada, setCondicaoSelecionada] = useState('');
+    const [condicoesEstados, setCondicoesEstados] = useState([]); // Regras de estado
+    const [campanhasAtivas, setCampanhasAtivas] = useState([]);   // Campanhas
+    const [lojaEstado, setLojaEstado] = useState('');             // Estado da loja logada
+    const [ajusteUnitario, setAjusteUnitario] = useState(0);      // Valor do ajuste calculado
 
     const [formData, setFormData] = useState({
         lojaId: '',
@@ -82,6 +86,7 @@ function NovoPedidoLoja  ()  {
 
     const [itensPedido, setItensPedido] = useState([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
 
+    // 1. Carregamento Inicial de Dados
     useEffect(() => {
         async function loadData() {
             try {
@@ -90,46 +95,98 @@ function NovoPedidoLoja  ()  {
                 const usuario = JSON.parse(usuarioStorage);
                 const myLojaId = usuario.lojaId || usuario.id;
 
-                const resForn = await api.get('/api/v1/fornecedores/ativos');
+                // Buscas em paralelo
+                const [resForn, resProd, resCond, resLoja, resCamp] = await Promise.all([
+                    api.get('/api/v1/fornecedores/ativos'),
+                    api.get('/api/v1/produtos'),
+                    api.get('/api/v1/condicoes-estado/ativos'), // Busca regras de estado
+                    api.get(`/api/v1/lojas/${myLojaId}`),       // Busca dados da loja para saber o Estado
+                    api.get('/api/v1/campanhas/ativos')         // Busca campanhas ativas
+                ]);
+
                 setFornecedores(resForn.data || []);
-                const resProd = await api.get('/api/v1/produtos');
                 setProdutos(resProd.data || []);
+                setCondicoesEstados(resCond.data || []);
+
+                // Define o estado da loja atual
+                if (resLoja.data && resLoja.data.estado) {
+                    setLojaEstado(resLoja.data.estado);
+                }
+
+                // Filtra campanhas (serão refinadas quando escolher fornecedor)
+                setCampanhasAtivas(resCamp.data || []);
 
                 setFormData(prev => ({ ...prev, lojaId: myLojaId, fornecedorId: queryFornecedorId || '' }));
             } catch (error) {
                 console.error("Erro:", error);
-                setMessage({ type: 'error', text: 'Erro ao carregar dados.' });
+                setMessage({ type: 'error', text: 'Erro ao carregar dados iniciais.' });
             }
         }
         loadData();
     }, [queryFornecedorId, router]);
 
-    // --- USE EFFECT PARA FILTRAR PRODUTOS E BUSCAR CONDIÇÕES ---
+    // 2. Lógica de Ajuste de Preço por Estado (Igual ao Admin)
+    useEffect(() => {
+        function calcularAjuste() {
+            if (!formData.fornecedorId || !lojaEstado || condicoesEstados.length === 0) {
+                setAjusteUnitario(0);
+                return;
+            }
+
+            const regra = condicoesEstados.find(c =>
+                String(c.fornecedorId) === String(formData.fornecedorId) &&
+                c.estado === lojaEstado
+            );
+
+            if (regra && regra.ajusteUnitarioAplicado) {
+                setAjusteUnitario(Number(regra.ajusteUnitarioAplicado));
+            } else {
+                setAjusteUnitario(0);
+            }
+        }
+        calcularAjuste();
+    }, [formData.fornecedorId, lojaEstado, condicoesEstados]);
+
+    // 3. Atualizar Carrinho e Condições de Pagamento quando Fornecedor muda
     useEffect(() => {
         if (formData.fornecedorId) {
+            // Filtrar produtos
             const prods = produtos.filter(p => String(p.fornecedorId) === String(formData.fornecedorId) && p.ativo);
             setFilteredProdutos(prods);
 
+            // Resetar itens se forem de outro fornecedor
             if (itensPedido.some(i => i.produtoId && !prods.find(p => p.id === i.produtoId))) {
                 setItensPedido([{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
             }
 
-            // NOVO: Buscar condições de pagamento deste fornecedor
+            // Buscar condições de pagamento
             api.get(`/api/v1/condicoes-pagamento/fornecedor/${formData.fornecedorId}`)
                 .then(res => setCondicoesPagamento(res.data || []))
-                .catch(err => console.error("Erro ao buscar condições", err));
+                .catch(err => console.error("Erro ao buscar condições pgto", err));
 
         } else {
             setFilteredProdutos([]);
-            setCondicoesPagamento([]); // Limpa se mudar fornecedor
+            setCondicoesPagamento([]);
             setCondicaoSelecionada('');
         }
     }, [formData.fornecedorId, produtos]);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
+    // 4. Atualizar preços no carrinho se o Ajuste Unitário mudar
+    useEffect(() => {
+        setItensPedido(currentItens => currentItens.map(item => {
+            if (!item.produtoId) return item;
+
+            const prod = filteredProdutos.find(p => String(p.id) === String(item.produtoId));
+            if (prod) {
+                // Aplica lógica: Preço Base + Ajuste
+                const novoPreco = Math.max(0, Number(prod.precoBase) + ajusteUnitario);
+                if (item.valorUnitario !== novoPreco) {
+                    return { ...item, valorUnitario: novoPreco };
+                }
+            }
+            return item;
+        }));
+    }, [ajusteUnitario, filteredProdutos]);
 
     const handleItemChange = (index, e) => {
         const { name, value } = e.target;
@@ -138,7 +195,13 @@ function NovoPedidoLoja  ()  {
         if (name === 'produtoId') {
             const prod = filteredProdutos.find(p => String(p.id) === String(value));
             novosItens[index].produtoId = value;
-            novosItens[index].valorUnitario = prod ? Number(prod.precoBase) : 0;
+
+            // Calcula preço com ajuste imediatamente
+            const precoBase = prod ? Number(prod.precoBase) : 0;
+            const precoFinal = Math.max(0, precoBase + ajusteUnitario);
+
+            novosItens[index].valorUnitario = precoFinal;
+
             if (prod && prod.quantidadeEstoque < 1) {
                 novosItens[index].quantidade = 0;
                 alert("Produto sem estoque!");
@@ -152,50 +215,34 @@ function NovoPedidoLoja  ()  {
                 setItensPedido(novosItens);
                 return;
             }
-
             let novaQtd = parseInt(value, 10);
-
-            if (isNaN(novaQtd) || novaQtd < 1) {
-                novaQtd = 1;
-            }
+            if (isNaN(novaQtd) || novaQtd < 1) novaQtd = 1;
 
             const itemAtual = novosItens[index];
             if (itemAtual.produtoId) {
                 const prod = filteredProdutos.find(p => String(p.id) === String(itemAtual.produtoId));
-                if (prod) {
-                    if (novaQtd > prod.quantidadeEstoque) {
-                        alert(`Estoque insuficiente! Máximo disponível: ${prod.quantidadeEstoque}`);
-                        novaQtd = prod.quantidadeEstoque;
-                    }
+                if (prod && novaQtd > prod.quantidadeEstoque) {
+                    alert(`Estoque insuficiente! Máximo disponível: ${prod.quantidadeEstoque}`);
+                    novaQtd = prod.quantidadeEstoque;
                 }
             }
-
             novosItens[index].quantidade = novaQtd;
         }
 
         setItensPedido(novosItens);
     };
 
-    const handleBlurQuantidade = (index) => {
-        const novosItens = [...itensPedido];
-        if (novosItens[index].quantidade === '' || novosItens[index].quantidade === 0) {
-            novosItens[index].quantidade = 1;
-            setItensPedido(novosItens);
-        }
-    }
-
-    const handleAddItem = () => {
-        setItensPedido([...itensPedido, { produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleAddItem = () => setItensPedido([...itensPedido, { produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
     const handleRemoveItem = (index) => {
         const novos = itensPedido.filter((_, i) => i !== index);
         setItensPedido(novos.length ? novos : [{ produtoId: '', quantidade: 1, valorUnitario: 0.00 }]);
     };
-
-    const calcularTotal = () => {
-        return itensPedido.reduce((acc, item) => acc + ((Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0)), 0);
-    };
+    const calcularTotal = () => itensPedido.reduce((acc, item) => acc + ((Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0)), 0);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -203,15 +250,11 @@ function NovoPedidoLoja  ()  {
         setMessage(null);
 
         const itensValidos = itensPedido.filter(i => i.produtoId && Number(i.quantidade) > 0);
-        if (!formData.lojaId) {
-            setMessage({ type: 'error', text: 'Erro: Loja não identificada. Faça login novamente.' });
-            setLoading(false); return;
-        }
+
         if (itensValidos.length === 0) {
             setMessage({ type: 'error', text: 'Adicione pelo menos um produto válido.' });
             setLoading(false); return;
         }
-
         if (!condicaoSelecionada) {
             setMessage({ type: 'error', text: 'Selecione uma condição de pagamento.' });
             setLoading(false); return;
@@ -219,12 +262,11 @@ function NovoPedidoLoja  ()  {
 
         const usuarioLogado = JSON.parse(localStorage.getItem('usuario'));
 
-        // --- PAYLOAD ATUALIZADO ---
         const payload = {
             lojaId: formData.lojaId,
             fornecedorId: formData.fornecedorId,
             criadoPorUsuarioId: usuarioLogado.id,
-            condicaoPagamentoId: condicaoSelecionada || null, // Envia o ID selecionado
+            condicaoPagamentoId: condicaoSelecionada || null,
             itens: itensValidos.map(i => ({ produtoId: i.produtoId, quantidade: Number(i.quantidade) }))
         };
 
@@ -240,6 +282,9 @@ function NovoPedidoLoja  ()  {
             setLoading(false);
         }
     };
+
+    // Helper para filtrar campanhas do fornecedor selecionado
+    const campanhasDoFornecedor = campanhasAtivas.filter(c => String(c.fornecedorId) === String(formData.fornecedorId));
 
     return (
         <div className={styles['dashboard-container']}>
@@ -281,7 +326,43 @@ function NovoPedidoLoja  ()  {
                         </div>
                     </div>
 
-                    {/* --- NOVO CAMPO DE CONDIÇÃO DE PAGAMENTO --- */}
+                    {/* ALERTAS DE REGRAS E CAMPANHAS */}
+                    {formData.fornecedorId && (
+                        <div style={{marginBottom: 20}}>
+                            {/* Alerta de Ajuste Estadual */}
+                            {ajusteUnitario !== 0 && (
+                                <div className={`${styles.alertMessage} ${styles.warning}`} style={{display:'flex', alignItems:'center', gap:10}}>
+                                    <FiInfo size={24} />
+                                    <div>
+                                        <strong>Atenção:</strong> Devido a regras comerciais para o estado <strong>{lojaEstado}</strong>,
+                                        haverá um {ajusteUnitario > 0 ? 'acréscimo' : 'desconto'} de
+                                        <strong> R$ {Math.abs(ajusteUnitario).toFixed(2)}</strong> no preço unitário dos produtos.
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Alerta de Campanhas */}
+                            {campanhasDoFornecedor.length > 0 && (
+                                <div className={`${styles.alertMessage} ${styles.info}`}>
+                                    <div style={{display:'flex', alignItems:'center', gap:10, marginBottom: 5}}>
+                                        <FiTag size={20} />
+                                        <strong>Campanhas Ativas deste Fornecedor:</strong>
+                                    </div>
+                                    <ul style={{paddingLeft: 25, margin: 0}}>
+                                        {campanhasDoFornecedor.map(camp => (
+                                            <li key={camp.id} style={{fontSize: '14px', marginBottom: 4}}>
+                                                <strong>{camp.nome}: </strong>
+                                                {camp.tipo === 'percentual_produto' && `Desconto de ${camp.percentualDesconto}%`}
+                                                {camp.tipo === 'valor_compra' && `Cashback de R$${camp.cashbackValor} (Min: R$${camp.valorMinimoCompra})`}
+                                                {camp.tipo === 'quantidade_produto' && `Brinde: ${camp.brindeDescricao} (Min: ${camp.quantidadeMinimaProduto} un)`}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {formData.fornecedorId && (
                         <div className={styles.row}>
                             <div className={styles.fieldGroup}>
@@ -325,7 +406,16 @@ function NovoPedidoLoja  ()  {
                                         />
                                         {item.produtoId && (() => {
                                             const p = filteredProdutos.find(x => String(x.id) === String(item.produtoId));
-                                            return p ? <div className={styles.stockInfo}>Estoque: {p.quantidadeEstoque}</div> : null;
+                                            return p ? (
+                                                <div className={styles.stockInfo}>
+                                                    Estoque: {p.quantidadeEstoque}
+                                                    {ajusteUnitario !== 0 && (
+                                                        <span style={{marginLeft: 10, color: '#e67e22'}}>
+                                                            (Base: R$ {p.precoBase})
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : null;
                                         })()}
                                     </div>
 
@@ -333,12 +423,10 @@ function NovoPedidoLoja  ()  {
                                         <span className={styles.mobileLabel}>Qtd:</span>
                                         <input
                                             type="number"
-                                            inputMode="numeric"
                                             name="quantidade"
                                             min="1"
                                             value={item.quantidade}
                                             onChange={(e) => handleItemChange(index, e)}
-                                            onBlur={() => handleBlurQuantidade(index)}
                                             className={`${styles.inputItem} ${styles.inputNoSpin}`}
                                             style={{textAlign: 'right'}}
                                         />
