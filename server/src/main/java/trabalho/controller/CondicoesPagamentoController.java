@@ -46,6 +46,11 @@ public class CondicoesPagamentoController {
         return ResponseEntity.ok(condicoesPagamentoService.buscarPorId(id));
     }
 
+    @GetMapping("/fornecedor/{id}")
+    public ResponseEntity<List<CondicoesPagamentoResponseDTO>> listarPorFornecedor(@PathVariable UUID id) {
+        return ResponseEntity.ok(condicoesPagamentoService.listarPorFornecedor(id));
+    }
+
     // UPDATE (PUT)
     @PutMapping("/{id}")
     public ResponseEntity<CondicoesPagamentoResponseDTO> atualizar(
