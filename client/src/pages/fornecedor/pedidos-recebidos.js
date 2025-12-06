@@ -1,66 +1,71 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import withAuth from '../../components/withAuth';
 import styles from '../../styles/FornecedorPedidos.module.css';
+import withAuth from '../../components/withAuth';
 import api from '@/services/api';
 
 import {
-    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings
+    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings, FiCheckCircle, FiTruck
 } from 'react-icons/fi';
 
-function PedidosRecebidos  () {
+const PedidosRecebidos = () => {
     const [pedidos, setPedidos] = useState([]);
     const [filtro, setFiltro] = useState('todos');
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                const usuarioStorage = localStorage.getItem('usuario');
-                const usuario = usuarioStorage ? JSON.parse(usuarioStorage) : null;
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const usuario = JSON.parse(localStorage.getItem('usuario'));
+            if (!usuario || !usuario.fornecedorId) return;
 
-                if (!usuario || !usuario.fornecedorId) {
-                    setLoading(false);
-                    return;
-                }
-
-                // Endpoint específico do seu backend:
-                const res = await api.get(`/api/v1/pedidos/fornecedor/${usuario.fornecedorId}`);
-                setPedidos(res.data || []);
-            } catch (error) {
-                console.error('Erro ao carregar pedidos:', error);
-            } finally {
-                setLoading(false);
-            }
+            const res = await api.get(`/api/v1/pedidos/fornecedor/${usuario.fornecedorId}`);
+            // Ordenar do mais recente
+            const sorted = (res.data || []).sort((a, b) => new Date(b.dataPedido) - new Date(a.dataPedido));
+            setPedidos(sorted);
+        } catch (error) {
+            console.error('Erro ao carregar pedidos:', error);
+        } finally {
+            setLoading(false);
         }
+    };
 
-        fetchData();
-    }, []);
+    useEffect(() => { fetchData(); }, []);
 
-    const { totalPedidos, totalPendentes, totalEnviados } = useMemo(() => {
-        const total = pedidos.length;
-        const pendentes = pedidos.filter(p => p.status === 'PENDENTE' || p.status === 'EM_SEPARACAO').length;
-        const enviados = pedidos.filter(p => p.status === 'ENVIADO' || p.status === 'ENTREGUE').length;
+    // LÓGICA DE AVANÇAR STATUS
+    const avancarStatus = async (pedido) => {
+        const usuario = JSON.parse(localStorage.getItem('usuario'));
+        let novoStatus = '';
 
-        return { totalPedidos: total, totalPendentes: pendentes, totalEnviados: enviados };
-    }, [pedidos]);
+        if (pedido.status === 'PENDENTE') novoStatus = 'EM_SEPARACAO';
+        else if (pedido.status === 'EM_SEPARACAO') novoStatus = 'ENVIADO';
+        else if (pedido.status === 'ENVIADO') novoStatus = 'ENTREGUE'; // Opcional, se o fornecedor confirmar entrega
+        else return;
+
+        if(!confirm(`Deseja alterar o status para ${novoStatus}?`)) return;
+
+        try {
+            await api.patch(`/api/v1/pedidos/${pedido.id}/status`, null, {
+                params: {
+                    status: novoStatus,
+                    usuarioId: usuario.id
+                }
+            });
+            alert('Status atualizado com sucesso!');
+            fetchData();
+        } catch (error) {
+            alert(error.response?.data?.erro || "Erro ao atualizar status.");
+        }
+    };
 
     const pedidosFiltrados = useMemo(() => {
-        if (filtro === 'pendentes') {
-            return pedidos.filter(p => p.status === 'PENDENTE' || p.status === 'EM_SEPARACAO');
-        }
-        if (filtro === 'enviados') {
-            return pedidos.filter(p => p.status === 'ENVIADO' || p.status === 'ENTREGUE');
-        }
+        if (filtro === 'pendentes') return pedidos.filter(p => ['PENDENTE', 'EM_SEPARACAO'].includes(p.status));
+        if (filtro === 'enviados') return pedidos.filter(p => ['ENVIADO', 'ENTREGUE'].includes(p.status));
         return pedidos;
     }, [filtro, pedidos]);
 
     const formatarValor = (valor) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
-
-    const formatarData = (dataIso) => {
-        if (!dataIso) return '-';
-        return new Date(dataIso).toLocaleDateString('pt-BR');
-    };
+    const formatarData = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : '-';
 
     return (
         <div className={styles['dashboard-container']}>
@@ -78,31 +83,14 @@ function PedidosRecebidos  () {
 
             <main className={styles['main-content']}>
                 <header className={styles.header}>
-                    <h1>Pedidos Recebidos</h1>
+                    <h1>Gestão de Pedidos</h1>
                 </header>
 
                 <section className={styles.filtersSection}>
                     <div className={styles.filterButtons}>
-                        <button type="button" className={`${styles.filterButton} ${filtro === 'todos' ? styles.filterButtonActive : ''}`} onClick={() => setFiltro('todos')}>Todos</button>
-                        <button type="button" className={`${styles.filterButton} ${filtro === 'pendentes' ? styles.filterButtonActive : ''}`} onClick={() => setFiltro('pendentes')}>Pendentes</button>
-                        <button type="button" className={`${styles.filterButton} ${filtro === 'enviados' ? styles.filterButtonActive : ''}`} onClick={() => setFiltro('enviados')}>Enviados</button>
-                    </div>
-                </section>
-
-                <section className={styles.summarySection}>
-                    <div className={styles.summaryBox}>
-                        <div className={styles.summaryColumn}>
-                            <span className={styles.summaryLabel}>Total</span>
-                            <span className={styles.summaryValue}>{totalPedidos}</span>
-                        </div>
-                        <div className={styles.summaryColumn}>
-                            <span className={styles.summaryLabel}>Abertos</span>
-                            <span className={styles.summaryValue}>{totalPendentes}</span>
-                        </div>
-                        <div className={styles.summaryColumn}>
-                            <span className={styles.summaryLabel}>Finalizados</span>
-                            <span className={styles.summaryValue}>{totalEnviados}</span>
-                        </div>
+                        <button className={`${styles.filterButton} ${filtro === 'todos' ? styles.filterButtonActive : ''}`} onClick={() => setFiltro('todos')}>Todos</button>
+                        <button className={`${styles.filterButton} ${filtro === 'pendentes' ? styles.filterButtonActive : ''}`} onClick={() => setFiltro('pendentes')}>Abertos</button>
+                        <button className={`${styles.filterButton} ${filtro === 'enviados' ? styles.filterButtonActive : ''}`} onClick={() => setFiltro('enviados')}>Finalizados</button>
                     </div>
                 </section>
 
@@ -111,31 +99,47 @@ function PedidosRecebidos  () {
                         <table className={styles.table}>
                             <thead>
                             <tr>
-                                <th>Nº Pedido</th>
-                                <th>Loja Solicitante</th>
-                                <th>Valor Total</th>
-                                <th>Status</th>
+                                <th>#ID</th>
+                                <th>Loja</th>
+                                <th>Valor</th>
                                 <th>Data</th>
+                                <th>Status</th>
+                                <th>Ação</th>
                             </tr>
                             </thead>
                             <tbody>
-                            {loading ? (
-                                <tr><td colSpan={5} className={styles.emptyState}>Carregando...</td></tr>
-                            ) : pedidosFiltrados.length > 0 ? (
-                                pedidosFiltrados.map((pedido) => (
-                                    <tr key={pedido.id}>
-                                        <td>#{String(pedido.id).substring(0, 8)}</td>
-                                        <td>{pedido.lojaNome || 'Desconhecida'}</td>
-                                        <td>{formatarValor(pedido.valorTotal)}</td>
-                                        <td>{pedido.status}</td>
-                                        <td>{formatarData(pedido.dataPedido)}</td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={5} className={styles.emptyState}>Nenhum pedido encontrado.</td>
+                            {pedidosFiltrados.map((p) => (
+                                <tr key={p.id}>
+                                    <td>{String(p.id).substring(0, 8)}</td>
+                                    <td>{p.lojaNome}</td>
+                                    <td>{formatarValor(p.valorTotal)}</td>
+                                    <td>{formatarData(p.dataPedido)}</td>
+                                    <td>
+                                        <span style={{
+                                            padding: '4px 10px', borderRadius: 12, fontSize: 12, fontWeight: 'bold',
+                                            backgroundColor: p.status === 'PENDENTE' ? '#fff3cd' : p.status === 'ENVIADO' ? '#d1ecf1' : '#d4edda',
+                                            color: p.status === 'PENDENTE' ? '#856404' : p.status === 'ENVIADO' ? '#0c5460' : '#155724'
+                                        }}>
+                                            {p.status}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {p.status === 'PENDENTE' && (
+                                            <button onClick={() => avancarStatus(p)} style={{ cursor: 'pointer', padding: '6px 12px', background: '#007bff', color: 'white', border: 'none', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+                                                <FiCheckCircle /> Separar
+                                            </button>
+                                        )}
+                                        {p.status === 'EM_SEPARACAO' && (
+                                            <button onClick={() => avancarStatus(p)} style={{ cursor: 'pointer', padding: '6px 12px', background: '#28a745', color: 'white', border: 'none', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+                                                <FiTruck /> Enviar
+                                            </button>
+                                        )}
+                                        {['ENVIADO', 'ENTREGUE', 'CANCELADO'].includes(p.status) && (
+                                            <span style={{ color: '#aaa', fontSize: 12 }}>---</span>
+                                        )}
+                                    </td>
                                 </tr>
-                            )}
+                            ))}
                             </tbody>
                         </table>
                     </div>
@@ -145,5 +149,4 @@ function PedidosRecebidos  () {
     );
 };
 
-
-export default withAuth(PedidosRecebidos, "fornecedor", "/");
+export default withAuth(PedidosRecebidos, 'fornecedor');

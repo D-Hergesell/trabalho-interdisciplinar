@@ -1,83 +1,94 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import styles from '../../styles/FornecedorCampanhas.module.css';
 import withAuth from '../../components/withAuth';
 import api from '@/services/api';
 
 import {
-    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiTag
+    FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiTag, FiPlus, FiTrash2
 } from 'react-icons/fi';
 
-function Campanhas () {
+const Campanhas = () => {
     const [campanhas, setCampanhas] = useState([]);
-    const [filtroBusca, setFiltroBusca] = useState('');
+    const [produtos, setProdutos] = useState([]); // Para escolher o brinde
     const [loading, setLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                // 1. Identificar Fornecedor Logado
-                const usuarioStorage = localStorage.getItem('usuario');
-                const usuario = usuarioStorage ? JSON.parse(usuarioStorage) : null;
+    // Form
+    const [form, setForm] = useState({
+        nome: '',
+        tipo: 'percentual_produto', // percentual_produto, valor_compra, quantidade_produto
+        dataInicio: '',
+        dataFim: '',
+        percentualDesconto: '',
+        valorMinimoCompra: '',
+        cashbackValor: '',
+        quantidadeMinimaProduto: '',
+        produtoIdBrinde: '', // ID do produto que é brinde
+        brindeDescricao: ''
+    });
 
-                if (!usuario || !usuario.fornecedorId) {
-                    console.warn("Usuário não é fornecedor ou não está logado.");
-                    setLoading(false);
-                    return;
-                }
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const usuario = JSON.parse(localStorage.getItem('usuario'));
+            if (!usuario) return;
 
-                // 2. Buscar Campanhas (Backend não tem endpoint específico de filtro, buscamos todas e filtramos aqui)
-                const res = await api.get('/api/v1/campanhas');
-                const todasCampanhas = res.data || [];
+            // Campanhas
+            const res = await api.get('/api/v1/campanhas');
+            const minhas = (res.data || []).filter(c => String(c.fornecedorId) === String(usuario.fornecedorId));
+            setCampanhas(minhas);
 
-                // 3. Filtrar apenas deste fornecedor
-                const minhasCampanhas = todasCampanhas.filter(c =>
-                    String(c.fornecedorId) === String(usuario.fornecedorId)
-                );
+            // Produtos (para selecionar o brinde se necessário)
+            const resProd = await api.get('/api/v1/produtos');
+            const meusProds = (resProd.data || []).filter(p => String(p.fornecedorId) === String(usuario.fornecedorId));
+            setProdutos(meusProds);
 
-                setCampanhas(minhasCampanhas);
-            } catch (error) {
-                console.error('Erro ao carregar campanhas:', error);
-            } finally {
-                setLoading(false);
-            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
         }
-
-        fetchData();
-    }, []);
-
-    const { totalCampanhas, totalInativas, totalAtivas } = useMemo(() => {
-        const total = campanhas.length;
-        const inativas = campanhas.filter(c => c.ativo === false).length;
-        const ativas = campanhas.filter(c => c.ativo === true).length;
-
-        return { totalCampanhas: total, totalInativas: inativas, totalAtivas: ativas };
-    }, [campanhas]);
-
-    const campanhasFiltradas = useMemo(() => {
-        if (!filtroBusca.trim()) return campanhas;
-        const termo = filtroBusca.toLowerCase();
-        return campanhas.filter(c =>
-            [c.nome, c.tipo].filter(Boolean).some(v => v.toLowerCase().includes(termo))
-        );
-    }, [campanhas, filtroBusca]);
-
-    // Helper para formatar o tipo de campanha vindo do Java
-    const formatarTipo = (tipo) => {
-        const mapa = {
-            'valor_compra': 'Valor Mínimo',
-            'quantidade_produto': 'Qtd. Produto',
-            'percentual_produto': 'Desconto %'
-        };
-        return mapa[tipo] || tipo;
     };
 
-    // Helper para descrever a condição
-    const formatarCondicao = (c) => {
-        if (c.tipo === 'valor_compra') return `Min: R$ ${c.valorMinimoCompra}`;
-        if (c.tipo === 'quantidade_produto') return `Min: ${c.quantidadeMinimaProduto} un.`;
-        if (c.tipo === 'percentual_produto') return `${c.percentualDesconto}% OFF`;
-        return '-';
+    useEffect(() => { fetchData(); }, []);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const usuario = JSON.parse(localStorage.getItem('usuario'));
+
+        const payload = {
+            fornecedorId: usuario.fornecedorId,
+            nome: form.nome,
+            tipo: form.tipo,
+            dataInicio: form.dataInicio,
+            dataFim: form.dataFim || null,
+            ativo: true,
+            // Campos opcionais dependendo do tipo
+            percentualDesconto: form.percentualDesconto ? Number(form.percentualDesconto) : null,
+            valorMinimoCompra: form.valorMinimoCompra ? Number(form.valorMinimoCompra) : null,
+            cashbackValor: form.cashbackValor ? Number(form.cashbackValor) : null,
+            quantidadeMinimaProduto: form.quantidadeMinimaProduto ? parseInt(form.quantidadeMinimaProduto) : null,
+            produtoIdBrinde: form.produtoIdBrinde || null,
+            brindeDescricao: form.brindeDescricao || null
+        };
+
+        try {
+            await api.post('/api/v1/campanhas', payload);
+            alert('Campanha criada com sucesso!');
+            setIsModalOpen(false);
+            setForm({ nome: '', tipo: 'percentual_produto', dataInicio: '', dataFim: '', percentualDesconto: '', valorMinimoCompra: '', cashbackValor: '', quantidadeMinimaProduto: '', produtoIdBrinde: '', brindeDescricao: '' });
+            fetchData();
+        } catch (error) {
+            alert(error.response?.data?.erro || "Erro ao criar campanha.");
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if(confirm("Excluir campanha?")) {
+            await api.delete(`/api/v1/campanhas/${id}`);
+            fetchData();
+        }
     };
 
     return (
@@ -99,79 +110,100 @@ function Campanhas () {
                     <h1>Campanhas Promocionais</h1>
                 </header>
 
-                <section className={styles.summarySection}>
-                    <div className={styles.summaryBox}>
-                        <div className={styles.summaryColumn}>
-                            <span className={styles.summaryLabel}>Campanhas Totais</span>
-                            <span className={styles.summaryValue}>{totalCampanhas}</span>
-                        </div>
-                        <div className={styles.summaryColumn}>
-                            <span className={styles.summaryLabel}>Campanhas Inativas</span>
-                            <span className={styles.summaryValue}>{totalInativas}</span>
-                        </div>
-                        <div className={styles.summaryColumn}>
-                            <span className={styles.summaryLabel}>Campanhas Ativas</span>
-                            <span className={styles.summaryValue}>{totalAtivas}</span>
-                        </div>
-                    </div>
-                </section>
-
-                <section className={styles.actionsSection}>
-                    <div className={styles.searchWrapper}>
-                        <div className={styles.searchIconCircle}>🔍</div>
-                        <input
-                            type="text"
-                            placeholder="Buscar campanha..."
-                            className={styles.searchInput}
-                            value={filtroBusca}
-                            onChange={e => setFiltroBusca(e.target.value)}
-                        />
-                    </div>
-                </section>
+                <div style={{marginBottom: 20, textAlign: 'right'}}>
+                    <button className={styles.newCampaignButton} onClick={() => setIsModalOpen(true)}>
+                        <FiPlus /> Nova Campanha
+                    </button>
+                </div>
 
                 <section className={styles.tableSection}>
                     <div className={styles.tableWrapper}>
                         <table className={styles.table}>
                             <thead>
                             <tr>
-                                <th>Nome da Campanha</th>
+                                <th>Nome</th>
                                 <th>Tipo</th>
-                                <th>Condição</th>
+                                <th>Vigência</th>
                                 <th>Status</th>
+                                <th>Ações</th>
                             </tr>
                             </thead>
                             <tbody>
-                            {loading ? (
-                                <tr><td colSpan={4} className={styles.emptyState}>Carregando...</td></tr>
-                            ) : campanhasFiltradas.length > 0 ? (
-                                campanhasFiltradas.map((c) => (
-                                    <tr key={c.id}>
-                                        <td>{c.nome}</td>
-                                        <td>{formatarTipo(c.tipo)}</td>
-                                        <td>{formatarCondicao(c)}</td>
-                                        <td>
-                                            <span style={{ color: c.ativo ? 'green' : 'red', fontWeight: 'bold' }}>
-                                                {c.ativo ? 'Ativa' : 'Inativa'}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={4} className={styles.emptyState}>
-                                        Nenhuma campanha encontrada.
+                            {campanhas.map(c => (
+                                <tr key={c.id}>
+                                    <td>{c.nome}</td>
+                                    <td>{c.tipo}</td>
+                                    <td>{c.dataInicio} até {c.dataFim || '...'}</td>
+                                    <td>{c.ativo ? 'Ativa' : 'Inativa'}</td>
+                                    <td>
+                                        <button onClick={() => handleDelete(c.id)} style={{border:'none', background:'transparent', color: 'red', cursor: 'pointer'}}><FiTrash2 /></button>
                                     </td>
                                 </tr>
-                            )}
+                            ))}
                             </tbody>
                         </table>
                     </div>
                 </section>
+
+                {/* MODAL CAMPANHA */}
+                {isModalOpen && (
+                    <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', justifyContent:'center', alignItems:'center', zIndex:1000}}>
+                        <div style={{background:'white', padding:30, borderRadius:8, width:500}}>
+                            <h2>Nova Campanha</h2>
+                            <form onSubmit={handleSubmit} style={{display:'flex', flexDirection:'column', gap: 15}}>
+                                <input placeholder="Nome da Campanha" value={form.nome} onChange={e => setForm({...form, nome: e.target.value})} required style={{padding:8, border:'1px solid #ccc'}}/>
+
+                                <select value={form.tipo} onChange={e => setForm({...form, tipo: e.target.value})} style={{padding:8, border:'1px solid #ccc'}}>
+                                    <option value="percentual_produto">Desconto (%)</option>
+                                    <option value="valor_compra">Cashback por Valor Compra</option>
+                                    <option value="quantidade_produto">Brinde por Quantidade</option>
+                                </select>
+
+                                {/* Campos dinâmicos */}
+                                {form.tipo === 'percentual_produto' && (
+                                    <input type="number" placeholder="Percentual Desconto (%)" value={form.percentualDesconto} onChange={e => setForm({...form, percentualDesconto: e.target.value})} style={{padding:8, border:'1px solid #ccc'}}/>
+                                )}
+
+                                {form.tipo === 'valor_compra' && (
+                                    <div style={{display:'flex', gap:10}}>
+                                        <input type="number" placeholder="Mínimo Compra (R$)" value={form.valorMinimoCompra} onChange={e => setForm({...form, valorMinimoCompra: e.target.value})} style={{padding:8, border:'1px solid #ccc', flex:1}}/>
+                                        <input type="number" placeholder="Valor Cashback (R$)" value={form.cashbackValor} onChange={e => setForm({...form, cashbackValor: e.target.value})} style={{padding:8, border:'1px solid #ccc', flex:1}}/>
+                                    </div>
+                                )}
+
+                                {form.tipo === 'quantidade_produto' && (
+                                    <div style={{display:'flex', flexDirection:'column', gap:10}}>
+                                        <input type="number" placeholder="Qtd. Mínima Produtos" value={form.quantidadeMinimaProduto} onChange={e => setForm({...form, quantidadeMinimaProduto: e.target.value})} style={{padding:8, border:'1px solid #ccc'}}/>
+                                        <select value={form.produtoIdBrinde} onChange={e => setForm({...form, produtoIdBrinde: e.target.value})} style={{padding:8, border:'1px solid #ccc'}}>
+                                            <option value="">Selecione o Produto Brinde...</option>
+                                            {produtos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                                        </select>
+                                        <input placeholder="Descrição do Brinde (Ex: 1 Unidade Grátis)" value={form.brindeDescricao} onChange={e => setForm({...form, brindeDescricao: e.target.value})} style={{padding:8, border:'1px solid #ccc'}}/>
+                                    </div>
+                                )}
+
+                                <div style={{display:'flex', gap:10}}>
+                                    <div style={{flex:1}}>
+                                        <label>Início</label>
+                                        <input type="date" value={form.dataInicio} onChange={e => setForm({...form, dataInicio: e.target.value})} required style={{width:'100%', padding:8, border:'1px solid #ccc'}}/>
+                                    </div>
+                                    <div style={{flex:1}}>
+                                        <label>Fim</label>
+                                        <input type="date" value={form.dataFim} onChange={e => setForm({...form, dataFim: e.target.value})} style={{width:'100%', padding:8, border:'1px solid #ccc'}}/>
+                                    </div>
+                                </div>
+
+                                <div style={{display:'flex', justifyContent:'flex-end', gap:10, marginTop:10}}>
+                                    <button type="button" onClick={() => setIsModalOpen(false)}>Cancelar</button>
+                                    <button type="submit" style={{background:'#28a745', color:'white', border:'none', padding:'8px 16px'}}>Salvar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
             </main>
         </div>
     );
 };
 
-
-
-export default withAuth(Campanhas, "fornecedor", "/");
+export default withAuth(Campanhas, "fornecedor");
