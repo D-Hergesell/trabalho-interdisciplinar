@@ -54,7 +54,6 @@ public class PedidoService {
             CondicoesPagamento condicao = condicoesPagamentoRepository.findById(dto.condicaoPagamentoId())
                     .orElseThrow(() -> new RuntimeException("Condição de pagamento não encontrada."));
 
-            // Valida se a condição pertence ao fornecedor do pedido
             if (!condicao.getFornecedor().getId().equals(fornecedor.getId())) {
                 throw new RuntimeException("A condição de pagamento não pertence a este fornecedor.");
             }
@@ -63,7 +62,7 @@ public class PedidoService {
             throw new RuntimeException("É obrigatório selecionar uma condição de pagamento.");
         }
 
-        // Lógica de Condições Regionais
+        // Lógica de Condições Regionais (Estado)
         Optional<CondicoesEstado> condicaoEstadoOpt = condicoesEstadoRepository
                 .findByFornecedor_IdAndEstado(fornecedor.getId(), loja.getEstado());
 
@@ -89,7 +88,7 @@ public class PedidoService {
         BigDecimal valorTotalCalculado = BigDecimal.ZERO;
         int quantidadeTotalItens = 0;
 
-        // Processa Itens e Baixa Estoque
+        // 1. Processa Itens, Aplica Ajuste Regional e Baixa Estoque
         for (var itemDto : dto.itens()) {
             Produto produto = produtoRepository.findById(itemDto.produtoId())
                     .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + itemDto.produtoId()));
@@ -107,6 +106,7 @@ public class PedidoService {
             item.setProduto(produto);
             item.setQuantidade(itemDto.quantidade());
 
+            // Aplica ajuste regional ao preço base
             BigDecimal precoBase = produto.getPrecoBase();
             BigDecimal precoFinal = precoBase.add(ajustePorUnidade);
             if (precoFinal.compareTo(BigDecimal.ZERO) < 0) {
@@ -125,11 +125,40 @@ public class PedidoService {
             quantidadeTotalItens += itemDto.quantidade();
         }
 
+        // Buscar Campanhas Ativas
+        List<Campanha> campanhasAtivas = campanhaRepository.findByFornecedor_IdAndAtivoTrue(fornecedor.getId());
+        LocalDate hoje = LocalDate.now();
+
+        // 2. Aplica Campanhas de DESCONTO PERCENTUAL (Primeiro, para reduzir o total a pagar)
+        for (Campanha campanha : campanhasAtivas) {
+            // Valida Vigência
+            if (campanha.getDataInicio() != null && hoje.isBefore(campanha.getDataInicio())) continue;
+            if (campanha.getDataFim() != null && hoje.isAfter(campanha.getDataFim())) continue;
+
+            if (campanha.getTipo() == TipoCampanha.percentual_produto && campanha.getPercentualDesconto() != null) {
+                // Verifica valor mínimo de compra, se houver
+                if (campanha.getValorMinimoCompra() == null || valorTotalCalculado.compareTo(campanha.getValorMinimoCompra()) >= 0) {
+                    BigDecimal desconto = valorTotalCalculado
+                            .multiply(campanha.getPercentualDesconto())
+                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+                    valorTotalCalculado = valorTotalCalculado.subtract(desconto);
+
+                    // Garante que não fique negativo
+                    if (valorTotalCalculado.compareTo(BigDecimal.ZERO) < 0) {
+                        valorTotalCalculado = BigDecimal.ZERO;
+                    }
+                }
+            }
+        }
+
+        // Define o valor total final do pedido
         pedido.setValorTotal(valorTotalCalculado);
 
-        // Lógica de Cashback
+        // 3. Aplica Cashback e Brindes (Baseado no valor final já com descontos)
         BigDecimal totalCashback = BigDecimal.ZERO;
 
+        // Cashback Regional
         if (cashbackPercentualEstado.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal cashbackDoEstado = valorTotalCalculado
                     .multiply(cashbackPercentualEstado)
@@ -137,13 +166,12 @@ public class PedidoService {
             totalCashback = totalCashback.add(cashbackDoEstado);
         }
 
-        List<Campanha> campanhasAtivas = campanhaRepository.findByFornecedor_IdAndAtivoTrue(fornecedor.getId());
-        LocalDate hoje = LocalDate.now();
-
+        // Campanhas de Cashback e Brinde
         for (Campanha campanha : campanhasAtivas) {
             if (campanha.getDataInicio() != null && hoje.isBefore(campanha.getDataInicio())) continue;
             if (campanha.getDataFim() != null && hoje.isAfter(campanha.getDataFim())) continue;
 
+            // Cashback por Valor de Compra
             if (campanha.getTipo() == TipoCampanha.valor_compra && campanha.getValorMinimoCompra() != null) {
                 if (valorTotalCalculado.compareTo(campanha.getValorMinimoCompra()) >= 0) {
                     if (campanha.getCashbackValor() != null) {
@@ -152,21 +180,23 @@ public class PedidoService {
                 }
             }
 
-            // Lógica de Brinde (Também baixa estoque do brinde)
+            // Brinde por Quantidade
             if (campanha.getTipo() == TipoCampanha.quantidade_produto && campanha.getQuantidadeMinimaProduto() != null) {
                 if (quantidadeTotalItens >= campanha.getQuantidadeMinimaProduto()) {
                     Produto brinde = campanha.getProdutoIdBrinde();
+                    // Valida estoque do brinde
                     if (brinde != null && brinde.getQuantidadeEstoque() > 0) {
                         PedidoItem itemBrinde = new PedidoItem();
                         itemBrinde.setPedido(pedido);
                         itemBrinde.setProduto(brinde);
                         itemBrinde.setQuantidade(1);
-                        itemBrinde.setPrecoUnitarioMomento(BigDecimal.ZERO);
+                        itemBrinde.setPrecoUnitarioMomento(BigDecimal.ZERO); // Custo zero
                         itemBrinde.setAjusteUnitarioAplicado(BigDecimal.ZERO);
 
                         // Baixa estoque do brinde
                         brinde.setQuantidadeEstoque(brinde.getQuantidadeEstoque() - 1);
                         produtoRepository.save(brinde);
+
                         pedido.getItens().add(itemBrinde);
                     }
                 }
@@ -234,26 +264,19 @@ public class PedidoService {
             case EM_SEPARACAO:
                 if (pedido.getDataSeparacao() == null) pedido.setDataSeparacao(agora);
                 break;
-
             case ENVIADO:
                 if (pedido.getDataEnviado() == null) pedido.setDataEnviado(agora);
                 break;
-
             case ENTREGUE:
                 if (pedido.getDataEntregue() == null) pedido.setDataEntregue(agora);
                 break;
-
             case CANCELADO:
                 if (pedido.getDataCancelado() == null) pedido.setDataCancelado(agora);
-
-                // IMPORTANTE: Estorno de estoque se for cancelado agora
                 if (pedido.getStatus() != StatusPedido.CANCELADO) {
                     restaurarEstoque(pedido);
                 }
                 break;
-
             case PENDENTE:
-                // Nenhuma ação de data específica
                 break;
         }
 
@@ -265,25 +288,15 @@ public class PedidoService {
     @Transactional
     public void deletarPedido(UUID id) {
         Pedido pedido = pedidoRepository.findById(id).orElseThrow(() -> new RuntimeException("Pedido não encontrado."));
-
-        // --- LÓGICA DE ESTORNO DE ESTOQUE AO DELETAR ---
-        // Se o pedido NÃO estava cancelado, o estoque ainda está preso nele. Devolvemos.
         if (pedido.getStatus() != StatusPedido.CANCELADO) {
             restaurarEstoque(pedido);
         }
-        // -----------------------------------------------
-
         pedidoRepository.delete(pedido);
     }
 
-    /**
-     * Devolve a quantidade dos itens para o estoque do produto.
-     */
     private void restaurarEstoque(Pedido pedido) {
         for (PedidoItem item : pedido.getItens()) {
             Produto produto = item.getProduto();
-            // Recupera o produto do banco para garantir saldo atualizado (opcional, mas seguro)
-            // Como já temos o objeto, podemos somar direto se estiver gerenciado pelo EntityManager
             produto.setQuantidadeEstoque(produto.getQuantidadeEstoque() + item.getQuantidade());
             produtoRepository.save(produto);
         }

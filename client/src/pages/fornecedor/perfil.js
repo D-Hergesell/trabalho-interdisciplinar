@@ -14,7 +14,7 @@ import {
     FiSettings,
     FiTag,
     FiMoreVertical,
-    FiX
+    FiX, FiCreditCard
 } from 'react-icons/fi';
 
 function PerfilFornecedor() {
@@ -143,6 +143,11 @@ function PerfilFornecedor() {
                     <li>
                         <Link href="/fornecedor/condicoes-comerciais" className={styles.linkReset}>
                             <div className={styles.menuItem}><FiSettings size={20} /><span>Condições Comerciais</span></div>
+                        </Link>
+                    </li>
+                    <li>
+                        <Link href="/fornecedor/condicoes-pagamento" className={styles.linkReset}>
+                            <div className={styles.menuItem}><FiCreditCard size={20} /><span>Formas de Pagamento</span></div>
                         </Link>
                     </li>
                     <li className={styles.active}>
