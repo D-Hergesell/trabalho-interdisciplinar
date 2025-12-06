@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-// Importa o CSS modular específico que criamos
+import withAuth from '../../components/withAuth';
 import styles from '../../styles/FornecedorDashboard.module.css';
 import api from '@/services/api';
 
@@ -16,7 +16,7 @@ import {
 } from 'react-icons/fi';
 import { FaUserCircle } from 'react-icons/fa';
 
-const Dashboard = () => {
+function Dashboard  ()  {
     const router = useRouter();
     const [dashboardData, setDashboardData] = useState({
         totalRecebidos: 0,
@@ -201,4 +201,5 @@ const Dashboard = () => {
     );
 };
 
-export default Dashboard;
+
+export default withAuth(Dashboard, "fornecedor", "/");

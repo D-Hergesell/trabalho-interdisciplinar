@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import withAuth from '../../components/withAuth';
 import styles from '../../styles/FornecedorProdutos.module.css';
 import api from '@/services/api';
 
@@ -7,7 +8,7 @@ import {
     FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings
 } from 'react-icons/fi';
 
-const MeusProdutos = () => {
+function MeusProdutos ()  {
     const [produtos, setProdutos] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -135,4 +136,5 @@ const MeusProdutos = () => {
     );
 };
 
-export default MeusProdutos;
+
+export default withAuth(MeusProdutos, "fornecedor", "/");

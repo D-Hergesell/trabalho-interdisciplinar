@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import withAuth from '../../components/withAuth';
 import styles from '../../styles/Condicao.module.css';
 import api from '@/services/api';
 
@@ -7,7 +8,7 @@ import {
     FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings
 } from 'react-icons/fi';
 
-const CondicoesComerciais = () => {
+function CondicoesComerciais  ()  {
     const [condicoes, setCondicoes] = useState([]);
     const [filtroBusca, setFiltroBusca] = useState('');
     const [loading, setLoading] = useState(true);
@@ -162,4 +163,6 @@ const CondicoesComerciais = () => {
     );
 };
 
-export default CondicoesComerciais;
+
+
+export default withAuth(CondicoesComerciais, "fornecedor", "/");

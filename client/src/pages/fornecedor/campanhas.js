@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import styles from '../../styles/FornecedorCampanhas.module.css';
+import withAuth from '../../components/withAuth';
 import api from '@/services/api';
 
 import {
     FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiTag
 } from 'react-icons/fi';
 
-const Campanhas = () => {
+function Campanhas () {
     const [campanhas, setCampanhas] = useState([]);
     const [filtroBusca, setFiltroBusca] = useState('');
     const [loading, setLoading] = useState(true);
@@ -171,4 +172,6 @@ const Campanhas = () => {
     );
 };
 
-export default Campanhas;
+
+
+export default withAuth(Campanhas, "fornecedor", "/");

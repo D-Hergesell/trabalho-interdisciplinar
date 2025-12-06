@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import withAuth from '../../components/withAuth';
 import styles from '../../styles/FornecedorPedidos.module.css';
 import api from '@/services/api';
 
@@ -7,7 +8,7 @@ import {
     FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings
 } from 'react-icons/fi';
 
-const PedidosRecebidos = () => {
+function PedidosRecebidos  () {
     const [pedidos, setPedidos] = useState([]);
     const [filtro, setFiltro] = useState('todos');
     const [loading, setLoading] = useState(true);
@@ -144,4 +145,5 @@ const PedidosRecebidos = () => {
     );
 };
 
-export default PedidosRecebidos;
+
+export default withAuth(PedidosRecebidos, "fornecedor", "/");

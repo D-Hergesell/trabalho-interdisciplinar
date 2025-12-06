@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import withAuth from '../../components/withAuth';
 import styles from '../../styles/FornecedorPerfil.module.css';
 import api from '@/services/api';
 
@@ -16,7 +17,7 @@ import {
     FiX
 } from 'react-icons/fi';
 
-const PerfilFornecedor = () => {
+function PerfilFornecedor ()  {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
@@ -309,4 +310,5 @@ const PerfilFornecedor = () => {
     );
 };
 
-export default PerfilFornecedor;
+
+export default withAuth(PerfilFornecedor, "fornecedor", "/");
