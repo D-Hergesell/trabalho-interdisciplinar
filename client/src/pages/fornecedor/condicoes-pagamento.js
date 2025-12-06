@@ -6,7 +6,7 @@ import styles from '../../styles/FornecedorCampanhas.module.css';
 import api from '@/services/api';
 import {
     FiGrid, FiPackage, FiUser, FiLogOut, FiUsers, FiSettings,
-    FiPlus, FiTrash2, FiCreditCard, FiMoreVertical, FiX
+    FiPlus, FiTrash2, FiCreditCard, FiMoreVertical, FiX, FiCreditCard
 } from 'react-icons/fi';
 
 function CondicoesPagamento() {
@@ -92,7 +92,7 @@ function CondicoesPagamento() {
                             <div className={styles.menuItem}><FiCreditCard size={20} /><span>Formas de Pagamento</span></div>
                         </Link>
                     </li>
-
+                 <li><Link href="/fornecedor/condicoes-pagamento" className={styles.linkReset}><div className={styles.menuItem}><FiCreditCard size={20} /><span>Formas de Pagamento</span></div></Link></li>
                     <li><Link href="/fornecedor/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li>
                     <li><Link href="/" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
                 </ul>
