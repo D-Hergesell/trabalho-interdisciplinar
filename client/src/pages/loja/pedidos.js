@@ -16,7 +16,7 @@ import {
     FiMoreVertical,
     FiX
 } from 'react-icons/fi';
-function MeusPedidosLoja = () => {
+function MeusPedidosLoja () {
     const router = useRouter();
     const [pedidos, setPedidos] = useState([]);
     const [filtroBusca, setFiltroBusca] = useState('');
