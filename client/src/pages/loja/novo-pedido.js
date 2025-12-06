@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import withAuth from '../../components/withAuth';
 import styles from '../../styles/Pedido.module.css';
 import api from '../../services/api';
 import {
@@ -59,7 +60,7 @@ const CustomProductDropdown = ({ options = [], value = '', onChange, placeholder
     );
 };
 
-const NovoPedidoLoja = () => {
+function NovoPedidoLoja  ()  {
     // ... (Estados e useEffects de loadData permanecem iguais) ...
     const router = useRouter();
     const { fornecedorId: queryFornecedorId } = router.query;
@@ -351,4 +352,5 @@ const NovoPedidoLoja = () => {
     );
 };
 
-export default NovoPedidoLoja;
+
+export default withAuth( NovoPedidoLoja);

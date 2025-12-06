@@ -6,22 +6,14 @@ import api from '../../services/api';
 
 // Importação dos ícones
 import {
-    FiGrid,
-    FiUsers,
-    FiPackage,
-    FiBox,
-    FiLogOut,
-    FiEdit3,
-    FiTrash2,
-    FiSearch,
-    FiChevronLeft,
-    FiChevronRight,
-    FiArrowRight,
-    FiShoppingBag,
-    FiTag
+    FiGrid, FiUsers, FiPackage, FiBox, FiLogOut, FiEdit3, FiTrash2,
+    FiSearch, FiChevronLeft, FiChevronRight, FiArrowRight, FiShoppingBag, FiTag
 } from 'react-icons/fi';
 
-const EditCampanhaModal = ({ campanha, onSave, onCancel, loading }) => {
+// ============================================================================
+// MODAL DE EDIÇÃO
+// ============================================================================
+const EditCampanhaModal = ({ campanha, onSave, onCancel, loading, fornecedores }) => {
 
     const [formData, setFormData] = useState({
         nome: '',
@@ -30,7 +22,6 @@ const EditCampanhaModal = ({ campanha, onSave, onCancel, loading }) => {
         dataInicio: '',
         dataFim: '',
         ativo: 'on',
-        // Campos específicos
         percentualDesconto: '',
         valorMinimoCompra: '',
         cashbackValor: '',
@@ -38,6 +29,7 @@ const EditCampanhaModal = ({ campanha, onSave, onCancel, loading }) => {
         brindeDescricao: ''
     });
 
+    // Correção do ESLint: Inicializa o form apenas quando 'campanha' mudar
     useEffect(() => {
         if (campanha) {
             setFormData({
@@ -71,17 +63,14 @@ const EditCampanhaModal = ({ campanha, onSave, onCancel, loading }) => {
             }
         }
 
-        // Prepara o payload convertendo tipos
         const payload = {
-            id: campanha.id, // ID para update
+            id: campanha.id,
             nome: formData.nome,
             fornecedorId: formData.fornecedorId,
             tipo: formData.tipo,
             dataInicio: formData.dataInicio,
             dataFim: formData.dataFim || null,
             ativo: formData.ativo === 'on',
-
-            // Envia nulo se estiver vazio, ou converte para número
             percentualDesconto: formData.percentualDesconto ? Number(formData.percentualDesconto) : null,
             valorMinimoCompra: formData.valorMinimoCompra ? Number(formData.valorMinimoCompra) : null,
             cashbackValor: formData.cashbackValor ? Number(formData.cashbackValor) : null,
@@ -98,19 +87,24 @@ const EditCampanhaModal = ({ campanha, onSave, onCancel, loading }) => {
                 <h3 className={styles.modalTitle}>Editar Campanha</h3>
 
                 <form onSubmit={handleSubmit}>
-                    {/* Linha 1 */}
                     <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>Nome da Campanha *</label>
                             <input type="text" name="nome" value={formData.nome} onChange={handleChange} required className={styles.inputModal} />
                         </div>
+
+                        {/* CORREÇÃO: Dropdown de Fornecedores no Modal */}
                         <div className={styles.fieldGroup}>
-                            <label>ID do Fornecedor *</label>
-                            <input type="text" name="fornecedorId" value={formData.fornecedorId} onChange={handleChange} required className={styles.inputModal} />
+                            <label>Fornecedor *</label>
+                            <select name="fornecedorId" value={formData.fornecedorId} onChange={handleChange} required className={styles.inputModal}>
+                                <option value="">Selecione...</option>
+                                {fornecedores.map(f => (
+                                    <option key={f.id} value={f.id}>{f.nomeFantasia}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 
-                    {/* Linha 2 - Tipo */}
                     <div className={styles.fieldGroup}>
                         <label>Tipo de Campanha *</label>
                         <select name="tipo" value={formData.tipo} onChange={handleChange} className={styles.inputModal} required>
@@ -120,7 +114,6 @@ const EditCampanhaModal = ({ campanha, onSave, onCancel, loading }) => {
                         </select>
                     </div>
 
-                    {/* Linha 3 - Condicionais baseadas no Tipo */}
                     <div className={styles.row}>
                         {formData.tipo === 'percentual_produto' && (
                             <div className={styles.fieldGroup}>
@@ -156,7 +149,6 @@ const EditCampanhaModal = ({ campanha, onSave, onCancel, loading }) => {
                         )}
                     </div>
 
-                    {/* Linha 4 - Datas e Status */}
                     <div className={styles.row}>
                         <div className={styles.fieldGroup}>
                             <label>Data de Início *</label>
@@ -189,17 +181,17 @@ const EditCampanhaModal = ({ campanha, onSave, onCancel, loading }) => {
     );
 };
 
-
-const BuscaCampanhas = () => {
+// ============================================================================
+// COMPONENTE DE BUSCA
+// ============================================================================
+const BuscaCampanhas = ({ fornecedores, mainMessageSetter }) => {
 
     const [searchId, setSearchId] = useState('');
     const [searchNome, setSearchNome] = useState('');
-    const [searchFornecedor, setSearchFornecedor] = useState('');
 
     const [campanhas, setCampanhas] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
-    const [message, setMessage] = useState(null);
 
     const [editingCampanha, setEditingCampanha] = useState(null);
     const [deleteId, setDeleteId] = useState(null);
@@ -213,54 +205,46 @@ const BuscaCampanhas = () => {
     const handleSearch = async () => {
         setLoading(true);
         setSearched(true);
-        setMessage(null);
+        mainMessageSetter(null); // Limpa mensagem principal
         setCurrentIndex(0);
         setExpandedId(null);
         setEditingCampanha(null);
 
         try {
-            // Rota atualizada para o backend Spring
             const response = await api.get('/api/v1/campanhas');
             let dados = response.data || [];
 
-            // Filtros no frontend (idealmente backend faria isso, mas mantendo a lógica do front atual)
             if (searchId) dados = dados.filter(c => c.id && c.id.includes(searchId));
             if (searchNome) dados = dados.filter(c => c.nome && c.nome.toLowerCase().includes(searchNome.toLowerCase()));
-            if (searchFornecedor) dados = dados.filter(c => c.fornecedorId && c.fornecedorId.toLowerCase().includes(searchFornecedor.toLowerCase()));
 
             setCampanhas(dados);
         } catch (error) {
             console.error('Erro ao buscar campanhas:', error);
-            setMessage({ type: 'error', text: 'Erro ao buscar campanhas.' });
+            mainMessageSetter({ type: 'error', text: 'Erro ao buscar campanhas.' });
         } finally {
             setLoading(false);
         }
     };
 
     const startEdit = (campanha) => {
-        setMessage(null);
+        mainMessageSetter(null);
         setEditingCampanha(campanha);
-    };
-
-    const cancelEdit = () => {
-        setEditingCampanha(null);
     };
 
     const handleUpdateSubmit = async (updatedData) => {
         setLoading(true);
-        setMessage(null);
+        mainMessageSetter(null);
         const id = updatedData.id;
-        // Backend espera JSON, o DTO cuida disso
 
         try {
             await api.put(`/api/v1/campanhas/${id}`, updatedData);
             setCampanhas(oldList => oldList.map(item => item.id === id ? { ...item, ...updatedData } : item));
             setEditingCampanha(null);
-            setMessage({ type: 'success', text: "Campanha atualizada com sucesso!" });
+            mainMessageSetter({ type: 'success', text: "Campanha atualizada com sucesso!" });
         } catch (error) {
             console.error("Erro ao atualizar:", error);
             const msg = error.response?.data?.erro || "Erro ao atualizar campanha.";
-            setMessage({ type: 'error', text: msg });
+            mainMessageSetter({ type: 'error', text: msg });
         } finally {
             setLoading(false);
         }
@@ -276,36 +260,26 @@ const BuscaCampanhas = () => {
         if (!deleteId) return;
         setShowConfirm(false);
         setLoading(true);
-        setMessage(null);
+        mainMessageSetter(null);
 
         try {
             if (currentAction === 'delete') {
                 await api.delete(`/api/v1/campanhas/${deleteId}`);
                 setCampanhas(oldList => oldList.filter(item => item.id !== deleteId));
-                setMessage({ type: 'success', text: "Campanha excluída permanentemente!" });
+                mainMessageSetter({ type: 'success', text: "Campanha excluída permanentemente!" });
             } else {
-                // Desativar: Update com ativo = false
-                // É necessário enviar o objeto completo para PUT no Spring geralmente,
-                // mas se o backend tiver PATCH ou lógica específica no PUT, pode funcionar.
-                // Como o controller usa PUT e espera RequestDTO, o ideal seria buscar antes, mas vamos tentar update simples.
-                // Nota: O backend `atualizarCampanha` espera todos os campos do DTO.
-
-                // Opção segura: Buscar, alterar e salvar. Ou simplificar aqui assumindo que temos os dados locais.
                 const campanhaAtual = campanhas.find(c => c.id === deleteId);
                 if(campanhaAtual) {
                     const payload = { ...campanhaAtual, ativo: false };
-                    // Adaptar nomes se o objeto local estiver diferente do DTO request
-                    // O objeto local (response DTO) tem os mesmos nomes que o request DTO exceto 'id'
                     await api.put(`/api/v1/campanhas/${deleteId}`, payload);
-
                     setCampanhas(oldList => oldList.map(item => item.id === deleteId ? { ...item, ativo: false } : item));
-                    setMessage({ type: 'success', text: "Campanha desativada com sucesso!" });
+                    mainMessageSetter({ type: 'success', text: "Campanha desativada com sucesso!" });
                 }
             }
             if (expandedId === deleteId) setExpandedId(null);
         } catch (error) {
             console.error(`Erro ao ${currentAction}:`, error);
-            setMessage({ type: 'error', text: `Erro ao executar ação: ${error.response?.data?.erro || "Erro de servidor."}` });
+            mainMessageSetter({ type: 'error', text: `Erro ao executar ação: ${error.response?.data?.erro || "Erro de servidor."}` });
         } finally {
             setLoading(false);
             setDeleteId(null);
@@ -313,64 +287,48 @@ const BuscaCampanhas = () => {
         }
     };
 
-    const cancelDelete = () => {
-        setDeleteId(null);
-        setShowConfirm(false);
-        setCurrentAction('deactivate');
-    };
-
     const handleToggleExpand = (id) => {
         setExpandedId(currentId => (currentId === id ? null : id));
     };
 
-    const nextSlide = () => {
-        if (currentIndex + itemsPerPage < campanhas.length) {
-            setCurrentIndex(currentIndex + itemsPerPage);
-            setExpandedId(null);
-        }
-    };
-
-    const prevSlide = () => {
-        if (currentIndex - itemsPerPage >= 0) {
-            setCurrentIndex(currentIndex - itemsPerPage);
-            setExpandedId(null);
-        }
-    };
+    const nextSlide = () => { if (currentIndex + itemsPerPage < campanhas.length) setCurrentIndex(currentIndex + itemsPerPage); };
+    const prevSlide = () => { if (currentIndex - itemsPerPage >= 0) setCurrentIndex(currentIndex - itemsPerPage); };
 
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         return new Date(dateString).toLocaleDateString('pt-BR');
     };
 
+    const getFornecedorNome = (id) => {
+        const f = fornecedores.find(forn => forn.id === id);
+        return f ? f.nomeFantasia : id; // Retorna o nome ou o ID se não achar
+    };
+
     const visibleItems = campanhas.slice(currentIndex, currentIndex + itemsPerPage);
     const totalPages = Math.ceil(campanhas.length / itemsPerPage);
     const currentPage = Math.floor(currentIndex / itemsPerPage) + 1;
 
-
-    const ConfirmationModal = () => {
-        const isDelete = currentAction === 'delete';
-        return (
-            <div className={styles.modalBackdrop}>
-                <div className={styles.modalContent}>
-                    <h3 className={styles.modalTitle}>Confirmação de {isDelete ? 'Exclusão' : 'Desativação'}</h3>
-                    <p className={styles.modalText}>
-                        Tem certeza que deseja {isDelete ? 'EXCLUIR PERMANENTEMENTE' : 'DESATIVAR'} esta campanha?
-                    </p>
-                    <div className={styles.modalActions}>
-                        <button className={`${styles.submitButton} ${styles.btnCancel}`} onClick={cancelDelete}>Cancelar</button>
-                        <button className={`${styles.submitButton} ${styles.btnDanger}`} onClick={handleConfirmAction} disabled={loading}>
-                            {loading ? 'Processando...' : 'Confirmar'}
-                        </button>
-                    </div>
+    const ConfirmationModal = () => (
+        <div className={styles.modalBackdrop}>
+            <div className={styles.modalContent}>
+                <h3 className={styles.modalTitle}>Confirmação</h3>
+                <p className={styles.modalText}>
+                    Tem certeza que deseja {currentAction === 'delete' ? 'EXCLUIR PERMANENTEMENTE' : 'DESATIVAR'} esta campanha?
+                </p>
+                <div className={styles.modalActions}>
+                    <button className={`${styles.submitButton} ${styles.btnCancel}`} onClick={() => setShowConfirm(false)}>Cancelar</button>
+                    <button className={`${styles.submitButton} ${styles.btnDanger}`} onClick={handleConfirmAction} disabled={loading}>
+                        {loading ? '...' : 'Confirmar'}
+                    </button>
                 </div>
             </div>
-        );
-    };
+        </div>
+    );
 
     const ExpandedDetailsRow = ({ item }) => (
         <div className={styles['expanded-details-row']}>
             <div className={styles['detail-full-span']}>
-                <p className={styles['detail-text-p']}><strong>ID Completo:</strong> {item.id}</p>
+                <p className={styles['detail-text-p']}><strong>ID:</strong> {item.id}</p>
             </div>
             <div className={styles['detail-half-span']}>
                 <p className={styles['detail-text-p']}><strong>Tipo:</strong> {item.tipo}</p>
@@ -393,12 +351,6 @@ const BuscaCampanhas = () => {
             <div className={styles['search-section']}>
                 <h2 className={styles['search-header']}>Consultar / Gerenciar Campanhas</h2>
 
-                {message && (
-                    <div className={`${styles.alertMessage} ${styles[message.type]}`}>
-                        {message.text}
-                    </div>
-                )}
-
                 <div className={styles['search-inputs']}>
                     <div className={styles['search-group']}>
                         <label>ID</label>
@@ -408,13 +360,9 @@ const BuscaCampanhas = () => {
                         <label>Nome</label>
                         <input type="text" placeholder="Ex: Verão..." value={searchNome} onChange={e => setSearchNome(e.target.value)} />
                     </div>
-                    <div className={styles['search-group']}>
-                        <label>Fornecedor</label>
-                        <input type="text" placeholder="ID do Fornecedor..." value={searchFornecedor} onChange={e => setSearchFornecedor(e.target.value)} />
-                    </div>
                     <button className={styles['btn-search']} onClick={handleSearch} disabled={loading}>
                         <FiSearch size={20} />
-                        {loading ? 'Buscando...' : 'Buscar'}
+                        {loading ? '...' : 'Buscar'}
                     </button>
                 </div>
 
@@ -441,7 +389,8 @@ const BuscaCampanhas = () => {
                                         <div className={itemClasses} onClick={() => handleToggleExpand(item.id)}>
                                             <div className={styles['detail-cell-name']} style={{ flex: '3fr' }}><p>{item.nome}</p></div>
                                             <div className={styles['detail-cell']} style={{ flex: '1.5fr' }}>
-                                                <span title={item.fornecedorId}>{item.fornecedorId ? item.fornecedorId.substring(0, 8) + '...' : '-'}</span>
+                                                {/* Mostra o Nome do fornecedor em vez do ID */}
+                                                <span>{getFornecedorNome(item.fornecedorId)}</span>
                                             </div>
                                             <div className={styles['detail-cell']} style={{ flex: '2fr' }}>{formatDate(item.dataInicio)}</div>
                                             <div className={styles['detail-cell']} style={{ flex: '2fr' }}>{formatDate(item.dataFim)}</div>
@@ -465,25 +414,26 @@ const BuscaCampanhas = () => {
                         </div>
                     </>
                 ) : (
-                    !loading && searched && <p className={styles['no-data']}>Nenhuma campanha encontrada com os filtros especificados.</p>
+                    !loading && searched && <p className={styles['no-data']}>Nenhuma campanha encontrada.</p>
                 )}
             </div>
 
             {showConfirm && <ConfirmationModal />}
-            {editingCampanha && <EditCampanhaModal campanha={editingCampanha} onSave={handleUpdateSubmit} onCancel={cancelEdit} loading={loading} />}
+            {editingCampanha && <EditCampanhaModal campanha={editingCampanha} onSave={handleUpdateSubmit} onCancel={() => setEditingCampanha(null)} loading={loading} fornecedores={fornecedores} />}
         </>
     );
 };
 
-
+// ============================================================================
+// PÁGINA PRINCIPAL
+// ============================================================================
 function CadastroCampanha() {
     const [form, setForm] = useState({
         nome: '',
-        fornecedorId: '',
-        tipo: 'percentual_produto', // Valor padrão
+        fornecedorId: '', // Este valor agora virá do Select
+        tipo: 'percentual_produto',
         dataInicio: '',
         dataFim: '',
-        // Campos condicionais
         percentualDesconto: '',
         valorMinimoCompra: '',
         cashbackValor: '',
@@ -493,6 +443,21 @@ function CadastroCampanha() {
 
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
+    const [fornecedores, setFornecedores] = useState([]);
+
+    // CORREÇÃO 400: Carregar fornecedores para preencher o Dropdown
+    useEffect(() => {
+        async function loadFornecedores() {
+            try {
+                const res = await api.get('/api/v1/fornecedores/ativos');
+                setFornecedores(res.data || []);
+            } catch (error) {
+                console.error("Erro ao carregar fornecedores:", error);
+                setMessage({ type: 'error', text: 'Erro ao carregar lista de fornecedores.' });
+            }
+        }
+        loadFornecedores();
+    }, []);
 
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -500,6 +465,13 @@ function CadastroCampanha() {
         e.preventDefault();
         setLoading(true);
         setMessage(null);
+
+        // Validação extra
+        if (!form.fornecedorId) {
+            setMessage({ type: 'error', text: "Selecione um fornecedor." });
+            setLoading(false);
+            return;
+        }
 
         if (form.dataFim && form.dataInicio) {
             if (new Date(form.dataFim) < new Date(form.dataInicio)) {
@@ -510,16 +482,13 @@ function CadastroCampanha() {
         }
 
         try {
-            // Conversão de tipos para o DTO
             const payload = {
                 nome: form.nome,
-                fornecedorId: form.fornecedorId,
+                fornecedorId: form.fornecedorId, // Agora isso é garantido ser um UUID válido do select
                 tipo: form.tipo,
                 dataInicio: form.dataInicio,
                 dataFim: form.dataFim || null,
-                ativo: true, // Default ao criar
-
-                // Numéricos e nulos
+                ativo: true,
                 percentualDesconto: form.percentualDesconto ? Number(form.percentualDesconto) : null,
                 valorMinimoCompra: form.valorMinimoCompra ? Number(form.valorMinimoCompra) : null,
                 cashbackValor: form.cashbackValor ? Number(form.cashbackValor) : null,
@@ -529,7 +498,6 @@ function CadastroCampanha() {
 
             await api.post('/api/v1/campanhas', payload);
 
-            // Reset do form
             setForm({
                 nome: '', fornecedorId: '', tipo: 'percentual_produto', dataInicio: '', dataFim: '',
                 percentualDesconto: '', valorMinimoCompra: '', cashbackValor: '', quantidadeMinimaProduto: '', brindeDescricao: ''
@@ -555,7 +523,6 @@ function CadastroCampanha() {
                     <li><Link href="/admin/cadastro-pedidos" className={styles.linkReset}><div className={styles.menuItem}><FiShoppingBag size={20} /><span>Pedidos</span></div></Link></li>
                     <li className={styles.active}><Link href="/admin/cadastro-campanha" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Campanhas</span></div></Link></li>
                     <li><Link href="/admin/cadastro-categoria" className={styles.linkReset}><div className={styles.menuItem}><FiTag size={20} /><span>Categorias</span></div></Link></li>
-                    {/*  <li><Link href="/admin/perfil" className={styles.linkReset}><div className={styles.menuItem}><FiUser size={20} /><span>Perfil</span></div></Link></li> */}
                     <li><Link href="/admin/login" className={styles.linkReset}><div className={styles.menuItem}><FiLogOut size={20} /><span>Sair</span></div></Link></li>
                 </ul>
             </nav>
@@ -574,18 +541,32 @@ function CadastroCampanha() {
                         <div className={styles.row}>
                             <div className={`${styles.fieldGroup} ${styles.inputMedium}`}>
                                 <label htmlFor="nome">Nome da Campanha<span className={styles.requiredAsterisk}>*</span></label>
-                                <input type="text" name="nome" id="nome" placeholder="Ex: Liquidação" value={form.nome} onChange={handleChange} required />
+                                <input type="text" name="nome" id="nome" placeholder="Ex: Liquidação" value={form.nome} onChange={handleChange} required className={styles.inputLong} />
                             </div>
+
+                            {/* CORREÇÃO DO 400: Select de Fornecedores */}
                             <div className={`${styles.fieldGroup} ${styles.fieldGroupThird}`}>
-                                <label htmlFor="fornecedorId">ID do Fornecedor<span className={styles.requiredAsterisk}>*</span></label>
-                                <input type="text" name="fornecedorId" id="fornecedorId" placeholder="ID..." value={form.fornecedorId} onChange={handleChange} required />
+                                <label htmlFor="fornecedorId">Fornecedor<span className={styles.requiredAsterisk}>*</span></label>
+                                <select
+                                    name="fornecedorId"
+                                    id="fornecedorId"
+                                    value={form.fornecedorId}
+                                    onChange={handleChange}
+                                    required
+                                    className={styles.inputLong}
+                                >
+                                    <option value="">Selecione...</option>
+                                    {fornecedores.map(f => (
+                                        <option key={f.id} value={f.id}>{f.nomeFantasia}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 
                         {/* Linha 2 - Seleção de Tipo */}
                         <div className={styles.fieldGroup}>
                             <label htmlFor="tipo">Tipo de Campanha<span className={styles.requiredAsterisk}>*</span></label>
-                            <select name="tipo" id="tipo" value={form.tipo} onChange={handleChange} className={styles.inputModal} required>
+                            <select name="tipo" id="tipo" value={form.tipo} onChange={handleChange} className={styles.inputLong} required>
                                 <option value="percentual_produto">Desconto Percentual</option>
                                 <option value="valor_compra">Cashback por Valor de Compra</option>
                                 <option value="quantidade_produto">Brinde por Quantidade</option>
@@ -597,7 +578,7 @@ function CadastroCampanha() {
                             {form.tipo === 'percentual_produto' && (
                                 <div className={`${styles.fieldGroup} ${styles.fieldGroupThird}`}>
                                     <label htmlFor="percentualDesconto">Desconto (%)<span className={styles.requiredAsterisk}>*</span></label>
-                                    <input type="number" name="percentualDesconto" id="percentualDesconto" placeholder="0-100" value={form.percentualDesconto} onChange={handleChange} step="0.01" />
+                                    <input type="number" name="percentualDesconto" id="percentualDesconto" placeholder="0-100" value={form.percentualDesconto} onChange={handleChange} step="0.01" className={styles.inputLong} />
                                 </div>
                             )}
 
@@ -605,11 +586,11 @@ function CadastroCampanha() {
                                 <>
                                     <div className={`${styles.fieldGroup} ${styles.fieldGroupThird}`}>
                                         <label htmlFor="valorMinimoCompra">Valor Mín. Compra (R$)<span className={styles.requiredAsterisk}>*</span></label>
-                                        <input type="number" name="valorMinimoCompra" id="valorMinimoCompra" value={form.valorMinimoCompra} onChange={handleChange} step="0.01" />
+                                        <input type="number" name="valorMinimoCompra" id="valorMinimoCompra" value={form.valorMinimoCompra} onChange={handleChange} step="0.01" className={styles.inputLong} />
                                     </div>
                                     <div className={`${styles.fieldGroup} ${styles.fieldGroupThird}`}>
                                         <label htmlFor="cashbackValor">Valor Cashback (R$)<span className={styles.requiredAsterisk}>*</span></label>
-                                        <input type="number" name="cashbackValor" id="cashbackValor" value={form.cashbackValor} onChange={handleChange} step="0.01" />
+                                        <input type="number" name="cashbackValor" id="cashbackValor" value={form.cashbackValor} onChange={handleChange} step="0.01" className={styles.inputLong} />
                                     </div>
                                 </>
                             )}
@@ -618,11 +599,11 @@ function CadastroCampanha() {
                                 <>
                                     <div className={`${styles.fieldGroup} ${styles.fieldGroupThird}`}>
                                         <label htmlFor="quantidadeMinimaProduto">Qtd. Mínima<span className={styles.requiredAsterisk}>*</span></label>
-                                        <input type="number" name="quantidadeMinimaProduto" id="quantidadeMinimaProduto" value={form.quantidadeMinimaProduto} onChange={handleChange} />
+                                        <input type="number" name="quantidadeMinimaProduto" id="quantidadeMinimaProduto" value={form.quantidadeMinimaProduto} onChange={handleChange} className={styles.inputLong} />
                                     </div>
                                     <div className={`${styles.fieldGroup} ${styles.fieldGroupThird}`}>
                                         <label htmlFor="brindeDescricao">Descrição do Brinde<span className={styles.requiredAsterisk}>*</span></label>
-                                        <input type="text" name="brindeDescricao" id="brindeDescricao" value={form.brindeDescricao} onChange={handleChange} placeholder="Ex: +1 unidade grátis" />
+                                        <input type="text" name="brindeDescricao" id="brindeDescricao" value={form.brindeDescricao} onChange={handleChange} placeholder="Ex: +1 unidade grátis" className={styles.inputLong} />
                                     </div>
                                 </>
                             )}
@@ -632,11 +613,11 @@ function CadastroCampanha() {
                         <div className={styles.row}>
                             <div className={`${styles.fieldGroup} ${styles.fieldGroupThird}`}>
                                 <label htmlFor="dataInicio">Início<span className={styles.requiredAsterisk}>*</span></label>
-                                <input type="date" name="dataInicio" id="dataInicio" value={form.dataInicio} onChange={handleChange} required />
+                                <input type="date" name="dataInicio" id="dataInicio" value={form.dataInicio} onChange={handleChange} required className={styles.inputLong} />
                             </div>
                             <div className={`${styles.fieldGroup} ${styles.fieldGroupThird}`}>
                                 <label htmlFor="dataFim">Fim</label>
-                                <input type="date" name="dataFim" id="dataFim" value={form.dataFim} onChange={handleChange} />
+                                <input type="date" name="dataFim" id="dataFim" value={form.dataFim} onChange={handleChange} className={styles.inputLong} />
                             </div>
                         </div>
 
@@ -651,10 +632,13 @@ function CadastroCampanha() {
 
                 <hr className={styles.divider} />
 
-                <BuscaCampanhas />
+                {/* Passamos fornecedores para a lista para exibir o nome ao invés do ID */}
+                <BuscaCampanhas fornecedores={fornecedores} mainMessageSetter={setMessage} />
             </main>
         </div>
     );
 }
 
-export default withAuth(CadastroCampanha);
+
+
+export default withAuth(CadastroCampanha, "admin", "/admin/login");
